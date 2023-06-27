@@ -1,0 +1,19 @@
+@media (max-width: 767px) {
+  .phones-portrait-only {
+    display: block;
+  }
+  .phones-portrait-hide {
+    display: none;
+  }
+  .hg1 {
+    font-size: 32px;
+  }
+  .btn {
+    font-size: 14px;
+    height: auto;
+    min-height: 40px;
+  }
+  .phones-portrait-grid1 {
+    grid-template-columns: 1fr;
+  }
+}

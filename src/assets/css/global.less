@@ -1,0 +1,378 @@
+@import 'vars.less';
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html, body, #__nuxt, #__layout {height: 100%;}
+body {
+    padding: 0;
+    margin: 0;
+    background: @bg;
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+}
+a {
+    color: @link;
+    &:hover {text-decoration: none;}
+}
+.text-white {color: #fff;}
+.text-current {color: currentColor;}
+.text-error {color: rgba(237, 116, 116, 0.7);}
+
+.btn {
+    display: inline-flex;
+    height: 40px;
+    align-items: center;
+    border-radius: 6px;
+    background-color: #464855;
+    padding-left: 16px;
+    padding-right: 16px;
+    text-decoration: none;
+    color: #fff;
+    border: 0;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+    cursor: pointer;
+    &:hover {
+        background-color: lighten(#464855, 5%);
+    }
+    .icon {margin-right: 8px;}
+    &.accent {background-color: @accent;}
+    &.btn-small {
+        font-size: 12px;
+        height: auto;
+        padding: 4px 8px;
+    }
+    &.disabled {
+        background-color: #494A52;
+        color: #35363A;
+        text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.11);
+    }
+    &.loading {
+        position: relative;
+        z-index: 1;
+        color: rgba(255,255,255,0);
+        &::before {
+            content: '';
+            background-image: url(~assets/images/loader.png);
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: 50% 50%;
+            top: 5px;
+            bottom: 5px;
+            position: absolute;
+            display: block;
+            left: 0;
+            right: 0;
+            animation: spinner 0.3s linear infinite;
+        }
+    }
+}
+@keyframes spinner {
+    from {transform: rotate(0deg);}
+    to {transform: rotate(360deg);}
+}
+
+.form-error {
+    background-color: @textError;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 2px;
+    line-height: 1.4;
+}
+
+button.btn {
+    display: block;
+    width: 100%;
+}
+.cta-big {
+    background: @accent;
+    border-radius: 4px;
+    font-size: 21px;
+    font-weight: bold;
+    height: 50px;
+}
+.mt24 {margin-top: 24px;}
+.mt1 {margin-top: 1rem;}
+.wlimit {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.tac {text-align: center;}
+.hg1 {
+    font-size: 42px;
+    font-weight: bold;
+}
+.hg2 {font-size: 18px;}
+.hg1 + .hg2 {margin-top: 16px;}
+.balance-big {font-size: 49px;}
+.bucks {margin-right: 4px;}
+.fz13 {font-size: 13px;}
+.icon, .icon16 {vertical-align: middle;}
+.icon {
+    width: 24px;
+    height: 24px;
+}
+.icon16 {
+    width: 16px;
+    height: 16px;
+}
+.list8 > * {
+    margin-top: 8px;
+    &:first-child {margin-top: 0;}
+}
+.df {display: flex;}
+.alitc {align-items: center;}
+.just-between {justify-content: space-between;}
+.just-center {justify-content: center;}
+.flex1 {flex: 1;}
+.gap6 {gap: 6px;}
+.gap8 {
+    & > * {
+        margin-left: 8px;
+        &:first-child {margin-left: 0;}
+    }
+}
+.gap16 {
+    & > * {
+        margin-left: 16px;
+        &:first-child {margin-left: 0;}
+    }
+}
+.gap32 {
+    & > * {
+        margin-left: 32px;
+        &:first-child {margin-left: 0;}
+    }
+}
+.select {
+    font-family: 'Montserrat', sans-serif;
+    appearance: none;
+    font-size: inherit;
+    border: 0;
+    margin: 0;
+    padding: 0 1em 0 0;
+    background: transparent;
+    outline: none;
+    color: inherit;
+    option {color: #000;}
+}
+.form-auth {
+    width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 32px;
+}
+.form-settings {
+    .setting-desc {
+        font-size: 14px;
+        opacity: .7;
+        margin-bottom: 8px;
+        max-width: 90ch;
+        line-height: 1.45;
+    }
+    .hg2 {margin-bottom: 4px;}
+    .form-row:first-child {margin-top: 0;}
+    .hint {font-size: 14px;}
+}
+.auth-wrap {
+    margin-top: 80px;
+    .hg2 {margin-top: 16px;}
+}
+.form-row {
+    margin-top: 24px;
+}
+.continue-with {
+    margin-top: 16px;
+    .fz13 {margin-bottom: 16px;}
+    .btn {
+        font-size: 14px;
+        padding-left: 10px;
+        padding-right: 10px;
+        width: 100%;
+        display: flex;
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+    }
+    .flex1:first-child {margin-right: 12px;}
+}
+.ffield {margin-top: 8px;}
+.ffield-hint {
+    font-size: 12px;
+    margin-top: 6px;
+    color: rgba(255,255,255,0.7);
+}
+
+.grid3 {
+    display: grid;
+    grid-gap: 32px;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+.span2 {grid-column-end: span 2;}
+.span3 {grid-column-end: span 3;}
+.info-card {
+    background-color: @card-bg;
+    border-radius: 8px;
+}
+.close {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    opacity: .3;
+    cursor: pointer;
+    &:hover {opacity: 1;}
+}
+.modal-wrap {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    .overlay {
+        position: absolute;
+        z-index: 1;
+        background-color: rgba(0,0,0,.5);
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+    .modal-window {
+        position: relative;
+        z-index: 2;
+        background-color: #464855;
+        border-radius: 8px;
+        padding: 24px;
+    }
+}
+
+.grid3 + .table-docs {margin-top: 32px;}
+
+.table-docs {
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.42857142857143;
+    text-decoration-skip-ink: auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Noto Sans", "Ubuntu", "Droid Sans", "Helvetica Neue", sans-serif;
+    border-collapse: collapse;
+    margin: 10px 0 0 0;
+    overflow-x: auto;
+    margin-top: 0;
+    width: initial;
+    padding: 0px;
+    background: #2B292F;
+    width: 100%;
+    th {
+      text-align: left;
+      .rtl & {text-align: right;}
+      background-color: #36353A;
+      font-weight: bold;
+      color: #AFAEB0;
+      padding: 7px 10px;
+      border: 1px solid #464854;
+    }
+    td {
+      padding: 7px 10px;
+      vertical-align: top;
+      min-width: 8px;
+      border: 1px solid #464854;
+      padding-left: 10px !important;
+    }
+}
+.page-docs {
+    color: rgba(255,255,255,0.75);
+    h1 {margin-top: 0;}
+    p {line-height: 1.4;}
+}
+
+small.title {display: none;}
+.code {
+    color: #333;
+    border-collapse: collapse;
+    background: 0;
+    border: 0;
+    bottom: auto;
+    float: none;
+    height: auto;
+    left: auto;
+    margin: 0;
+    outline: 0;
+    overflow: visible;
+    padding: 0;
+    position: static;
+    right: auto;
+    text-align: left;
+    top: auto;
+    vertical-align: baseline;
+    box-sizing: content-box;
+    font-family: "Consolas","Bitstream Vera Sans Mono","Courier New",Courier,monospace;
+    font-weight: normal;
+    font-style: normal;
+    min-height: inherit;
+    width: 100%;
+    line-height: 20px;
+    font-size: 14px;
+  }
+  .line {
+    color: #333;
+    border-collapse: collapse;
+    background: 0;
+    border: 0;
+    bottom: auto;
+    float: none;
+    height: auto;
+    left: auto;
+    margin: 0;
+    outline: 0;
+    overflow: visible;
+    position: static;
+    right: auto;
+    text-align: left;
+    top: auto;
+    vertical-align: baseline;
+    width: auto;
+    box-sizing: content-box;
+    font-family: "Consolas","Bitstream Vera Sans Mono","Courier New",Courier,monospace;
+    font-weight: normal;
+    font-style: normal;
+    min-height: inherit;
+    line-height: 20px;
+    font-size: 14px;
+    padding: 0 1em;
+    background-color: #0f192a!important;
+    padding-left: 0;
+    white-space: nowrap;
+  }
+  .codeContent, .example-code {
+    display: grid;
+    grid-template-columns: 1fr;
+    position: relative;
+    overflow: hidden;
+    td > & {margin-top: 8px;}
+    & > div {
+      overflow: auto;
+      background: #282C34;
+      border-radius: 3px;
+    }
+    .body {border-radius: 0 0 4px 4px;}
+}
+.phones-portrait-only {
+    display: none;
+}
+
+.col-side-nav + .col-content {
+    position: relative;
+    z-index: 1;
+}
+@import 'tablets-landscape.less';
+@import 'tablets-portrait.less';
+@import 'phones-portrait.less';
