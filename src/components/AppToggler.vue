@@ -5,7 +5,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import SvgIcon from "./SvgIcon.vue";
 import IconCheck from '../assets/icons/check.svg'
 import {ref} from "vue";

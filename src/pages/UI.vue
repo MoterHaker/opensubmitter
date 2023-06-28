@@ -69,7 +69,7 @@
         </div>
     </div>
 </template>
-<script setup>
+<script setup lang="ts">
 import Btn from "../components/Btn.vue";
 import BtnIcon from "../components/BtnIcon.vue";
 import AppToggler from "../components/AppToggler.vue";

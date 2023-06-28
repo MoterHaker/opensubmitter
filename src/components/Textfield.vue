@@ -3,7 +3,6 @@
         <input
             type="text"
             :value="value"
-            @input="$emit('input', $event.target.value)"
         />
         <div class="error-msg" v-if="errorMessage">
             {{ errorMessage }}
@@ -11,15 +10,8 @@
     </div>
 </template>
 
-<script>
-export default {
-    props: {
-        type: {type: String},
-        error: {type: Boolean},
-        errorMessage: {type: String},
-        value: {type: String}
-    }
-}
+<script setup lang="ts">
+defineProps(['type', 'error', 'errorMessage', 'value'])
 </script>
 
 <style lang="less" scoped>

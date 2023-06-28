@@ -1,5 +1,5 @@
 import fs from "fs";
-import * as interfaces from "../electron/main/interface"
+import * as interfaces from "../src/interface"
 
 export default class Template implements OpenSubmitterTemplateProtocol {
 

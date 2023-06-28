@@ -35,8 +35,8 @@ import Textfield from "../components/Textfield.vue";
 
 const fileName = ref('')
 const isRunningBlocked = ref(true);
-const userSettings = ref([]);
-const templateConfig = ref({});
+const userSettings: Array<UserSetting> | any = ref([]); //TODO correct typing
+const templateConfig : OpenSubmitterTemplateProtocol | any = ref({});
 const templateError = ref('');
 
 function openTemplateIPC() {
@@ -47,7 +47,7 @@ function openTemplateIPC() {
 }
 type FileOpenDialogType = ('open' | 'save')
 
-function selectFileForTemplate(type : FileOpenDialogType, index) {
+function selectFileForTemplate(type : FileOpenDialogType, index: number) {
     ipcRenderer.send('TM-select-file-for-template-settings', {
         type,
         index

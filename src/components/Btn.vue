@@ -5,6 +5,6 @@
     }">{{ props.label }}</button>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const props = defineProps(['label', 'disabled', 'loading'])
 </script>
