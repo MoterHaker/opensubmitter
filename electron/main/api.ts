@@ -1,21 +1,25 @@
 import puppeteer from 'puppeteer'
+import { ipcMain } from 'electron'
 import { join } from 'node:path'
 const { dialog } = require('electron')
 
 class InternalAPI {
 
-    async hello(e, message: Object) {
+    startListening() {
+        ipcMain.on('TM-select-template-dialog', this.selectTemplateFile);
+        ipcMain.on('TM-run-opened-file', this.runOpenedTemplate);
+    }
 
-        e.reply('nice', 'path: '+__dirname)
+    async selectTemplateFile(e) {
+        console.log('selecting template file')
         const files = await dialog.showOpenDialog({ properties: ['openFile'] });
-
         if (!files || files.canceled) {
-            e.reply('nice', 'canceled opening');
             return;
         }
-        console.log(files);
+        e.reply('TM-set-file-name', files.filePaths[0])
+    }
 
-        // console.log('iapi hello:', message);
+    async runOpenedTemplate(e, filename: string) {
 
 
         let options = {
@@ -60,33 +64,17 @@ class InternalAPI {
         const page = await browser.newPage();
 
         try {
-            let templatePath = 'bropanel.mjs';
             const time = Math.random();
-            const templateObject = await import(files.filePaths[0]+'?'+time);
-            // console.log("type:", typeof templateObject);
-            // const { obj } = templateObject;
-            // console.log('obj', obj);
-            const template = new templateObject.default(page);
-            // console.log(template);
+            const templateObject = await import(filename+'?'+time);
+            const template = new templateObject.default();
             template.page = page;
             const result = await template.run();
-            e.reply('nice', result)
+            console.log('result', result);
 
         } catch (e) {
-            console.log('could not run:', e.toString());
-            e.reply('nice', 'could not run:', e.toString())
+            console.log('could not run template:', e.toString());
         }
 
-        // try {
-        //     await page.goto('https://bropanel.com/', {
-        //         waitUntil: "networkidle0",
-        //         timeout: 20000
-        //     });
-        // } catch (e) {
-        //     console.log('err while loading the page: ' + e);
-        // }
-        // console.log(await page.content());
-        // Take screenshot
         await browser.close();
     }
 }

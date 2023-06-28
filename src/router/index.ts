@@ -17,7 +17,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'dashboard',
         component: () => import('../pages/TaskManager.vue'),
         meta: {
-          title: "Dashboard",
+          title: "Task Manager",
           subtitle: "Run templates"
         }
       },{

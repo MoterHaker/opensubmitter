@@ -55,7 +55,7 @@ a {
         color: rgba(255,255,255,0);
         &::before {
             content: '';
-            background-image: url(~assets/images/loader.png);
+            background-image: url('../images/loader.png');
             background-repeat: no-repeat;
             background-size: contain;
             background-position: 50% 50%;
@@ -123,9 +123,12 @@ button.btn {
     margin-top: 8px;
     &:first-child {margin-top: 0;}
 }
-.df {
+.df-100vh {
   display: flex;
   min-height: 100vh;
+}
+.df {
+  display: flex;
 }
 .alitc {align-items: center;}
 .just-between {justify-content: space-between;}
@@ -375,6 +378,25 @@ small.title {display: none;}
 .col-side-nav + .col-content {
     position: relative;
     z-index: 1;
+}
+.textfield-button {
+  display: grid;
+  column-gap: 20px;
+  column-count: 4;
+  :first-child {
+    grid-column-start: 1;
+    grid-column-end: 5;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  :nth-child(2) {
+    grid-column-start: 1;
+    grid-column-end: 4;
+  }
+  :last-child {
+    grid-column-start: 4;
+    grid-column-end: 4;
+  }
 }
 @import 'tablets-landscape.less';
 @import 'tablets-portrait.less';

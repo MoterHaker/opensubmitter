@@ -3,9 +3,9 @@ export default class Template {
 
     page = null;
 
-    constructor(page) {
-        this.page = page;
-    }
+    // constructor(page) {
+    //     this.page = page;
+    // }
 
     async run() {
         try {

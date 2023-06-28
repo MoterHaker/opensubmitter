@@ -1,7 +1,7 @@
 <template>
     <div>
 <!--        <component :is="modalToShow" />-->
-        <div class="df">
+        <div class="df-100vh ">
             <div class="col-side-nav">
                 <router-link to="/dashboard">Task Manager</router-link>
                 <router-link to="/templates">Templates</router-link>
@@ -13,7 +13,7 @@
                     <div class="subtitle">{{ route.meta.subtitle }}</div>
                 </div>
                 <div class="col-content">
-                <router-view  />
+                    <router-view  />
                 </div>
             </div>
         </div>

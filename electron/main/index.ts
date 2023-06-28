@@ -121,8 +121,9 @@ ipcMain.handle('open-win', (_, arg) => {
 })
 
 const internalAPI = new InternalAPI();
-ipcMain.on('hello', (e, data) => {
-  console.log('got hello message')
-  internalAPI.hello(e, data);
-  e.reply('nice', data)
-})
+internalAPI.startListening();
+// ipcMain.on('hello', (e, data) => {
+//   console.log('got hello message')
+//   internalAPI.hello(e, data);
+//   e.reply('nice', data)
+// })

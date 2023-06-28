@@ -57,6 +57,14 @@
                 Button with label:
                 <btn label="Test me" />
             </div>
+            <div style="padding: 10px 0">
+                Disabled Button:
+                <btn label="Test me" :disabled="true"/>
+            </div>
+            <div style="padding: 10px 0">
+                Button with loader:
+                <btn label="Test me" :loading="true"/>
+            </div>
 
         </div>
     </div>
