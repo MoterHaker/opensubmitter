@@ -2,8 +2,23 @@
     <div class="dashboard">
         <div class="textfield-button">
             <div>Template file path</div>
-            <textfield :value="fileName" style="width:100%"/>
-            <btn label="Open Template" @click="testIPC"/>
+            <textfield :value="fileName" style="width:100%" :errorMessage="templateError"/>
+            <btn label="Open Template" @click="openTemplateIPC"/>
+        </div>
+        <div v-if="userSettings.length > 0">
+            <div class="hg2 padding20_0px">{{templateConfig.name}}</div>
+        </div>
+        <div v-for="(setting, index) in userSettings" :key="index" class="mtop10">
+            <div v-if="['SourceFileTaskPerLine'].indexOf(setting.type) !== -1" class="textfield-button">
+                <div>{{setting.title}}</div>
+                <textfield :value="setting.fileName" style="width:100%"/>
+                <btn label="Select File" @click="selectFileForTemplate('open', index)"/>
+            </div>
+            <div v-if="['OutputFile'].indexOf(setting.type) !== -1" class="textfield-button">
+                <div>{{setting.title}}</div>
+                <textfield :value="setting.fileName" style="width:100%"/>
+                <btn label="Select File" @click="selectFileForTemplate('save', index)"/>
+            </div>
         </div>
         <div class="run-btn">
             <btn label="Run template" :disabled="isRunningBlocked" @click="runTemplate"/>
@@ -11,7 +26,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import Btn from "../components/Btn.vue";
 import { ref } from 'vue'
 import { ipcRenderer } from 'electron'
@@ -20,12 +35,23 @@ import Textfield from "../components/Textfield.vue";
 
 const fileName = ref('')
 const isRunningBlocked = ref(true);
+const userSettings = ref([]);
+const templateConfig = ref({});
+const templateError = ref('');
 
-function testIPC() {
+function openTemplateIPC() {
     console.log('sending IPC')
     ipcRenderer.send('TM-select-template-dialog', {
         some: "data"
     })
+}
+type FileOpenDialogType = ('open' | 'save')
+
+function selectFileForTemplate(type : FileOpenDialogType, index) {
+    ipcRenderer.send('TM-select-file-for-template-settings', {
+        type,
+        index
+    });
 }
 function runTemplate() {
     if (isRunningBlocked.value) {
@@ -33,11 +59,18 @@ function runTemplate() {
     }
     ipcRenderer.send('TM-run-opened-file', fileName.value);
 }
-ipcRenderer.on('TM-set-file-name', (e, data) => {
-    console.log('e', e);
-    console.log('data', data);
+ipcRenderer.on('TM-set-template-name', (e, data) => {
     fileName.value = data;
     isRunningBlocked.value = false;
+})
+ipcRenderer.on('TM-set-template-config', (e, data) => {
+    templateConfig.value = data;
+    if (data.userSettings) {
+        userSettings.value = data.userSettings;
+    }
+});
+ipcRenderer.on('TM-set-template-name-error', (e, errorString: string) => {
+    templateError.value = errorString;
 })
 </script>
 
