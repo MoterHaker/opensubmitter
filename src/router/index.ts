@@ -5,7 +5,7 @@ import AppLayout from '../layouts/AppLayout.vue'
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/:catchAll(.*)',
-    redirect: { name: 'dashboard' },
+    redirect: { path: '/dashboard' },
   },
   {
     name: 'default',
@@ -16,14 +16,26 @@ const routes: Array<RouteRecordRaw> = [
         name: 'dashboard',
         path: 'dashboard',
         component: () => import('../pages/TaskManager.vue'),
+        meta: {
+          title: "Dashboard",
+          subtitle: "Run templates"
+        }
       },{
         name: 'templates',
         path: 'templates',
         component: () => import('../pages/TemplatesDatabase.vue'),
+        meta: {
+          title: "Templates",
+          subtitle: "Find templates"
+        }
       },{
         name: 'uikit',
         path: 'uikit',
         component: () => import('../pages/UI.vue'),
+        meta: {
+          title: "UI Kit",
+          subtitle: "Build the app"
+        }
       }
     ],
   },

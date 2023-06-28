@@ -45,7 +45,7 @@ async function createWindow() {
   win = new BrowserWindow({
     title: 'Main window',
     icon: join(process.env.PUBLIC, 'favicon.ico'),
-    width: 1800,
+    width: 1400,
     height: 900,
     webPreferences: {
       preload,
@@ -67,7 +67,7 @@ async function createWindow() {
 
   // Test actively push message to the Electron-Renderer
   win.webContents.on('did-finish-load', () => {
-    win?.webContents.send('main-process-message', new Date().toLocaleString())
+    win?.webContents.send('main-process-message', new Date().toLocaleString()+` ${url}dashboard`)
   })
 
   // Make all links open with the browser, not with the application
@@ -114,7 +114,7 @@ ipcMain.handle('open-win', (_, arg) => {
   })
 
   if (process.env.VITE_DEV_SERVER_URL) {
-    childWindow.loadURL(`${url}#${arg}`)
+    childWindow.loadURL(`${url}dashboard`)
   } else {
     childWindow.loadFile(indexHtml, { hash: arg })
   }

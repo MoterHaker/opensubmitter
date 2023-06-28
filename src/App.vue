@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import {useRouter} from "vue-router";
+
+const router = useRouter()
+router.push('/dashboard');
 import HelloWorld from './components/HelloWorld.vue'
 
 console.log("[App.vue]", `Hello world from Electron ${process.versions.electron}!`)

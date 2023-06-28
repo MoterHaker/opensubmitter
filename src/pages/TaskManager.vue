@@ -1,6 +1,11 @@
 <template>
     <div class="dashboard">
-        Task Manager
+        1Task Manager<br>
+        2Task Manager<br>
+        3Task Manager<br>
+        4Task Manager<br>
+        5Task Manager<br>
+        6Task Manager<br>
     </div>
 </template>
 
