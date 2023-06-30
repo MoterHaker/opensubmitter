@@ -2,7 +2,8 @@
     <div class="textfield" :class="{error : errorMessage}">
         <input
             type="text"
-            :value="value"
+            :value="modelValue"
+            @input="$emit('update:modelValue', $event.target.value)"
         />
         <div class="error-msg" v-if="errorMessage">
             {{ errorMessage }}
@@ -11,7 +12,8 @@
 </template>
 
 <script setup lang="ts">
-defineProps(['type', 'error', 'errorMessage', 'value'])
+defineEmits(['update:modelValue'])
+defineProps(['modelValue', 'errorMessage'])
 </script>
 
 <style lang="less" scoped>

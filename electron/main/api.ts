@@ -1,22 +1,25 @@
-import puppeteer from 'puppeteer'
+import puppeteer, {Browser} from 'puppeteer'
+import axios from 'axios';
 import { ipcMain } from 'electron'
 import { join } from 'node:path'
 const { dialog } = require('electron')
 import ts, {ScriptTarget} from "typescript"
 import fs from "fs"
 import { join } from 'node:path'
+import * as interfaces from "../src/interface.d.ts"
 
 class InternalAPI {
 
     currentTemplateClass = null;
-    currentTemplateObject = null;
+    currentTemplateObject?: OpenSubmitterTemplateProtocol | null = null;
+    currentTasks: TemplateTask[] = [];
 
     startListening() {
         ipcMain.on('TM-select-template-dialog', async(e, data) => {
             await this.selectTemplateFile(e);
         });
-        ipcMain.on('TM-run-opened-file', async(e, data) => {
-            await this.runOpenedTemplate(e, data);
+        ipcMain.on('TM-run-opened-file', async(e) => {
+            await this.runOpenedTemplate(e);
         });
         ipcMain.on('TM-select-file-for-template-settings', async(e, data) => {
             await this.selectFileForTemplateSettings(e, data);
@@ -87,29 +90,82 @@ class InternalAPI {
         }
     }
 
-    async runOpenedTemplate(e, filename: string) {
+    async runOpenedTemplate(event) {
 
-        const browser = await puppeteer.launch(this.getPuppeteerOptions());
-        console.log('creating new page ..');
-        const page = await browser.newPage();
+        console.log('running..')
+        const template = new this.currentTemplateClass.default();
+        if (this.currentTemplateObject && this.currentTemplateObject.config) {
+            template.config = this.currentTemplateObject.config;
+        }
 
-        try {
-            const template = new this.currentTemplateClass.default();
+        event.reply('TM-set-running-status', {
+            status: 'Generating tasks',
+            completed: 0,
+            pending: 0
+        })
+        console.log('generating')
+        this.currentTasks = await template.generateTasks();
+
+
+        event.reply('TM-set-running-status', {
+            status: 'Running tasks',
+            completed: 0,
+            pending: this.currentTasks.length
+        })
+
+        let completedTasks = 0;
+        console.log('iterating', this.currentTasks);
+        for (const index in this.currentTasks) {
+
+            console.log('running', index);
+            let browser: Browser | null = null;
+
+            //creating template object
+            const template: OpenSubmitterTemplateProtocol = new this.currentTemplateClass.default();
+
+            //setting configuration
             if (this.currentTemplateObject && this.currentTemplateObject.config) {
                 template.config = this.currentTemplateObject.config;
             }
 
-            //TODO: assign requested capabilities, like axios, puppeteer, anticaptcha
-            template.page = page;
-            const result = await template.run();
-            console.log('result', result);
+            //setting modules
+            if (template.config && template.config.capabilities) {
+                for (const capability of template.config.capabilities) {
 
-        } catch (e) {
-            console.log('could not run template:', e.toString());
+                    switch (capability) {
+                        case 'axios':
+                            template.axios = axios;
+                            break;
+
+                        case 'puppeteer':
+                            console.log('setting puppeteer');
+                            browser = await puppeteer.launch(this.getPuppeteerOptions());
+                            template.page = await browser.newPage();
+                            break;
+                    }
+
+                }
+            }
+
+            //running one task
+            console.log('running task', this.currentTasks.length[index]);
+            await template.runTask(this.currentTasks.length[index])
+            completedTasks++;
+
+            event.reply('TM-set-running-status', {
+                status: 'Running tasks',
+                completed: completedTasks,
+                pending: this.currentTasks.length
+            })
+            console.log('closing browser');
+            //closing browser object
+            if (browser) browser.close();
+
         }
-
-        await browser.close();
+        console.log('done!');
     }
+
+
 
     tsCompile(source: string): string {
         return ts.transpileModule(source, { compilerOptions: {
@@ -122,7 +178,7 @@ class InternalAPI {
 
     private getPuppeteerOptions() {
         return {
-            headless: true,
+            headless: "new",
             ignoreDefaultArgs: ["--disable-extensions", "--enable-automation"],
             devtools: false,
             args: [

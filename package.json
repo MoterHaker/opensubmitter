@@ -36,6 +36,7 @@
     "vue-tsc": "^1.2.0"
   },
   "dependencies": {
+    "axios": "^1.4.0",
     "puppeteer": "^20.7.3",
     "vue-router": "^4.2.2"
   }

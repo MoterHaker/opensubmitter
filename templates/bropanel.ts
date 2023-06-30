@@ -5,6 +5,7 @@ export default class Template implements OpenSubmitterTemplateProtocol {
 
     config: TemplateConfig = {
         name: 'Template tester from MotaHaker',
+        capabilities: ['puppeteer'],
         userSettings: [
             {
                 type: 'OutputFile',
@@ -17,11 +18,17 @@ export default class Template implements OpenSubmitterTemplateProtocol {
 
     page = null;
 
+    async generateTasks(...args: any): Promise<TemplateTask[]> {
+        return [{
+            data: null // return one empty task to iterate once
+        }]
+    }
 
-    async run() {
+
+    async runTask(task: TemplateTask) {
         try {
             console.log('navigating...');
-            await this.page.goto('http://bropanel.com/', {
+            await this.page.goto('https://antigate.com/iptest.php', {
                 waitUntil: "networkidle0",
                 timeout: 20000
             });
@@ -34,6 +41,7 @@ export default class Template implements OpenSubmitterTemplateProtocol {
         } else {
             console.log('no filename is specified!');
         }
+        console.log('done');
         return result;
     }
 

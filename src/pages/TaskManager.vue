@@ -1,27 +1,29 @@
 <template>
     <div class="dashboard">
+
+
         <div class="textfield-button">
             <div>Template file path</div>
-            <textfield :value="fileName" style="width:100%" :errorMessage="templateError"/>
+            <Textfield v-model="fileName" style="width:100%" :errorMessage="templateError"/>
             <btn label="Open Template" @click="openTemplateIPC"/>
         </div>
-        <div v-if="userSettings.length > 0">
-            <div class="hg2 padding20_0px">{{templateConfig.name}}</div>
+        <div v-if="userSettings.length > 0 && templateConfig">
+            <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
         </div>
         <div v-for="(setting, index) in userSettings" :key="index" class="mtop10">
             <div v-if="['SourceFileTaskPerLine'].indexOf(setting.type) !== -1" class="textfield-button">
                 <div>{{setting.title}}</div>
-                <textfield :value="setting.fileName" style="width:100%"/>
-                <btn label="Select File" @click="selectFileForTemplate('open', index)"/>
+                <Textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="inputsErrors[index]" style="width:100%"/>
+                <btn label="Select File" @click="selectFileForTemplateIPC('open', index)"/>
             </div>
             <div v-if="['OutputFile'].indexOf(setting.type) !== -1" class="textfield-button">
                 <div>{{setting.title}}</div>
-                <textfield :value="setting.fileName" style="width:100%"/>
-                <btn label="Select File" @click="selectFileForTemplate('save', index)"/>
+                <textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="inputsErrors[index]" style="width:100%"/>
+                <btn label="Select File" @click="selectFileForTemplateIPC('save', index)"/>
             </div>
         </div>
         <div class="run-btn">
-            <btn label="Run template" :disabled="isRunningBlocked" @click="runTemplate"/>
+            <btn label="Run template" :disabled="isRunningBlocked" @click="runTemplateIPC"/>
         </div>
     </div>
 </template>
@@ -30,43 +32,86 @@
 import Btn from "../components/Btn.vue";
 import { ref } from 'vue'
 import { ipcRenderer } from 'electron'
-import {onMounted} from "vue";
 import Textfield from "../components/Textfield.vue";
+
 
 const fileName = ref('')
 const isRunningBlocked = ref(true);
-const userSettings: Array<UserSetting> | any = ref([]); //TODO correct typing
-const templateConfig : OpenSubmitterTemplateProtocol | any = ref({});
+const userSettings = ref([]);
+const templateConfig = ref<TemplateConfig | null>(null);
 const templateError = ref('');
+const inputsErrors = ref({});
 
-function openTemplateIPC() {
-    console.log('sending IPC')
-    ipcRenderer.send('TM-select-template-dialog', {
-        some: "data"
-    })
-}
 type FileOpenDialogType = ('open' | 'save')
 
-function selectFileForTemplate(type : FileOpenDialogType, index: number) {
+function validateUserSettings(type?: UserSettingsInput, index?: number) {
+    let isEverythingChecked = true;
+    for (const userSettingIndex in userSettings.value) {
+        const userSetting : UserSetting = userSettings.value[userSettingIndex];
+        if (typeof type !== "undefined" && typeof index !== "undefined") {
+            //check exactly this input
+            if (parseInt(userSettingIndex) === index) {
+                if (userSetting.required) {
+                    if (validateInput(userSetting)) {
+                        if (typeof inputsErrors.value[userSettingIndex] !== "undefined") delete inputsErrors.value[userSettingIndex];
+                    } else {
+                        inputsErrors.value[userSettingIndex] = "Required field";
+                    }
+                }
+                validateUserSettings(); //recheck everything silently
+            }
+        } else {
+            //check all fields silently
+            if (!validateInput(userSetting)) {
+                isEverythingChecked = false;
+            } else {
+                if (typeof inputsErrors.value[userSettingIndex] !== "undefined") delete inputsErrors.value[userSettingIndex];
+            }
+        }
+    }
+
+    //results of silent mode
+    if (typeof type === "undefined" && typeof index === "undefined") {
+        isRunningBlocked.value = !isEverythingChecked;
+    }
+
+}
+function validateInput(setting: UserSetting) {
+    switch (setting.type) {
+        case 'OutputFile':
+        case 'SourceFileTaskPerLine':
+            console.log('validating setting.fileName', setting.fileName);
+            //TODO check in internal API that file exists
+            return setting.fileName?.length > 0
+            break;
+    }
+}
+
+function runTemplateIPC() {
+    if (isRunningBlocked.value) {
+        console.log('running blocked');
+        return;
+    }
+    ipcRenderer.send('TM-run-opened-file', fileName.value);
+}
+function openTemplateIPC() {
+    ipcRenderer.send('TM-select-template-dialog')
+}
+function selectFileForTemplateIPC(type : FileOpenDialogType, index: number) {
     ipcRenderer.send('TM-select-file-for-template-settings', {
         type,
         index
     });
 }
-function runTemplate() {
-    if (isRunningBlocked.value) {
-        return;
-    }
-    ipcRenderer.send('TM-run-opened-file', fileName.value);
-}
 ipcRenderer.on('TM-set-template-name', (e, data) => {
     fileName.value = data;
-    isRunningBlocked.value = false;
+    validateUserSettings()
 })
 ipcRenderer.on('TM-set-template-config', (e, data) => {
     templateConfig.value = data;
     if (data.userSettings) {
         userSettings.value = data.userSettings;
+        validateUserSettings()
     }
 });
 ipcRenderer.on('TM-set-template-name-error', (e, errorString: string) => {

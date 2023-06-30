@@ -6,6 +6,7 @@ export default class Template implements OpenSubmitterTemplateProtocol {
 
     config: TemplateConfig = {
         name: 'Proxy Checker from MotaHaker',
+        capabilities: ['axios'],
         userSettings: [
             {
                 type: 'SourceFileTaskPerLine',
@@ -19,7 +20,11 @@ export default class Template implements OpenSubmitterTemplateProtocol {
         ]
     };
 
-    async run(...args) {
+    async generateTasks(...args: any): Promise<TemplateTask[]> {
+        return []
+    }
+
+    async runTask(task: TemplateTask) {
 
     }
 
