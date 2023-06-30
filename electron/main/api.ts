@@ -1,3 +1,4 @@
+/// <reference path="../../src/interface.d.ts" />
 import puppeteer, {Browser} from 'puppeteer'
 import axios from 'axios';
 import { ipcMain } from 'electron'
@@ -5,29 +6,43 @@ import { join } from 'node:path'
 const { dialog } = require('electron')
 import ts, {ScriptTarget} from "typescript"
 import fs from "fs"
-import { join } from 'node:path'
-import * as interfaces from "../src/interface.d.ts"
 
 class InternalAPI {
 
     currentTemplateClass = null;
     currentTemplateObject?: OpenSubmitterTemplateProtocol | null = null;
     currentTasks: TemplateTask[] = [];
+    isRunningAllowed = true;
 
     startListening() {
-        ipcMain.on('TM-select-template-dialog', async(e, data) => {
-            await this.selectTemplateFile(e);
-        });
-        ipcMain.on('TM-run-opened-file', async(e) => {
-            await this.runOpenedTemplate(e);
-        });
-        ipcMain.on('TM-select-file-for-template-settings', async(e, data) => {
-            await this.selectFileForTemplateSettings(e, data);
+        ipcMain.on('TM', async(e, data) => {
+            if (!data.type) return;
+            switch (data.type) {
+
+                case 'select-template-dialog':
+                    await this.selectTemplateFile(e);
+                    break;
+
+                case 'run-opened-file':
+                    await this.runOpenedTemplate(e);
+                    break;
+
+                case 'select-file-for-template-settings':
+                    await this.selectFileForTemplateSettings(e, data);
+                    break;
+
+                case 'stop-job':
+                    //TODO: terminate threads
+                    this.isRunningAllowed = false;
+                    break;
+
+            }
+
         });
     }
 
     async selectFileForTemplateSettings(e, data) {
-        if (data.type === 'open') {
+        if (data.dialogType === 'open') {
             const files: Electron.OpenDialogReturnValue = await dialog.showOpenDialog({properties: ['openFile']});
             if (!files || files.canceled) {
                 return;
@@ -35,7 +50,7 @@ class InternalAPI {
                 this.currentTemplateObject.config.userSettings[data.index]["fileName"] = files.filePaths[0];
             }
         }
-        if (data.type === 'save') {
+        if (data.dialogType === 'save') {
             const files: Electron.SaveDialogReturnValue = await dialog.showSaveDialog({properties: ['showOverwriteConfirmation']});
             if (!files || files.canceled) {
                 return;
@@ -43,7 +58,10 @@ class InternalAPI {
                 this.currentTemplateObject.config.userSettings[data.index]["fileName"] = files.filePath;
             }
         }
-        e.reply('TM-set-template-config', this.currentTemplateObject.config)
+        e.reply('TaskManager', {
+            type: 'set-template-config',
+            config: this.currentTemplateObject.config
+        })
     }
 
 
@@ -74,54 +92,69 @@ class InternalAPI {
             this.currentTemplateObject = new this.currentTemplateClass.default();
         } catch (e) {
             console.error(`could not compile ts file ${filename}: `, e.toString());
-            event.reply('TM-set-template-name-error', "Invalid Typescript template")
+            event.reply('TaskManager', {type: 'set-template-name-error', error: "Invalid Typescript template"})
             return;
         }
 
-        event.reply('TM-set-template-name', filename)
-        event.reply('TM-set-template-name-error', "")
+        event.reply('TaskManager', { type: 'set-template-name', filename })
+        event.reply('TaskManager', { type: 'set-template-name-error', error: "" })
 
         if (!this.currentTemplateObject.config) {
             return;
         }
 
         if (this.currentTemplateObject.config) {
-            event.reply('TM-set-template-config', this.currentTemplateObject.config)
+            event.reply('TaskManager', {
+                type: 'set-template-config',
+                config: this.currentTemplateObject.config
+            })
         }
     }
 
     async runOpenedTemplate(event) {
 
         console.log('running..')
-        const template = new this.currentTemplateClass.default();
+        this.isRunningAllowed = true;
+        const template: OpenSubmitterTemplateProtocol = new this.currentTemplateClass.default();
         if (this.currentTemplateObject && this.currentTemplateObject.config) {
             template.config = this.currentTemplateObject.config;
         }
 
-        event.reply('TM-set-running-status', {
-            status: 'Generating tasks',
-            completed: 0,
-            pending: 0
+        event.reply('TaskManager', {
+            type: 'set-running-status',
+            statusData: {
+                status: 'Generating tasks',
+                completed: 0,
+                pending: 0
+            }
         })
         console.log('generating')
         this.currentTasks = await template.generateTasks();
 
 
-        event.reply('TM-set-running-status', {
-            status: 'Running tasks',
-            completed: 0,
-            pending: this.currentTasks.length
+        event.reply('TaskManager', {
+            type: 'set-running-status',
+            statusData: {
+                status: 'Running tasks',
+                completed: 0,
+                pending: this.currentTasks.length
+            }
         })
 
         let completedTasks = 0;
         console.log('iterating', this.currentTasks);
-        for (const index in this.currentTasks) {
+        while (true) {
 
-            console.log('running', index);
+            if (!this.isRunningAllowed) {
+                break;
+            }
+            const task = this.getTask();
+            if (!task) break;
+
             let browser: Browser | null = null;
 
             //creating template object
-            const template: OpenSubmitterTemplateProtocol = new this.currentTemplateClass.default();
+            const template = new this.currentTemplateClass.default();
 
             //setting configuration
             if (this.currentTemplateObject && this.currentTemplateObject.config) {
@@ -139,6 +172,7 @@ class InternalAPI {
 
                         case 'puppeteer':
                             console.log('setting puppeteer');
+                            // @ts-ignore
                             browser = await puppeteer.launch(this.getPuppeteerOptions());
                             template.page = await browser.newPage();
                             break;
@@ -148,24 +182,39 @@ class InternalAPI {
             }
 
             //running one task
-            console.log('running task', this.currentTasks.length[index]);
-            await template.runTask(this.currentTasks.length[index])
+            console.log('running task', task);
+            await template.runTask(task)
             completedTasks++;
 
-            event.reply('TM-set-running-status', {
-                status: 'Running tasks',
-                completed: completedTasks,
-                pending: this.currentTasks.length
+            event.reply('TaskManager', {
+                type: 'set-running-status',
+                statusData: {
+                    status: 'Running tasks',
+                    completed: completedTasks,
+                    pending: this.currentTasks.length
+                }
             })
             console.log('closing browser');
             //closing browser object
             if (browser) browser.close();
 
         }
-        console.log('done!');
+
+        event.reply('TaskManager', {
+            type: 'set-running-status',
+            statusData: {
+                status: 'Job complete',
+                completed: completedTasks,
+                pending: this.currentTasks.length
+            }
+        })
+        console.log('done!, completed: '+completedTasks);
     }
 
-
+    getTask(): TemplateTask | null {
+        if (this.currentTasks.length === 0) return null;
+        return this.currentTasks.pop();
+    }
 
     tsCompile(source: string): string {
         return ts.transpileModule(source, { compilerOptions: {
@@ -178,7 +227,7 @@ class InternalAPI {
 
     private getPuppeteerOptions() {
         return {
-            headless: "new",
+            headless: 'new',
             ignoreDefaultArgs: ["--disable-extensions", "--enable-automation"],
             devtools: false,
             args: [

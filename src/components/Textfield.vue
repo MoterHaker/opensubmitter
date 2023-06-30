@@ -3,7 +3,7 @@
         <input
             type="text"
             :value="modelValue"
-            @input="$emit('update:modelValue', $event.target.value)"
+            @input="$emit('update:modelValue', $event.target?.value)"
         />
         <div class="error-msg" v-if="errorMessage">
             {{ errorMessage }}
@@ -29,8 +29,7 @@ defineProps(['modelValue', 'errorMessage'])
     input {
         background: rgba(255, 255, 255, 0.05);
         color: #fff;
-        // border: 1px solid rgba(255, 255, 255, 0.17);
-        border: 1px solid #6A6AC2;
+        border: 1px solid rgba(255, 255, 255, 0.17);
         border-radius: 6px;
         font-family: 'Montserrat', sans-serif;
         font-size: 16px;
@@ -41,7 +40,6 @@ defineProps(['modelValue', 'errorMessage'])
     }
 }
 .form-settings .textfield input {width: 310px;}
-// .topup-amount .textfield input {border-color: #8C8CE5;}
 .error-msg {
     margin-top: 4px;
     font-size: 12px;

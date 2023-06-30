@@ -4,8 +4,10 @@ interface OpenSubmitterTemplateProtocol {
     runTask: TemplateTaskRunner
 }
 
+type FileOpenDialogType = ('open' | 'save')
 type TemplateTaskRunner = (task: TemplateTask) => Promise<any>;
 type TemplateTaskGenerator = (...args: any) => Promise<TemplateTask[]>;
+type TaskManagerInterfaceMode = ('settings' | 'running')
 
 interface TemplateTask {
     data: any
@@ -24,4 +26,11 @@ interface UserSetting {
     title: string,
     fileName?: string,
     required?: boolean
+}
+
+interface TaskStatusUpdate {
+    status: string,
+    completed: number,
+    pending: number,
+    updateLogMessage?: string
 }

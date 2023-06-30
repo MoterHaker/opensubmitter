@@ -1,4 +1,4 @@
-import * as interfaces from "../src/interface"
+/// <reference path="../src/interface.d.ts" />
 
 export default class Template implements OpenSubmitterTemplateProtocol {
 

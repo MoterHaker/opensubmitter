@@ -1,39 +1,52 @@
 <template>
-    <div class="dashboard">
+    <div>
+        <div v-if="interfaceMode == 'running'">
 
-
-        <div class="textfield-button">
-            <div>Template file path</div>
-            <Textfield v-model="fileName" style="width:100%" :errorMessage="templateError"/>
-            <btn label="Open Template" @click="openTemplateIPC"/>
-        </div>
-        <div v-if="userSettings.length > 0 && templateConfig">
-            <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
-        </div>
-        <div v-for="(setting, index) in userSettings" :key="index" class="mtop10">
-            <div v-if="['SourceFileTaskPerLine'].indexOf(setting.type) !== -1" class="textfield-button">
-                <div>{{setting.title}}</div>
-                <Textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="inputsErrors[index]" style="width:100%"/>
-                <btn label="Select File" @click="selectFileForTemplateIPC('open', index)"/>
-            </div>
-            <div v-if="['OutputFile'].indexOf(setting.type) !== -1" class="textfield-button">
-                <div>{{setting.title}}</div>
-                <textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="inputsErrors[index]" style="width:100%"/>
-                <btn label="Select File" @click="selectFileForTemplateIPC('save', index)"/>
+            {{ taskStatusData?.status }} {{ taskStatusData?.status == 'Running tasks' ? ' ('+taskStatusData?.pending + ' pending, ' + taskStatusData?.completed + ' completed)'  : ''}}
+            <progress-bar :percents="progressComputed"/>
+            <div class="subtitle mtop20" height="200">Job logs:</div>
+            <text-log value="" class="mtop10"/>
+            <div class="run-btn">
+                <btn label="Restart" @click="resetManager" :disabled="isJobRunning" class="btn-row"/>
+                <btn label="Stop" @click="stopJobIPC" :disabled="!isJobRunning" class="btn-row"/>
             </div>
         </div>
-        <div class="run-btn">
-            <btn label="Run template" :disabled="isRunningBlocked" @click="runTemplateIPC"/>
+        <div v-if="interfaceMode == 'settings'">
+            <div class="textfield-button">
+                <div>Template file path</div>
+                <Textfield v-model="fileName" style="width:100%" :errorMessage="templateError"/>
+                <btn label="Open Template" @click="openTemplateIPC"/>
+            </div>
+            <div v-if="userSettings.length > 0 && templateConfig">
+                <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
+            </div>
+            <div v-for="(setting, index) in userSettings as UserSetting[]" :key="index" class="mtop10">
+                <div v-if="['SourceFileTaskPerLine'].indexOf(setting.type) !== -1" class="textfield-button">
+                    <div>{{setting.title}}</div>
+                    <Textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="inputsErrors[index]" style="width:100%"/>
+                    <btn label="Select File" @click="selectFileForTemplateIPC('open', index)"/>
+                </div>
+                <div v-if="['OutputFile'].indexOf(setting.type) !== -1" class="textfield-button">
+                    <div>{{setting.title}}</div>
+                    <textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="inputsErrors[index]" style="width:100%"/>
+                    <btn label="Select File" @click="selectFileForTemplateIPC('save', index)"/>
+                </div>
+            </div>
+            <div class="run-btn">
+                <btn label="Run template" :disabled="isRunningBlocked" @click="runTemplateIPC"/>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
+/// <reference path="../../src/interface.ts" />
 import Btn from "../components/Btn.vue";
-import { ref } from 'vue'
+import {computed, ComputedRef, ref} from 'vue'
 import { ipcRenderer } from 'electron'
 import Textfield from "../components/Textfield.vue";
-
+import ProgressBar from "../components/ProgressBar.vue";
+import TextLog from "../components/TextLog.vue";
 
 const fileName = ref('')
 const isRunningBlocked = ref(true);
@@ -41,8 +54,14 @@ const userSettings = ref([]);
 const templateConfig = ref<TemplateConfig | null>(null);
 const templateError = ref('');
 const inputsErrors = ref({});
+const interfaceMode = ref<TaskManagerInterfaceMode>('settings');
+const isJobRunning = ref(false);
+const taskStatusData = ref<TaskStatusUpdate | null>({
+    status: 'Testing',
+    completed: 10,
+    pending: 50
+});
 
-type FileOpenDialogType = ('open' | 'save')
 
 function validateUserSettings(type?: UserSettingsInput, index?: number) {
     let isEverythingChecked = true;
@@ -87,32 +106,87 @@ function validateInput(setting: UserSetting) {
     }
 }
 
+const progressComputed: ComputedRef<number> = computed(() => {
+    if (typeof taskStatusData.value?.completed === "undefined" || typeof taskStatusData.value?.pending === "undefined") return 0;
+    const totalTasks = taskStatusData.value!.completed + taskStatusData.value!.pending;
+    if (totalTasks === 0) return 0;
+    return 100 - Math.round(taskStatusData.value!.pending / totalTasks * 100);
+})
+
 function runTemplateIPC() {
     if (isRunningBlocked.value) {
         console.log('running blocked');
         return;
     }
-    ipcRenderer.send('TM-run-opened-file', fileName.value);
+    ipcRenderer.send('TM', { type: 'run-opened-file' });
 }
 function openTemplateIPC() {
-    ipcRenderer.send('TM-select-template-dialog')
+    ipcRenderer.send('TM', {type: 'select-template-dialog'})
 }
+
 function selectFileForTemplateIPC(type : FileOpenDialogType, index: number) {
-    ipcRenderer.send('TM-select-file-for-template-settings', {
-        type,
+    ipcRenderer.send('TM', {
+        type: 'select-file-for-template-settings',
+        dialogType: type,
         index
     });
 }
-ipcRenderer.on('TM-set-template-name', (e, data) => {
-    fileName.value = data;
-    validateUserSettings()
-})
-ipcRenderer.on('TM-set-template-config', (e, data) => {
-    templateConfig.value = data;
-    if (data.userSettings) {
-        userSettings.value = data.userSettings;
-        validateUserSettings()
+function resetManager() {
+    fileName.value = '';
+    isRunningBlocked.value = true;
+    templateConfig.value = null;
+    userSettings.value = [];
+    taskStatusData.value = null;
+    interfaceMode.value = 'settings';
+}
+function stopJobIPC() {
+    isJobRunning.value = false;
+    ipcRenderer.send('TM', {type: 'stop-job'});
+}
+
+ipcRenderer.on('TaskManager', (e, data) => {
+    switch (data.type) {
+        case 'set-template-name':
+            fileName.value = data.filename;
+            validateUserSettings()
+            break;
+
+        case 'set-template-config':
+            templateConfig.value = data.config;
+            if (data.userSettings) {
+                userSettings.value = data.userSettings;
+                validateUserSettings()
+            }
+            break;
+
+        case 'set-template-name-error':
+            templateError.value = data.error;
+            break;
+
+        case 'set-template-config':
+            templateConfig.value = data.config;
+            if (data.config.userSettings) {
+                userSettings.value = data.config.userSettings;
+                validateUserSettings()
+            }
+            break;
+
+        case 'set-running-status':
+            interfaceMode.value = 'running';
+            taskStatusData.value = data.statusData;
+            if (data.statusData.status === 'Job complete') {
+                isJobRunning.value = false;
+            } else {
+                isJobRunning.value = true;
+            }
+            break;
     }
+
+})
+
+
+ipcRenderer.on('TM-set-template-config', (e, data) => {
+
 });
 ipcRenderer.on('TM-set-template-name-error', (e, errorString: string) => {
     templateError.value = errorString;
@@ -127,10 +201,12 @@ ipcRenderer.on('TM-set-template-name-error', (e, errorString: string) => {
     margin: 50px auto 0;
     max-width: 200px;
 }
+.btn-row {
+    display: inline-block !important;
+    margin-right: 5px;
+    margin-left: 5px;
+    width: auto !important;
 
-//.dashboard {
-//    .va-card {
-//        margin-bottom: 0 !important;
-//    }
-//}
+}
+
 </style>

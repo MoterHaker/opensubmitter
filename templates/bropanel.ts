@@ -1,5 +1,6 @@
-import fs from "fs";
-import * as interfaces from "../src/interface"
+/// <reference path="../src/interface.d.ts" />
+import * as fs from "node:fs";
+
 
 export default class Template implements OpenSubmitterTemplateProtocol {
 
@@ -20,6 +21,8 @@ export default class Template implements OpenSubmitterTemplateProtocol {
 
     async generateTasks(...args: any): Promise<TemplateTask[]> {
         return [{
+            data: null // return one empty task to iterate once
+        },{
             data: null // return one empty task to iterate once
         }]
     }
