@@ -23,12 +23,12 @@
             <div v-for="(setting, index) in userSettings as UserSetting[]" :key="index" class="mtop10">
                 <div v-if="['SourceFileTaskPerLine'].indexOf(setting.type) !== -1" class="textfield-button">
                     <div>{{setting.title}}</div>
-                    <Textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="inputsErrors[index]" style="width:100%"/>
+                    <Textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
                     <btn label="Select File" @click="selectFileForTemplateIPC('open', index)"/>
                 </div>
                 <div v-if="['OutputFile'].indexOf(setting.type) !== -1" class="textfield-button">
                     <div>{{setting.title}}</div>
-                    <textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="inputsErrors[index]" style="width:100%"/>
+                    <textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
                     <btn label="Select File" @click="selectFileForTemplateIPC('save', index)"/>
                 </div>
             </div>
@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-/// <reference path="../../src/interface.ts" />
+/// <reference path="../../src/interface.d.ts" />
 import Btn from "../components/Btn.vue";
 import {computed, ComputedRef, ref} from 'vue'
 import { ipcRenderer } from 'electron'
@@ -53,7 +53,6 @@ const isRunningBlocked = ref(true);
 const userSettings = ref([]);
 const templateConfig = ref<TemplateConfig | null>(null);
 const templateError = ref('');
-const inputsErrors = ref({});
 const interfaceMode = ref<TaskManagerInterfaceMode>('settings');
 const isJobRunning = ref(false);
 const taskStatusData = ref<TaskStatusUpdate | null>({
@@ -72,9 +71,9 @@ function validateUserSettings(type?: UserSettingsInput, index?: number) {
             if (parseInt(userSettingIndex) === index) {
                 if (userSetting.required) {
                     if (validateInput(userSetting)) {
-                        if (typeof inputsErrors.value[userSettingIndex] !== "undefined") delete inputsErrors.value[userSettingIndex];
+                        userSetting.errorString = null;
                     } else {
-                        inputsErrors.value[userSettingIndex] = "Required field";
+                        userSetting.errorString = "Required field";
                     }
                 }
                 validateUserSettings(); //recheck everything silently
@@ -84,7 +83,7 @@ function validateUserSettings(type?: UserSettingsInput, index?: number) {
             if (!validateInput(userSetting)) {
                 isEverythingChecked = false;
             } else {
-                if (typeof inputsErrors.value[userSettingIndex] !== "undefined") delete inputsErrors.value[userSettingIndex];
+                userSetting.errorString = null;
             }
         }
     }
@@ -101,7 +100,9 @@ function validateInput(setting: UserSetting) {
         case 'SourceFileTaskPerLine':
             console.log('validating setting.fileName', setting.fileName);
             //TODO check in internal API that file exists
-            return setting.fileName?.length > 0
+            if (setting.fileName) {
+                return setting.fileName!.length > 0
+            }
             break;
     }
 }
@@ -112,6 +113,7 @@ const progressComputed: ComputedRef<number> = computed(() => {
     if (totalTasks === 0) return 0;
     return 100 - Math.round(taskStatusData.value!.pending / totalTasks * 100);
 })
+
 
 function runTemplateIPC() {
     if (isRunningBlocked.value) {
@@ -152,23 +154,16 @@ ipcRenderer.on('TaskManager', (e, data) => {
             break;
 
         case 'set-template-config':
+            console.log('set-template-config message', data);
             templateConfig.value = data.config;
-            if (data.userSettings) {
-                userSettings.value = data.userSettings;
+            if (data.config.userSettings) {
+                userSettings.value = data.config.userSettings;
                 validateUserSettings()
             }
             break;
 
         case 'set-template-name-error':
             templateError.value = data.error;
-            break;
-
-        case 'set-template-config':
-            templateConfig.value = data.config;
-            if (data.config.userSettings) {
-                userSettings.value = data.config.userSettings;
-                validateUserSettings()
-            }
             break;
 
         case 'set-running-status':

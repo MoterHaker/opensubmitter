@@ -3,7 +3,7 @@
         <textarea
                 :value="modelValue"
                 :style="{ minHeight: '200px' }"
-                @input="$emit('update:modelValue', $event.target?.value)"
+                @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         />
         <div class="error-msg" v-if="errorMessage">
             {{ errorMessage }}
@@ -12,7 +12,6 @@
 </template>
 
 <script setup lang="ts">
-
 defineEmits(['update:modelValue'])
 defineProps(['modelValue', 'errorMessage'])
 </script>

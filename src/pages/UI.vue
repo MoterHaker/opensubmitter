@@ -4,8 +4,8 @@
             <div class="hg2">Settings title</div>
             <div class="setting-desc">Setting subtitle.</div>
             <div class="df alitc gap16">
-                Input and button:<br>
-                <textfield value="hello world" />
+                Input and button {{inputValue}}:<br>
+                <textfield value="hello world" v-model="inputValue"/>
                 <div class="btn">Do something</div>
             </div>
             <div style="padding: 20px 0">
@@ -154,6 +154,7 @@ import ProgressBar from "../components/ProgressBar.vue";
 import {onMounted, ref} from "vue";
 
 const progressPerc = ref(20)
+const inputValue = ref('text');
 
 </script>
 

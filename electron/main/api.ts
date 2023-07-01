@@ -100,15 +100,14 @@ class InternalAPI {
         event.reply('TaskManager', { type: 'set-template-name-error', error: "" })
 
         if (!this.currentTemplateObject.config) {
+            console.log('no config in the template')
             return;
         }
 
-        if (this.currentTemplateObject.config) {
-            event.reply('TaskManager', {
-                type: 'set-template-config',
-                config: this.currentTemplateObject.config
-            })
-        }
+        event.reply('TaskManager', {
+            type: 'set-template-config',
+            config: this.currentTemplateObject.config
+        })
     }
 
     async runOpenedTemplate(event) {

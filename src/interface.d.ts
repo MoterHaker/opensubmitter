@@ -24,8 +24,9 @@ type UserSettingsInput = ('OutputFile' | 'SourceFileTaskPerLine')
 interface UserSetting {
     type: UserSettingsInput,
     title: string,
-    fileName?: string,
-    required?: boolean
+    fileName?: string | null,
+    required?: boolean,
+    errorString?: string | null
 }
 
 interface TaskStatusUpdate {
