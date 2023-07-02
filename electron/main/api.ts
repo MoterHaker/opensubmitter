@@ -74,42 +74,9 @@ class InternalAPI {
 
     async selectTemplateFile(event) {
 
-        let controllerPath = join(__dirname, '../../dist/child.js');
+        let templateChildPath = '../../dist/templateController.ts';
         if (process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development") {
-            controllerPath = join(__dirname, '../../public/child.js');
-        }
-        const thepath = join(__dirname, '../../public/child.js');
-        console.log('thepath: ' + thepath);
-        try {
-            const child = utilityProcess
-                .fork(controllerPath)
-                .on("spawn", () => {
-                    console.log("spawned new utilityProcess")
-                    child.postMessage('message')
-                })
-                .on('message', (data) => {
-                    console.log('got message from child', data)
-                    event.reply('TaskManager', {
-                        type: 'set-running-status',
-                        statusData: {
-                            status: 'got message from child: '+ data,
-                            completed: 0,
-                            pending: 0
-                        }
-                    })
-                })
-                .on("exit", (code) => console.log("exiting utilityProcess"));
-
-        } catch (e) {
-            console.log('utility process failed: ', e.toString());
-        }
-
-        return;
-
-        // const ch = getChildTemplate();
-        let templateChildPath = '../../dist/templateChild.ts';
-        if (process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development") {
-            templateChildPath = '../../public/templateChild.ts';
+            templateChildPath = '../../public/templateController.ts';
         }
         let templateChildContent = fs.readFileSync(join(__dirname, templateChildPath)).toString();
         templateChildContent = templateChildContent.split("//cut")[1];
@@ -122,6 +89,11 @@ class InternalAPI {
 
         const filename = files.filePaths[0];
         this.compiledTemplateFilePath = tmpdir() + "/compiled"+Math.random();
+        fs.mkdirSync(this.compiledTemplateFilePath);
+        fs.writeFileSync(this.compiledTemplateFilePath + "/package.json", JSON.stringify({
+            "type":"commonjs",
+            "exports": "./index.js"
+        }))
 
         let contentJS = null;
         let contentTS = null;
@@ -143,20 +115,23 @@ class InternalAPI {
         }
 
 
-        console.log('contentJS', contentJS);
+        // console.log('contentJS', contentJS);
 
         try {
-            fs.writeFileSync(this.compiledTemplateFilePath+".mjs", contentJS);
-            fs.writeFileSync(this.compiledTemplateFilePath+".js", contentJS);
+            // fs.writeFileSync(this.compiledTemplateFilePath+"/index.mjs", contentJS);
+            fs.writeFileSync(this.compiledTemplateFilePath+"/index.js", contentJS);
         } catch (e) {
             event.reply('TaskManager', {type: 'set-template-name-error', error: "Could not write compiled code to file "+this.compiledTemplateFilePath})
             return;
         }
 
+
+
+
         try {
 
-            this.currentTemplateClass = await import(this.compiledTemplateFilePath+".mjs");
-            this.currentTemplateObject = new this.currentTemplateClass.default();
+            const { TemplateController } = require(this.compiledTemplateFilePath+"/index.js");
+            this.currentTemplateObject = new TemplateController();
 
         } catch (e) {
             console.error(`could not open mjs file ${this.compiledTemplateFilePath}: `, e.toString());
@@ -179,6 +154,31 @@ class InternalAPI {
     }
 
     async runOpenedTemplate(event) {
+
+        const fileCont = fs.readFileSync(this.compiledTemplateFilePath+"/index.js").toString();
+        fs.writeFileSync(this.compiledTemplateFilePath+"/index.js", fileCont.replace("// export default Template", "export default Template"))
+
+        //works!
+        const child = utilityProcess
+            .fork(this.compiledTemplateFilePath+"/index.js")
+            .on("spawn", () => {
+                console.log("spawned new utilityProcess")
+                child.postMessage({'hello': "world"})
+            })
+            .on('message', (data) => {
+                console.log('got message from child', data)
+                event.reply('TaskManager', {
+                    type: 'set-running-status',
+                    statusData: {
+                        status: 'got message from child: '+ data,
+                        completed: 0,
+                        pending: 0
+                    }
+                })
+            })
+            .on("exit", (code) => console.log("exiting utilityProcess"));
+
+        return;
 
         // const cont = fs.readFileSync(join(__dirname, "../../dist/emptytemplate.ts")).toString();
         // console.log(cont);

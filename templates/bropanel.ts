@@ -1,8 +1,8 @@
 /// <reference path="../src/interface.d.ts" />
-import * as fs from "node:fs";
+const fs = require("fs");
 
 
-export default class Template implements OpenSubmitterTemplateProtocol {
+class Template implements OpenSubmitterTemplateProtocol {
 
     config: TemplateConfig = {
         name: 'Template tester from MotaHaker',
