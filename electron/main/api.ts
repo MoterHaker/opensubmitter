@@ -3,9 +3,13 @@ import puppeteer, {Browser} from 'puppeteer'
 import axios from 'axios';
 import { ipcMain } from 'electron'
 import { join } from 'node:path'
+import path from 'path'
 const { dialog } = require('electron')
 import ts, {ScriptTarget} from "typescript"
+import { utilityProcess } from "electron";
 import fs from "fs"
+import {tmpdir} from 'os';
+
 
 class InternalAPI {
 
@@ -13,6 +17,7 @@ class InternalAPI {
     currentTemplateObject?: OpenSubmitterTemplateProtocol | null = null;
     currentTasks: TemplateTask[] = [];
     isRunningAllowed = true;
+    compiledTemplateFilePath = null;
 
     startListening() {
         ipcMain.on('TM', async(e, data) => {
@@ -66,15 +71,48 @@ class InternalAPI {
 
 
 
+
     async selectTemplateFile(event) {
-        const destinationPath = join(__dirname, "../compiled/compiled.mjs");
-        try {
-            fs.mkdirSync(join(__dirname, "../compiled"))
-            if (fs.existsSync(destinationPath)) {
-                fs.unlinkSync(destinationPath)
-            }
-        } catch (e) {
+
+        let controllerPath = join(__dirname, '../../dist/child.js');
+        if (process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development") {
+            controllerPath = join(__dirname, '../../public/child.js');
         }
+        const thepath = join(__dirname, '../../public/child.js');
+        console.log('thepath: ' + thepath);
+        try {
+            const child = utilityProcess
+                .fork(controllerPath)
+                .on("spawn", () => {
+                    console.log("spawned new utilityProcess")
+                    child.postMessage('message')
+                })
+                .on('message', (data) => {
+                    console.log('got message from child', data)
+                    event.reply('TaskManager', {
+                        type: 'set-running-status',
+                        statusData: {
+                            status: 'got message from child: '+ data,
+                            completed: 0,
+                            pending: 0
+                        }
+                    })
+                })
+                .on("exit", (code) => console.log("exiting utilityProcess"));
+
+        } catch (e) {
+            console.log('utility process failed: ', e.toString());
+        }
+
+        return;
+
+        // const ch = getChildTemplate();
+        let templateChildPath = '../../dist/templateChild.ts';
+        if (process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development") {
+            templateChildPath = '../../public/templateChild.ts';
+        }
+        let templateChildContent = fs.readFileSync(join(__dirname, templateChildPath)).toString();
+        templateChildContent = templateChildContent.split("//cut")[1];
 
         const files: Electron.OpenDialogReturnValue = await dialog.showOpenDialog({ properties: ['openFile'] });
         if (!files || files.canceled) {
@@ -83,16 +121,46 @@ class InternalAPI {
         }
 
         const filename = files.filePaths[0];
+        this.compiledTemplateFilePath = tmpdir() + "/compiled"+Math.random();
+
         let contentJS = null;
+        let contentTS = null;
+
         try {
-            const contentTS = fs.readFileSync(filename).toString();
-            contentJS = this.tsCompile(contentTS);
-            fs.writeFileSync(destinationPath, contentJS);
-            this.currentTemplateClass = await import(join(__dirname, "../compiled/compiled.mjs?"+Math.random())); //prevent from caching
-            this.currentTemplateObject = new this.currentTemplateClass.default();
+            contentTS = fs.readFileSync(filename).toString();
         } catch (e) {
-            console.error(`could not compile ts file ${filename}: `, e.toString());
-            event.reply('TaskManager', {type: 'set-template-name-error', error: "Invalid Typescript template"})
+            event.reply('TaskManager', {type: 'set-template-name-error', error: "Could not open "+filename})
+            return;
+        }
+
+        contentTS = contentTS + templateChildContent;
+
+        try {
+            contentJS = this.tsCompile(contentTS);
+        } catch (e) {
+            event.reply('TaskManager', {type: 'set-template-name-error', error: "Could not compile TypeScript to Javascript"})
+            return;
+        }
+
+
+        console.log('contentJS', contentJS);
+
+        try {
+            fs.writeFileSync(this.compiledTemplateFilePath+".mjs", contentJS);
+            fs.writeFileSync(this.compiledTemplateFilePath+".js", contentJS);
+        } catch (e) {
+            event.reply('TaskManager', {type: 'set-template-name-error', error: "Could not write compiled code to file "+this.compiledTemplateFilePath})
+            return;
+        }
+
+        try {
+
+            this.currentTemplateClass = await import(this.compiledTemplateFilePath+".mjs");
+            this.currentTemplateObject = new this.currentTemplateClass.default();
+
+        } catch (e) {
+            console.error(`could not open mjs file ${this.compiledTemplateFilePath}: `, e.toString());
+            event.reply('TaskManager', {type: 'set-template-name-error', error: "Invalid Typescript template (could not import from "+this.compiledTemplateFilePath+")"})
             return;
         }
 
@@ -111,6 +179,18 @@ class InternalAPI {
     }
 
     async runOpenedTemplate(event) {
+
+        // const cont = fs.readFileSync(join(__dirname, "../../dist/emptytemplate.ts")).toString();
+        // console.log(cont);
+        // event.reply('TaskManager', {
+        //     type: 'set-running-status',
+        //     statusData: {
+        //         status: cont,
+        //         completed: 0,
+        //         pending: 0
+        //     }
+        // })
+        // return;
 
         console.log('running..')
         this.isRunningAllowed = true;
@@ -141,7 +221,7 @@ class InternalAPI {
         })
 
         let completedTasks = 0;
-        console.log('iterating', this.currentTasks);
+        // console.log('iterating', this.currentTasks);
         while (true) {
 
             if (!this.isRunningAllowed) {
@@ -149,6 +229,20 @@ class InternalAPI {
             }
             const task = this.getTask();
             if (!task) break;
+
+            try {
+                const child = utilityProcess
+                    .fork(this.compiledTemplateFilePath+".js")
+                    .on("spawn", () => {
+                        console.log("spawned new utilityProcess")
+                        child.postMessage('message')
+                    })
+                    .on("exit", (code) => console.log("exiting utilityProcess"));
+
+            } catch (e) {
+                console.log('utility process failed: ', e.toString());
+            }
+            return;
 
             let browser: Browser | null = null;
 
@@ -218,6 +312,7 @@ class InternalAPI {
     tsCompile(source: string): string {
         return ts.transpileModule(source, { compilerOptions: {
                 target: ScriptTarget.ESNext,
+                esModuleInterop: true,
                 strict: true,
                 noEmitOnError: true,
                 strictFunctionTypes: true

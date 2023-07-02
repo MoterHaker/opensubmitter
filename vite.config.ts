@@ -5,6 +5,7 @@ import electron from 'vite-plugin-electron'
 import renderer from 'vite-plugin-electron-renderer'
 import pkg from './package.json'
 import svgLoader from 'vite-svg-loader'
+const { resolve } = require('path')
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => {
@@ -33,8 +34,9 @@ export default defineConfig(({ command }) => {
               sourcemap,
               minify: isBuild,
               outDir: 'dist-electron/main',
+              copyPublicDir: true,
               rollupOptions: {
-                external: Object.keys('dependencies' in pkg ? pkg.dependencies : {}),
+                external: Object.keys('dependencies' in pkg ? pkg.dependencies : {})
               },
             },
           },
