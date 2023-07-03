@@ -33,5 +33,13 @@ interface TaskStatusUpdate {
     status: string,
     completed: number,
     pending: number,
+    running: number,
     updateLogMessage?: string
+}
+
+interface TaskThread {
+    templateObject: OpenSubmitterTemplateProtocol,
+    templateResult: Promise<any>,
+    id: number,
+    textStatus: string
 }

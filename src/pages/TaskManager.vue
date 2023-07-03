@@ -2,7 +2,7 @@
     <div>
         <div v-if="interfaceMode == 'running'">
 
-            {{ taskStatusData?.status }} {{ taskStatusData?.status == 'Running tasks' ? ' ('+taskStatusData?.pending + ' pending, ' + taskStatusData?.completed + ' completed)'  : ''}}
+            {{ taskStatusData?.status }} {{ taskStatusData?.status == 'Running tasks' ? ' ('+taskStatusData?.pending + ' pending, ' + taskStatusData?.running + ' running, ' + taskStatusData?.completed + ' completed)'  : ''}}
             <progress-bar :percents="progressComputed"/>
             <div class="subtitle mtop20" height="200">Job logs:</div>
             <text-log value="" class="mtop10"/>
@@ -58,6 +58,7 @@ const isJobRunning = ref(false);
 const taskStatusData = ref<TaskStatusUpdate | null>({
     status: 'Testing',
     completed: 10,
+    running: 0,
     pending: 50
 });
 

@@ -8,12 +8,12 @@ export default class Template implements OpenSubmitterTemplateProtocol {
         name: 'Template tester from MotaHaker',
         capabilities: ['puppeteer'],
         userSettings: [
-            {
-                type: 'OutputFile',
-                title: 'Where to write the output of the download',
-                fileName: "",
-                required: true
-            }
+            // {
+            //     type: 'OutputFile',
+            //     title: 'Where to write the output of the download',
+            //     fileName: "",
+            //     required: true
+            // }
         ]
     };
 
@@ -21,9 +21,25 @@ export default class Template implements OpenSubmitterTemplateProtocol {
 
     async generateTasks(...args: any): Promise<TemplateTask[]> {
         return [{
-            data: null // return one empty task to iterate once
+            data: 0 
         },{
-            data: null // return one empty task to iterate once
+            data: 1 
+        },{
+            data: 2 
+        },{
+            data: 3 
+        },{
+            data: 4 
+        },{
+            data: 5 
+        },{
+            data: 6 
+        },{
+            data: 7 
+        },{
+            data: 8 
+        },{
+            data: 9 
         }]
     }
 
@@ -39,7 +55,7 @@ export default class Template implements OpenSubmitterTemplateProtocol {
             console.log('err while loading the page: ' + e);
         }
         const result = await this.page.content();
-        if (this.config.userSettings[0].fileName.length > 0) {
+        if (this.config.userSettings && this.config.userSettings.length && this.config.userSettings[0].fileName && this.config.userSettings[0].fileName.length > 0) {
             fs.writeFileSync(this.config.userSettings[0].fileName, result);
         } else {
             console.log('no filename is specified!');

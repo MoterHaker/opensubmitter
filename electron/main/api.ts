@@ -13,6 +13,8 @@ class InternalAPI {
     currentTemplateObject?: OpenSubmitterTemplateProtocol | null = null;
     currentTasks: TemplateTask[] = [];
     isRunningAllowed = true;
+    threads : TaskThread[] = [];
+    maxTasks = 5; //TODO make an option
 
     startListening() {
         ipcMain.on('TM', async(e, data) => {
@@ -124,6 +126,7 @@ class InternalAPI {
             statusData: {
                 status: 'Generating tasks',
                 completed: 0,
+                running: 0,
                 pending: 0
             }
         })
@@ -136,6 +139,7 @@ class InternalAPI {
             statusData: {
                 status: 'Running tasks',
                 completed: 0,
+                running: this.threads.length,
                 pending: this.currentTasks.length
             }
         })
@@ -145,10 +149,31 @@ class InternalAPI {
         while (true) {
 
             if (!this.isRunningAllowed) {
-                break;
+                break; //TODO terminate objects
             }
+
+            // for (const thread of this.threads) {
+            //     if (typeof thread.templateResult !== "Promise") {
+            //
+            //     }
+            // }
+
+            if (this.threads.length > this.maxTasks) {
+                console.log('too many threads already running');
+                await this.delay(500);
+                continue;
+            }
+
             const task = this.getTask();
-            if (!task) break;
+            if (!task) {
+                if (this.threads.length > 0) {
+                    console.log('some threads are still running', this.threads.length)
+                    await this.delay(1000);
+                    continue;
+                } else {
+                    break;
+                }
+            }
 
             let browser: Browser | null = null;
 
@@ -182,20 +207,43 @@ class InternalAPI {
 
             //running one task
             console.log('running task', task);
-            await template.runTask(task)
-            completedTasks++;
+            const id = Math.floor(Math.random()*100000000);
+            this.threads.push({
+                templateObject: template,
+                templateResult: template.runTask(task).then(() => {
+                    console.log(`thread ${id} finished`)
+                    console.log('closing browser');
+                    //closing browser object
+                    if (template.browser) template.browser.close();
+                    this.threads = this.threads.filter(thread => {
+                        if (thread.id !== id) {
+                            return true;
+                        } else {
+                            delete thread.templateObject;
+                            thread = null;
+                        }
+                    })
 
-            event.reply('TaskManager', {
-                type: 'set-running-status',
-                statusData: {
-                    status: 'Running tasks',
-                    completed: completedTasks,
-                    pending: this.currentTasks.length
-                }
+                    completedTasks++;
+
+                    event.reply('TaskManager', {
+                        type: 'set-running-status',
+                        statusData: {
+                            status: 'Running tasks',
+                            completed: completedTasks,
+                            running: this.threads.length,
+                            pending: this.currentTasks.length
+                        }
+                    })
+                }),
+                id: id,
+                textStatus: "starting"
             })
-            console.log('closing browser');
-            //closing browser object
-            if (browser) browser.close();
+
+
+
+
+
 
         }
 
@@ -204,6 +252,7 @@ class InternalAPI {
             statusData: {
                 status: 'Job complete',
                 completed: completedTasks,
+                running: this.threads.length,
                 pending: this.currentTasks.length
             }
         })
@@ -262,6 +311,12 @@ class InternalAPI {
                 '--no-sandbox'
             ]
         };
+    }
+
+    delay(time) {
+        return new Promise(function(resolve) {
+            setTimeout(resolve, time)
+        });
     }
 }
 
