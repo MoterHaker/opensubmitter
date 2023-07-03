@@ -2,9 +2,9 @@
 import Template from "./emptytemplate";
 import {Browser} from "puppeteer";
 //cut
-// import puppeteer from "puppeteer";
-const puppeteer = require('puppeteer')
-const axios = require('axios');
+// import puppeteer from '/Users/flash/Documents/work/opensubmitter/node_modules/puppeteer'
+import puppeteer from '/Users/flash/Documents/work/opensubmitter/node_modules/puppeteer/lib/cjs/puppeteer/puppeteer.js'
+import axios from '/Users/flash/Documents/work/opensubmitter/node_modules/axios/index.js'
 
 interface ParentPort {
     postMessage: Function,
@@ -150,8 +150,8 @@ class TemplateController extends Template {
     await child.startMessaging();
 })();
 
-
-module.exports = { TemplateController }
+export default TemplateController
+// module.exports = { TemplateController }
 
 
 

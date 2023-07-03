@@ -1,6 +1,5 @@
 /// <reference path="../src/interface.d.ts" />
-const fs = require("fs");
-
+import fs from "fs"
 
 class Template implements OpenSubmitterTemplateProtocol {
 

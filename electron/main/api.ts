@@ -76,6 +76,10 @@ class InternalAPI {
 
     async selectTemplateFile(event) {
 
+        // const nodeModulesPath = path.resolve(__dirname, '..');
+        // console.log('nodeModulesPath', nodeModulesPath);
+        // return;
+
         let templateChildPath = '../../dist/templateController.ts';
         if (process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development") {
             templateChildPath = '../../public/templateController.ts';
@@ -93,7 +97,7 @@ class InternalAPI {
         this.compiledTemplateFilePath = tmpdir() + "/compiled"+Math.random();
         fs.mkdirSync(this.compiledTemplateFilePath);
         fs.writeFileSync(this.compiledTemplateFilePath + "/package.json", JSON.stringify({
-            "type":"commonjs",
+            "type":"module",
             "exports": "./index.js"
         }))
 
@@ -128,11 +132,13 @@ class InternalAPI {
         }
 
 
-
+        // const TemplateController = (await import(this.compiledTemplateFilePath+"/index.js")).default;
+        // this.currentTemplateObject = new TemplateController();
+        // process.exit()
 
         try {
 
-            const { TemplateController } = require(this.compiledTemplateFilePath+"/index.js");
+            const TemplateController = (await import(this.compiledTemplateFilePath+"/index.js")).default;
             this.currentTemplateObject = new TemplateController();
 
         } catch (e) {
@@ -187,7 +193,6 @@ class InternalAPI {
         //     template.config = this.currentTemplateObject.config;
         // }
 
-        await puppeteer.launch();
 
         event.reply('TaskManager', {
             type: 'set-running-status',
