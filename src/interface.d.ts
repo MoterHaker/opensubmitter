@@ -1,7 +1,10 @@
+import UtilityProcess = Electron.UtilityProcess;
+
 interface OpenSubmitterTemplateProtocol {
     config?: TemplateConfig,
     generateTasks: TemplateTaskGenerator,
-    runTask: TemplateTaskRunner
+    runTask: TemplateTaskRunner,
+    log?: Function
 }
 
 type FileOpenDialogType = ('open' | 'save')
@@ -34,4 +37,21 @@ interface TaskStatusUpdate {
     completed: number,
     pending: number,
     updateLogMessage?: string
+}
+
+interface TemplateControllerChild {
+    child: UtilityProcess,
+    textStatus: string
+}
+
+interface MessageWithType {
+    type: string,
+    data: object | any
+}
+
+interface TaskMessage {
+    type: 'start-task',
+    pid: number,
+    task: TemplateTask,
+    config: TemplateConfig | null
 }

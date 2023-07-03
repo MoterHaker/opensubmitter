@@ -8,44 +8,52 @@ class Template implements OpenSubmitterTemplateProtocol {
         name: 'Template tester from MotaHaker',
         capabilities: ['puppeteer'],
         userSettings: [
-            {
-                type: 'OutputFile',
-                title: 'Where to write the output of the download',
-                fileName: "",
-                required: true
-            }
+            // {
+            //     type: 'OutputFile',
+            //     title: 'Where to write the output of the download',
+            //     fileName: "",
+            //     required: true
+            // }
         ]
     };
 
+    //dummy variables, will be overridden by parent manager class
     page = null;
 
     async generateTasks(...args: any): Promise<TemplateTask[]> {
         return [{
-            data: null // return one empty task to iterate once
+            data: 0 // return one empty task to iterate once
         },{
-            data: null // return one empty task to iterate once
+            data: 1 // return one empty task to iterate once
+        },{
+            data: 2 // return one empty task to iterate once
         }]
     }
 
 
     async runTask(task: TemplateTask) {
         try {
-            console.log('navigating...');
+            this.log('navigating...');
             await this.page.goto('https://antigate.com/iptest.php', {
                 waitUntil: "networkidle0",
                 timeout: 20000
             });
         } catch (e) {
-            console.log('err while loading the page: ' + e);
+            this.log('err while loading the page: ' + e);
         }
         const result = await this.page.content();
         if (this.config.userSettings[0].fileName.length > 0) {
             fs.writeFileSync(this.config.userSettings[0].fileName, result);
         } else {
-            console.log('no filename is specified!');
+            this.log('no filename is specified!');
         }
-        console.log('done');
+        this.log('done');
         return result;
+    }
+
+    //dummy function, will be overridden by parent manager class
+    log(msg: string) {
+        console.log('bro says: '+msg);
     }
 
 }

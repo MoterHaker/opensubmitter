@@ -1,6 +1,6 @@
 /// <reference path="../../src/interface.d.ts" />
-import puppeteer, {Browser} from 'puppeteer'
-import axios from 'axios';
+import axios from "axios";
+import puppeteer from "puppeteer";
 import { ipcMain } from 'electron'
 import { join } from 'node:path'
 import path from 'path'
@@ -16,8 +16,10 @@ class InternalAPI {
     currentTemplateClass = null;
     currentTemplateObject?: OpenSubmitterTemplateProtocol | null = null;
     currentTasks: TemplateTask[] = [];
+    threads: TemplateControllerChild[] = [];
     isRunningAllowed = true;
     compiledTemplateFilePath = null;
+    taskThreadsAmount = 2; //TODO make an option
 
     startListening() {
         ipcMain.on('TM', async(e, data) => {
@@ -153,51 +155,39 @@ class InternalAPI {
         })
     }
 
+    async childMessageHandler(child: UtilityProcess, message: MessageWithType) {
+        console.log("message from child: ", message);
+        for (const thread of this.threads) {
+            if (thread.child.pid === child.pid) {
+
+                switch (message.type) {
+                    case 'log-update':
+                        thread.textStatus = message.data.message;
+                        break;
+                }
+
+                return;
+            }
+        }
+    }
+
+    printThreadsStatuses() {
+        for (const thread of this.threads) {
+            console.log(`thread ${thread.child.pid} status: ${thread.textStatus}`)
+        }
+        console.log("\n\n");
+    }
+
     async runOpenedTemplate(event) {
-
-        const fileCont = fs.readFileSync(this.compiledTemplateFilePath+"/index.js").toString();
-        fs.writeFileSync(this.compiledTemplateFilePath+"/index.js", fileCont.replace("// export default Template", "export default Template"))
-
-        //works!
-        const child = utilityProcess
-            .fork(this.compiledTemplateFilePath+"/index.js")
-            .on("spawn", () => {
-                console.log("spawned new utilityProcess")
-                child.postMessage({'hello': "world"})
-            })
-            .on('message', (data) => {
-                console.log('got message from child', data)
-                event.reply('TaskManager', {
-                    type: 'set-running-status',
-                    statusData: {
-                        status: 'got message from child: '+ data,
-                        completed: 0,
-                        pending: 0
-                    }
-                })
-            })
-            .on("exit", (code) => console.log("exiting utilityProcess"));
-
-        return;
-
-        // const cont = fs.readFileSync(join(__dirname, "../../dist/emptytemplate.ts")).toString();
-        // console.log(cont);
-        // event.reply('TaskManager', {
-        //     type: 'set-running-status',
-        //     statusData: {
-        //         status: cont,
-        //         completed: 0,
-        //         pending: 0
-        //     }
-        // })
-        // return;
 
         console.log('running..')
         this.isRunningAllowed = true;
-        const template: OpenSubmitterTemplateProtocol = new this.currentTemplateClass.default();
-        if (this.currentTemplateObject && this.currentTemplateObject.config) {
-            template.config = this.currentTemplateObject.config;
-        }
+        // const template: OpenSubmitterTemplateProtocol = new this.currentTemplateClass.default();
+        // if (this.currentTemplateObject && this.currentTemplateObject.config) {
+        //     template.config = this.currentTemplateObject.config;
+        // }
+
+        await puppeteer.launch();
 
         event.reply('TaskManager', {
             type: 'set-running-status',
@@ -207,9 +197,9 @@ class InternalAPI {
                 pending: 0
             }
         })
-        console.log('generating')
-        this.currentTasks = await template.generateTasks();
-
+        console.log('generating');
+        this.currentTasks = await this.currentTemplateObject.generateTasks();
+        console.log('this.currentTasks', this.currentTasks);
 
         event.reply('TaskManager', {
             type: 'set-running-status',
@@ -221,75 +211,70 @@ class InternalAPI {
         })
 
         let completedTasks = 0;
-        // console.log('iterating', this.currentTasks);
+
+
         while (true) {
 
             if (!this.isRunningAllowed) {
+                //todo kill threads
                 break;
             }
+
+
+            if (this.threads.length >= this.taskThreadsAmount) {
+                console.log('reached threads limit')
+                this.printThreadsStatuses();
+                await this.delay(1000);
+                continue;
+            }
+
             const task = this.getTask();
-            if (!task) break;
-
-            try {
-                const child = utilityProcess
-                    .fork(this.compiledTemplateFilePath+".js")
-                    .on("spawn", () => {
-                        console.log("spawned new utilityProcess")
-                        child.postMessage('message')
-                    })
-                    .on("exit", (code) => console.log("exiting utilityProcess"));
-
-            } catch (e) {
-                console.log('utility process failed: ', e.toString());
-            }
-            return;
-
-            let browser: Browser | null = null;
-
-            //creating template object
-            const template = new this.currentTemplateClass.default();
-
-            //setting configuration
-            if (this.currentTemplateObject && this.currentTemplateObject.config) {
-                template.config = this.currentTemplateObject.config;
-            }
-
-            //setting modules
-            if (template.config && template.config.capabilities) {
-                for (const capability of template.config.capabilities) {
-
-                    switch (capability) {
-                        case 'axios':
-                            template.axios = axios;
-                            break;
-
-                        case 'puppeteer':
-                            console.log('setting puppeteer');
-                            // @ts-ignore
-                            browser = await puppeteer.launch(this.getPuppeteerOptions());
-                            template.page = await browser.newPage();
-                            break;
-                    }
-
+            if (!task) {
+                console.log('no more tasks left')
+                if (this.threads.length > 0) {
+                    console.log('some threads are still running: ', this.threads.length);
+                    await this.delay(500);
+                    continue;
+                } else {
+                    console.log('all threads are finished')
+                    break;
                 }
             }
 
-            //running one task
             console.log('running task', task);
-            await template.runTask(task)
-            completedTasks++;
 
-            event.reply('TaskManager', {
-                type: 'set-running-status',
-                statusData: {
-                    status: 'Running tasks',
-                    completed: completedTasks,
-                    pending: this.currentTasks.length
-                }
+            const child = utilityProcess
+                .fork(this.compiledTemplateFilePath+"/index.js")
+                .on("spawn", () => {
+                    console.log("spawned new utilityProcess "+child.pid)
+                    child.postMessage({
+                        'type': "start-task",
+                        "pid": child.pid,
+                        "task": task,
+                        "config": this.currentTemplateObject.config ? this.currentTemplateObject.config : null
+                    } as TaskMessage)
+                })
+                .on('message', async(data) => {
+                    await this.childMessageHandler(child, data)
+                })
+                .on("exit", (code) => {
+                    this.threads = this.threads.filter(thread => thread.child.pid !== child.pid);
+                    console.log("exiting utilityProcess pid "+child.pid)
+                    completedTasks++;
+                    event.reply('TaskManager', {
+                        type: 'set-running-status',
+                        statusData: {
+                            status: 'Running tasks',
+                            completed: completedTasks,
+                            pending: this.currentTasks.length
+                        }
+                    })
+                });
+
+            this.threads.push({
+                child,
+                textStatus: "Started thread"
             })
-            console.log('closing browser');
-            //closing browser object
-            if (browser) browser.close();
 
         }
 
@@ -319,44 +304,10 @@ class InternalAPI {
             }}).outputText;
     }
 
-    private getPuppeteerOptions() {
-        return {
-            headless: 'new',
-            ignoreDefaultArgs: ["--disable-extensions", "--enable-automation"],
-            devtools: false,
-            args: [
-                // `--proxy-server=${proxyAddress}:${proxyPort}`,
-                '--disable-web-security',
-                '--disable-features=IsolateOrigins,site-per-process',
-                '--allow-running-insecure-content',
-                '--disable-blink-features=AutomationControlled',
-                '--no-sandbox',
-                '--mute-audio',
-                '--no-zygote',
-                '--no-xshm',
-                '--window-size=1920,1080',
-                '--no-first-run',
-                '--no-default-browser-check',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--enable-webgl',
-                '--ignore-certificate-errors',
-                '--lang=en-US,en;q=0.9',
-                '--password-store=basic',
-                '--disable-gpu-sandbox',
-                '--disable-software-rasterizer',
-                '--disable-background-timer-throttling',
-                '--disable-backgrounding-occluded-windows',
-                '--disable-renderer-backgrounding',
-                '--disable-infobars',
-                '--disable-breakpad',
-                '--disable-canvas-aa',
-                '--disable-2d-canvas-clip-aa',
-                '--disable-gl-drawing-for-tests',
-                '--enable-low-end-device-mode',
-                '--no-sandbox'
-            ]
-        };
+    delay(time) {
+        return new Promise(function(resolve) {
+            setTimeout(resolve, time)
+        });
     }
 }
 
