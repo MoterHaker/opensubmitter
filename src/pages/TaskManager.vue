@@ -4,8 +4,6 @@
 
             {{ taskStatusData?.status }} {{ taskStatusData?.status == 'Running tasks' ? ' ('+taskStatusData?.pending + ' pending, ' + taskStatusData?.completed + ' completed)'  : ''}}
             <progress-bar :percents="progressComputed"/>
-            <div class="subtitle mtop20" height="200">Job logs:</div>
-            <text-log v-model="textLogString" class="mtop10"/>
             <div class="run-btn">
                 <btn label="Restart" @click="resetManager" :disabled="isJobRunning" class="btn-row"/>
                 <btn label="Stop" @click="stopJobIPC" :disabled="!isJobRunning" class="btn-row"/>
@@ -36,6 +34,9 @@
                 <btn label="Run template" :disabled="isRunningBlocked" @click="runTemplateIPC"/>
             </div>
         </div>
+
+        <div class="subtitle mtop20" height="200">Job logs:</div>
+        <text-log v-model="textLogString" class="mtop10"/>
     </div>
 </template>
 
@@ -70,7 +71,7 @@ function validateUserSettings(type?: UserSettingsInput, index?: number) {
         if (typeof type !== "undefined" && typeof index !== "undefined") {
             //check exactly this input
             if (parseInt(userSettingIndex) === index) {
-                if (userSetting.required) {
+                if (userSetting.required && userSetting.required === true) {
                     if (validateInput(userSetting)) {
                         userSetting.errorString = null;
                     } else {
@@ -101,8 +102,14 @@ function validateInput(setting: UserSetting) {
         case 'SourceFileTaskPerLine':
             console.log('validating setting.fileName', setting.fileName);
             //TODO check in internal API that file exists
+            if (typeof setting.required === "undefined") {
+                return true;
+            }
+            if (setting.required && setting.required === false) {
+                return true;
+            }
             if (setting.fileName) {
-                return setting.fileName!.length > 0
+                return setting.fileName!.length > 0; // || typeof setting.required  && setting.required === false
             }
             break;
     }

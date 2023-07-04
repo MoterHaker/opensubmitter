@@ -2,9 +2,6 @@
 import Template from "./emptytemplate";
 import {Browser} from "puppeteer";
 //cut
-// import puppeteer from '/Users/flash/Documents/work/opensubmitter/node_modules/puppeteer'
-// import puppeteer from '/Users/flash/Documents/work/opensubmitter/node_modules/puppeteer/lib/cjs/puppeteer/puppeteer.js'
-// const axios = require('/Users/flash/Documents/work/opensubmitter/node_modules/axios')
 
 interface ParentPort {
     postMessage: Function,
@@ -44,9 +41,9 @@ class TemplateController extends Template {
             //messages from parent (main) process
             switch (message.type) {
                 case 'start-task':
-                    this.log("importing "+message.cwd + "/node_modules/puppeteer/lib/cjs/puppeteer/puppeteer.js")
+                    this.log("importing puppeteer")
                     try {
-                        this.puppeteer = await import(message.cwd + "/node_modules/puppeteer/lib/cjs/puppeteer/puppeteer.js");
+                        this.puppeteer = await import("puppeteer");
                     } catch (e) {
                         this.log("could not import puppeteer: "+e.toString())
                         return;
@@ -56,19 +53,7 @@ class TemplateController extends Template {
                     break;
             }
         })
-        // this.log('waiting 1 second');
-        //
-        // await this.delay(1000);
-        // this.log('waiting another 3 seconds');
-        //
-        // await this.delay(3000);
-        // this.log('exiting');
-        // process.exit();
     }
-
-    // statusUpdate(message: string) {
-    //     this.messageToParent('status-update', { message })
-    // }
 
     async startTask(message: TaskMessage) {
         this.myPID = message.pid;
@@ -81,7 +66,7 @@ class TemplateController extends Template {
 
                 switch (capability) {
                     case 'axios':
-                        this.axios = axios;
+                        this.axios = require('axios');
                         break;
 
                     case 'puppeteer':

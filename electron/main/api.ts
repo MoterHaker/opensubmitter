@@ -1,7 +1,7 @@
 /// <reference path="../../src/interface.d.ts" />
 import axios from "axios";
 import puppeteer from "puppeteer";
-import { ipcMain } from 'electron'
+import {app, ipcMain} from 'electron'
 import { join } from 'node:path'
 import path from 'path'
 const { dialog } = require('electron')
@@ -9,6 +9,7 @@ import ts, {ScriptTarget} from "typescript"
 import { utilityProcess } from "electron";
 import fs from "fs"
 import {tmpdir} from 'os';
+import asar, {extractAll} from "@electron/asar";
 
 
 class InternalAPI {
@@ -72,17 +73,50 @@ class InternalAPI {
         })
     }
 
+    extractNodeModules() {
+        let modulesPath = '';
+        if (process.platform === 'darwin' && process.arch === 'arm64') {
+            modulesPath = 'macos_arm64';
+        }
+        if (modulesPath.length === 0) {
+            process.exit();
+        }
+        this.addToParentLog(`modules path: ${modulesPath}, preparing node_modules`)
+        if (!this.isDevelopmentEnv()) {
 
+            // App is a build.
+            // Extracting files from app.asar
+
+            const asar = require('@electron/asar');
+            fs.mkdirSync(this.compiledTemplateFilePath + "/asar");
+            asar.extractAll(app.getAppPath(), this.compiledTemplateFilePath + "/asar");
+            try {
+                fs.cpSync(this.compiledTemplateFilePath + `/asar/dist/os_modules/${modulesPath}/modules`, this.compiledTemplateFilePath + "/node_modules", {recursive: true});
+                fs.cpSync(this.compiledTemplateFilePath + `/asar/dist/os_modules/${modulesPath}/modules`, this.compiledTemplateFilePath + "/package.json");
+                fs.rmdirSync(this.compiledTemplateFilePath + "/asar")
+            } catch (e) {
+                this.addToParentLog('copy error: ' + e.toString())
+                return;
+            }
+        } else {
+
+            // Developer mode
+            // Copying files from current node_modules
+
+            fs.cpSync(app.getAppPath()+`/public/os_modules/${modulesPath}/modules`, this.compiledTemplateFilePath + "/node_modules", {recursive: true});
+
+        }
+        this.addToParentLog('node_modules prepared');
+    }
 
 
     async selectTemplateFile(event) {
 
-        // const nodeModulesPath = path.resolve(__dirname, '..');
-        // console.log('nodeModulesPath', nodeModulesPath);
-        // return;
+        this.eventHook = event;
+
 
         let templateChildPath = '../../dist/templateController.ts';
-        if (process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development") {
+        if (this.isDevelopmentEnv()) {
             templateChildPath = '../../public/templateController.ts';
         }
         let templateChildContent = fs.readFileSync(join(__dirname, templateChildPath)).toString();
@@ -97,10 +131,12 @@ class InternalAPI {
         const filename = files.filePaths[0];
         this.compiledTemplateFilePath = tmpdir() + "/compiled"+Math.random();
         fs.mkdirSync(this.compiledTemplateFilePath);
-        fs.writeFileSync(this.compiledTemplateFilePath + "/package.json", JSON.stringify({
-            "type":"module",
-            "exports": "./index.js"
-        }))
+
+        this.addToParentLog('temporary dir: ' + this.compiledTemplateFilePath);
+
+
+        this.extractNodeModules();
+
 
         let contentJS = null;
         let contentTS = null;
@@ -264,20 +300,14 @@ class InternalAPI {
                 }
             }
 
-            const cwdPath = join(__dirname, "../..");
-            this.addToParentLog('running task at '+cwdPath);
-
 
             try {
                 const child = utilityProcess
-                    .fork(this.compiledTemplateFilePath + "/index.cjs", [], {
-                        // cwd: cwdPath
-                    })
+                    .fork(this.compiledTemplateFilePath + "/index.cjs")
                     .on("spawn", () => {
                         this.addToParentLog("spawned new utilityProcess " + child.pid)
                         child.postMessage({
                             'type': "start-task",
-                            'cwd': cwdPath,
                             "pid": child.pid,
                             "task": task,
                             "config": this.currentTemplateObject.config ? this.currentTemplateObject.config : null
@@ -304,6 +334,7 @@ class InternalAPI {
                     child,
                     textStatus: "Started thread"
                 })
+
             } catch (e) {
                 this.addToParentLog("could not start child process: "+e.toString())
             }
@@ -318,7 +349,10 @@ class InternalAPI {
                 pending: this.currentTasks.length
             }
         })
-        console.log('done!, completed: '+completedTasks);
+
+        this.addToParentLog('Removing temporary directory with compiled script');
+        fs.rmdirSync(this.compiledTemplateFilePath);
+        this.addToParentLog(`Done! Completed ${completedTasks} tasks`);
     }
 
     getTask(): TemplateTask | null {
@@ -340,6 +374,10 @@ class InternalAPI {
         return new Promise(function(resolve) {
             setTimeout(resolve, time)
         });
+    }
+
+    isDevelopmentEnv() {
+        return process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development";
     }
 }
 

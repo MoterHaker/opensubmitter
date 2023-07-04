@@ -1,0 +1,16 @@
+{
+  "name": "macos_arm_node_modules",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "index.cjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.4.0",
+    "puppeteer": "^20.7.4"
+  }
+}
