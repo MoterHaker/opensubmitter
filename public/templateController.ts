@@ -3,8 +3,8 @@ import Template from "./emptytemplate";
 import {Browser} from "puppeteer";
 //cut
 // import puppeteer from '/Users/flash/Documents/work/opensubmitter/node_modules/puppeteer'
-import puppeteer from '/Users/flash/Documents/work/opensubmitter/node_modules/puppeteer/lib/cjs/puppeteer/puppeteer.js'
-import axios from '/Users/flash/Documents/work/opensubmitter/node_modules/axios/index.js'
+// import puppeteer from '/Users/flash/Documents/work/opensubmitter/node_modules/puppeteer/lib/cjs/puppeteer/puppeteer.js'
+// const axios = require('/Users/flash/Documents/work/opensubmitter/node_modules/axios')
 
 interface ParentPort {
     postMessage: Function,
@@ -17,10 +17,10 @@ interface ChildProcess extends NodeJS.Process {
 class TemplateController extends Template {
 
     myPID: number = 0;
+    puppeteer = null;
     parentPort: ParentPort = null;
     page = null;
     browser: Browser | null = null;
-    puppeteer = null;
     axios = null;
     task = null;
 
@@ -28,6 +28,14 @@ class TemplateController extends Template {
         if (!process || typeof (process as ChildProcess).parentPort === "undefined") {
             return;
         }
+
+        const fs = require("fs");
+        console.log(fs.readdirSync("."));
+
+        //todo if has puppeteer option
+
+        // this.puppeteer = await import("/Users/flash/Documents/work/opensubmitter/node_modules/puppeteer/lib/cjs/puppeteer/puppeteer.js");
+
         this.parentPort = (process as ChildProcess).parentPort;
         this.parentPort.on('message', async(e) => {
             const message = e.data;
@@ -36,6 +44,14 @@ class TemplateController extends Template {
             //messages from parent (main) process
             switch (message.type) {
                 case 'start-task':
+                    this.log("importing "+message.cwd + "/node_modules/puppeteer/lib/cjs/puppeteer/puppeteer.js")
+                    try {
+                        this.puppeteer = await import(message.cwd + "/node_modules/puppeteer/lib/cjs/puppeteer/puppeteer.js");
+                    } catch (e) {
+                        this.log("could not import puppeteer: "+e.toString())
+                        return;
+                    }
+
                     await this.startTask(message);
                     break;
             }
@@ -70,7 +86,7 @@ class TemplateController extends Template {
 
                     case 'puppeteer':
                         this.log('launching puppeteer');
-                        this.browser = await puppeteer.launch(this.getPuppeteerOptions());
+                        this.browser = await this.puppeteer.launch(this.getPuppeteerOptions());
                         this.page = await this.browser.newPage();
                         break;
                 }
@@ -150,8 +166,8 @@ class TemplateController extends Template {
     await child.startMessaging();
 })();
 
-export default TemplateController
-// module.exports = { TemplateController }
+// export default TemplateController
+module.exports = { TemplateController }
 
 
 

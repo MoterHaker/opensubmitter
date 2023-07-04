@@ -5,7 +5,7 @@
             {{ taskStatusData?.status }} {{ taskStatusData?.status == 'Running tasks' ? ' ('+taskStatusData?.pending + ' pending, ' + taskStatusData?.completed + ' completed)'  : ''}}
             <progress-bar :percents="progressComputed"/>
             <div class="subtitle mtop20" height="200">Job logs:</div>
-            <text-log value="" class="mtop10"/>
+            <text-log v-model="textLogString" class="mtop10"/>
             <div class="run-btn">
                 <btn label="Restart" @click="resetManager" :disabled="isJobRunning" class="btn-row"/>
                 <btn label="Stop" @click="stopJobIPC" :disabled="!isJobRunning" class="btn-row"/>
@@ -60,6 +60,7 @@ const taskStatusData = ref<TaskStatusUpdate | null>({
     completed: 10,
     pending: 50
 });
+const textLogString = ref('')
 
 
 function validateUserSettings(type?: UserSettingsInput, index?: number) {
@@ -139,6 +140,7 @@ function resetManager() {
     templateConfig.value = null;
     userSettings.value = [];
     taskStatusData.value = null;
+    textLogString.value = '';
     interfaceMode.value = 'settings';
 }
 function stopJobIPC() {
@@ -174,6 +176,10 @@ ipcRenderer.on('TaskManager', (e, data) => {
             } else {
                 isJobRunning.value = true;
             }
+            break;
+
+        case 'add-log-message':
+            textLogString.value = textLogString.value + data.message + "\n";
             break;
     }
 

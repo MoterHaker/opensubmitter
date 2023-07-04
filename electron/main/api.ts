@@ -20,6 +20,7 @@ class InternalAPI {
     isRunningAllowed = true;
     compiledTemplateFilePath = null;
     taskThreadsAmount = 2; //TODO make an option
+    eventHook = null;
 
     startListening() {
         ipcMain.on('TM', async(e, data) => {
@@ -125,7 +126,7 @@ class InternalAPI {
 
         try {
             // fs.writeFileSync(this.compiledTemplateFilePath+"/index.mjs", contentJS);
-            fs.writeFileSync(this.compiledTemplateFilePath+"/index.js", contentJS);
+            fs.writeFileSync(this.compiledTemplateFilePath+"/index.cjs", contentJS);
         } catch (e) {
             event.reply('TaskManager', {type: 'set-template-name-error', error: "Could not write compiled code to file "+this.compiledTemplateFilePath})
             return;
@@ -138,7 +139,10 @@ class InternalAPI {
 
         try {
 
-            const TemplateController = (await import(this.compiledTemplateFilePath+"/index.js")).default;
+            const { TemplateController } = await import(this.compiledTemplateFilePath+"/index.cjs");
+
+
+            // const TemplateController = (await import(this.compiledTemplateFilePath+"/index.js")).default;
             this.currentTemplateObject = new TemplateController();
 
         } catch (e) {
@@ -169,6 +173,10 @@ class InternalAPI {
                 switch (message.type) {
                     case 'log-update':
                         thread.textStatus = message.data.message;
+                        this.eventHook.reply('TaskManager', {
+                            type: 'add-log-message',
+                            message: child.pid + ": " + message.data.message
+                        })
                         break;
                 }
 
@@ -184,9 +192,18 @@ class InternalAPI {
         console.log("\n\n");
     }
 
+    addToParentLog(message) {
+        this.eventHook.reply('TaskManager', {
+            type: 'add-log-message',
+            message: message
+        })
+    }
+
     async runOpenedTemplate(event) {
 
+        this.eventHook = event;
         console.log('running..')
+
         this.isRunningAllowed = true;
         // const template: OpenSubmitterTemplateProtocol = new this.currentTemplateClass.default();
         // if (this.currentTemplateObject && this.currentTemplateObject.config) {
@@ -202,9 +219,9 @@ class InternalAPI {
                 pending: 0
             }
         })
-        console.log('generating');
+        this.addToParentLog('generating');
         this.currentTasks = await this.currentTemplateObject.generateTasks();
-        console.log('this.currentTasks', this.currentTasks);
+        this.addToParentLog('this.currentTasks ' + JSON.stringify(this.currentTasks));
 
         event.reply('TaskManager', {
             type: 'set-running-status',
@@ -217,6 +234,7 @@ class InternalAPI {
 
         let completedTasks = 0;
 
+        this.addToParentLog(this.compiledTemplateFilePath + "/index.cjs")
 
         while (true) {
 
@@ -227,7 +245,7 @@ class InternalAPI {
 
 
             if (this.threads.length >= this.taskThreadsAmount) {
-                console.log('reached threads limit')
+                this.addToParentLog('reached threads limit')
                 this.printThreadsStatuses();
                 await this.delay(1000);
                 continue;
@@ -241,45 +259,54 @@ class InternalAPI {
                     await this.delay(500);
                     continue;
                 } else {
-                    console.log('all threads are finished')
+                    this.addToParentLog('all threads are finished')
                     break;
                 }
             }
 
-            console.log('running task', task);
+            const cwdPath = join(__dirname, "../..");
+            this.addToParentLog('running task at '+cwdPath);
 
-            const child = utilityProcess
-                .fork(this.compiledTemplateFilePath+"/index.js")
-                .on("spawn", () => {
-                    console.log("spawned new utilityProcess "+child.pid)
-                    child.postMessage({
-                        'type': "start-task",
-                        "pid": child.pid,
-                        "task": task,
-                        "config": this.currentTemplateObject.config ? this.currentTemplateObject.config : null
-                    } as TaskMessage)
-                })
-                .on('message', async(data) => {
-                    await this.childMessageHandler(child, data)
-                })
-                .on("exit", (code) => {
-                    this.threads = this.threads.filter(thread => thread.child.pid !== child.pid);
-                    console.log("exiting utilityProcess pid "+child.pid)
-                    completedTasks++;
-                    event.reply('TaskManager', {
-                        type: 'set-running-status',
-                        statusData: {
-                            status: 'Running tasks',
-                            completed: completedTasks,
-                            pending: this.currentTasks.length
-                        }
+
+            try {
+                const child = utilityProcess
+                    .fork(this.compiledTemplateFilePath + "/index.cjs", [], {
+                        // cwd: cwdPath
                     })
-                });
+                    .on("spawn", () => {
+                        this.addToParentLog("spawned new utilityProcess " + child.pid)
+                        child.postMessage({
+                            'type': "start-task",
+                            'cwd': cwdPath,
+                            "pid": child.pid,
+                            "task": task,
+                            "config": this.currentTemplateObject.config ? this.currentTemplateObject.config : null
+                        } as TaskMessage)
+                    })
+                    .on('message', async (data) => {
+                        await this.childMessageHandler(child, data)
+                    })
+                    .on("exit", (code) => {
+                        this.threads = this.threads.filter(thread => thread.child.pid !== child.pid);
+                        this.addToParentLog("exiting utilityProcess pid " + child.pid)
+                        completedTasks++;
+                        event.reply('TaskManager', {
+                            type: 'set-running-status',
+                            statusData: {
+                                status: 'Running tasks',
+                                completed: completedTasks,
+                                pending: this.currentTasks.length
+                            }
+                        })
+                    });
 
-            this.threads.push({
-                child,
-                textStatus: "Started thread"
-            })
+                this.threads.push({
+                    child,
+                    textStatus: "Started thread"
+                })
+            } catch (e) {
+                this.addToParentLog("could not start child process: "+e.toString())
+            }
 
         }
 

@@ -1,5 +1,5 @@
 /// <reference path="../src/interface.d.ts" />
-import fs from "fs"
+const fs = require("fs")
 
 class Template implements OpenSubmitterTemplateProtocol {
 
@@ -41,12 +41,18 @@ class Template implements OpenSubmitterTemplateProtocol {
             this.log('err while loading the page: ' + e);
         }
         const result = await this.page.content();
-        if (this.config.userSettings[0].fileName.length > 0) {
-            fs.writeFileSync(this.config.userSettings[0].fileName, result);
+        console.log(result);
+        if (result.indexOf('<ip>') !== -1) {
+            this.log('IP: '+result.split("<ip>")[1].split("</ip>")[0]);
         } else {
-            this.log('no filename is specified!');
+            this.log('phrase not found');
         }
-        this.log('done');
+        // if (this.config.userSettings[0].fileName.length > 0) {
+        //     fs.writeFileSync(this.config.userSettings[0].fileName, result);
+        // } else {
+        //     this.log('no filename is specified!');
+        // }
+
         return result;
     }
 
