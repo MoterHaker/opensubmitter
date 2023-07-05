@@ -105,7 +105,7 @@ function validateInput(setting: UserSetting) {
             if (typeof setting.required === "undefined") {
                 return true;
             }
-            if (setting.required && setting.required === false) {
+            if (typeof setting.required !== "undefined" && setting.required === false) {
                 return true;
             }
             if (setting.fileName) {

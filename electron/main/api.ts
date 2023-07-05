@@ -74,25 +74,29 @@ class InternalAPI {
     }
 
     extractNodeModules() {
-        let modulesPath = '';
+        let modulesPath = 'macos_arm64';
         if (process.platform === 'darwin' && process.arch === 'arm64') {
             modulesPath = 'macos_arm64';
         }
         if (modulesPath.length === 0) {
             process.exit();
         }
+        const slash = process.platform === 'win32' ? "\\" : '/';
+
         this.addToParentLog(`modules path: ${modulesPath}, preparing node_modules`)
         if (!this.isDevelopmentEnv()) {
+
+
 
             // App is a build.
             // Extracting files from app.asar
 
             const asar = require('@electron/asar');
-            fs.mkdirSync(this.compiledTemplateFilePath + "/asar");
-            asar.extractAll(app.getAppPath(), this.compiledTemplateFilePath + "/asar");
+            fs.mkdirSync(this.compiledTemplateFilePath + `${slash}asar`);
+            asar.extractAll(app.getAppPath(), this.compiledTemplateFilePath + "${slash}asar");
             try {
-                fs.cpSync(this.compiledTemplateFilePath + `/asar/dist/os_modules/${modulesPath}/modules`, this.compiledTemplateFilePath + "/node_modules", {recursive: true});
-                fs.cpSync(this.compiledTemplateFilePath + `/asar/dist/os_modules/${modulesPath}/modules`, this.compiledTemplateFilePath + "/package.json");
+                fs.cpSync(this.compiledTemplateFilePath + `${slash}asar${slash}dist${slash}os_modules${slash}${modulesPath}${slash}modules`, this.compiledTemplateFilePath + `${slash}node_modules`, {recursive: true});
+                fs.cpSync(this.compiledTemplateFilePath + `${slash}asar${slash}dist${slash}os_modules${slash}${modulesPath}${slash}package.json`, this.compiledTemplateFilePath + `${slash}package.json`);
                 fs.rmdirSync(this.compiledTemplateFilePath + "/asar")
             } catch (e) {
                 this.addToParentLog('copy error: ' + e.toString())
@@ -103,7 +107,7 @@ class InternalAPI {
             // Developer mode
             // Copying files from current node_modules
 
-            fs.cpSync(app.getAppPath()+`/public/os_modules/${modulesPath}/modules`, this.compiledTemplateFilePath + "/node_modules", {recursive: true});
+            fs.cpSync(app.getAppPath()+`${slash}public${slash}os_modules${slash}${modulesPath}${slash}modules`, this.compiledTemplateFilePath + "${slash}node_modules", {recursive: true});
 
         }
         this.addToParentLog('node_modules prepared');
@@ -114,10 +118,11 @@ class InternalAPI {
 
         this.eventHook = event;
 
+        const slash = process.platform === 'win32' ? "\\" : '/';
 
-        let templateChildPath = '../../dist/templateController.ts';
+        let templateChildPath = `..${slash}..${slash}dist${slash}templateController.ts`;
         if (this.isDevelopmentEnv()) {
-            templateChildPath = '../../public/templateController.ts';
+            templateChildPath = '..${slash}..${slash}public${slash}templateController.ts';
         }
         let templateChildContent = fs.readFileSync(join(__dirname, templateChildPath)).toString();
         templateChildContent = templateChildContent.split("//cut")[1];
@@ -129,7 +134,7 @@ class InternalAPI {
         }
 
         const filename = files.filePaths[0];
-        this.compiledTemplateFilePath = tmpdir() + "/compiled"+Math.random();
+        this.compiledTemplateFilePath = tmpdir() + `${slash}compiled`+Math.random();
         fs.mkdirSync(this.compiledTemplateFilePath);
 
         this.addToParentLog('temporary dir: ' + this.compiledTemplateFilePath);
@@ -162,7 +167,7 @@ class InternalAPI {
 
         try {
             // fs.writeFileSync(this.compiledTemplateFilePath+"/index.mjs", contentJS);
-            fs.writeFileSync(this.compiledTemplateFilePath+"/index.cjs", contentJS);
+            fs.writeFileSync(`${this.compiledTemplateFilePath}${slash}index.cjs`, contentJS);
         } catch (e) {
             event.reply('TaskManager', {type: 'set-template-name-error', error: "Could not write compiled code to file "+this.compiledTemplateFilePath})
             return;
@@ -175,7 +180,7 @@ class InternalAPI {
 
         try {
 
-            const { TemplateController } = await import(this.compiledTemplateFilePath+"/index.cjs");
+            const { TemplateController } = await import(`${this.compiledTemplateFilePath}${slash}index.cjs`);
 
 
             // const TemplateController = (await import(this.compiledTemplateFilePath+"/index.js")).default;
