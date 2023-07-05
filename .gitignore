@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 dist-electron
+public/os_modules/macos_arm64
+public/os_modules/win32_arm64
 release
 *.local
 
