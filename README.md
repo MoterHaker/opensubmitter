@@ -6,9 +6,10 @@ The goal: a template-based open source web automation engine with Chrome browser
 ### Todo list:
 
 - ✅ UI kit
-- ❌ Templates engine
-- ❌ Multithreading
+- ⏳ Templates engine
+- ✅ Multithreading
 - ❌ Templates backend
 - ❌ Templates gallery
-- ❌ Automatic release system
+- ❌ Scripts for automatic builds
+- ❌ Revenue sharing system
 - ❌ Official website 

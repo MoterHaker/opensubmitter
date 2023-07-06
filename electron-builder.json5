@@ -2,6 +2,15 @@
  * @see https://www.electron.build/configuration/configuration
  */
 {
+  "extraResources": [
+    {
+      "from": "electron/main/emptytemplate.ts",
+      "to": "src/emptytemplate.ts"
+    },{
+      "from": "electron/main/templateController.ts",
+      "to": "src/templateController.ts"
+    }
+  ],
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   "appId": "Open Submitter",
   "asar": true,

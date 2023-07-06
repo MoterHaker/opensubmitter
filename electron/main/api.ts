@@ -82,11 +82,13 @@ class InternalAPI {
 
         const slash = process.platform === 'win32' ? "\\" : '/';
 
-        let templateChildPath = `..${slash}..${slash}dist${slash}templateController.ts`;
+        let templateChildPath = null;
         if (this.isDevelopmentEnv()) {
-            templateChildPath = `..${slash}..${slash}public${slash}templateController.ts`;
+            templateChildPath = join(__dirname, `..${slash}..${slash}electron${slash}main${slash}templateController.ts`);
+        } else {
+            templateChildPath = join(process.resourcesPath, `src${slash}templateController.ts`)
         }
-        let templateChildContent = fs.readFileSync(join(__dirname, templateChildPath)).toString();
+        let templateChildContent = fs.readFileSync(templateChildPath).toString();
         templateChildContent = templateChildContent.split("//cut")[1];
 
         const files: Electron.OpenDialogReturnValue = await dialog.showOpenDialog({ properties: ['openFile'] });
