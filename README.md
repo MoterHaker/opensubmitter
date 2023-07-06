@@ -13,3 +13,15 @@ The goal: a template-based open source web automation engine with Chrome browser
 - ❌ Scripts for automatic builds
 - ❌ Revenue sharing system
 - ❌ Official website 
+
+### Cloning the project
+
+``
+git clone --recursive https://github.com/MoterHaker/opensubmitter.git
+``
+
+For Windows users: git longpaths must be enabled to deal with "File name too long" errors:
+
+``
+git config --system core.longpaths true
+``
