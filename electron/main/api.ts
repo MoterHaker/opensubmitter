@@ -22,6 +22,8 @@ class InternalAPI {
     compiledTemplateFilePath = null;
     taskThreadsAmount = 2; //TODO make an option
     eventHook = null;
+    puppeteerExecutablePath = null;
+    asarExtractedDirectory = null;
 
     startListening() {
         ipcMain.on('TM', async(e, data) => {
@@ -73,54 +75,6 @@ class InternalAPI {
         })
     }
 
-    extractNodeModules() {
-        let modulesPath = 'macos_arm64';
-        if (process.platform === 'darwin' && process.arch === 'arm64') {
-            modulesPath = 'macos_arm64';
-        }
-        if (modulesPath.length === 0) {
-            process.exit();
-        }
-        const slash = process.platform === 'win32' ? "\\" : '/';
-
-        this.addToParentLog(`modules path: ${modulesPath}, preparing node_modules`)
-        if (!this.isDevelopmentEnv()) {
-
-
-
-            // App is a build.
-            // Extracting files from app.asar
-
-            const asar = require('@electron/asar');
-            const extractDir = this.compiledTemplateFilePath + `${slash}asar`
-            fs.mkdirSync(extractDir);
-            this.addToParentLog('extracting to '+extractDir)
-            asar.extractAll(app.getAppPath(), extractDir);
-            try {
-                const fullModulesPath = this.compiledTemplateFilePath + `${slash}asar${slash}dist${slash}os_modules${slash}${modulesPath}${slash}modules`;
-                const targetModulesPath = this.compiledTemplateFilePath + `${slash}node_modules`;
-                this.addToParentLog('modules path: ' + fullModulesPath)
-                this.addToParentLog('copying to ' + targetModulesPath)
-                fs.cpSync(fullModulesPath, this.compiledTemplateFilePath + `${slash}node_modules`, {recursive: true});
-                fs.rmdirSync(extractDir, { recursive: true })
-            } catch (e) {
-                this.addToParentLog('copy error: ' + e.toString())
-                return;
-            }
-        } else {
-
-            // Developer mode
-            // Copying files from current node_modules
-            const sourceModulesPath = join(app.getAppPath()+`${slash}public${slash}os_modules${slash}${modulesPath}${slash}modules`);
-            const targetModulesPath = join(this.compiledTemplateFilePath + `${slash}node_modules`);
-            console.log('source modules path', sourceModulesPath);
-            console.log('target modules path', targetModulesPath);
-            fs.cpSync(sourceModulesPath, targetModulesPath, {recursive: true});
-
-        }
-        this.addToParentLog('node_modules prepared');
-    }
-
 
     async selectTemplateFile(event) {
 
@@ -149,6 +103,7 @@ class InternalAPI {
 
 
         this.extractNodeModules();
+        this.definePuppeteerExecutablePath();
 
 
         let contentJS = null;
@@ -170,11 +125,10 @@ class InternalAPI {
             return;
         }
 
-
-        // console.log('contentJS', contentJS);
+        //setting puppeteer executable path
+        contentJS = contentJS.replace('%PUPPETEER_EXECUTABLE_PATH%', this.puppeteerExecutablePath);
 
         try {
-            // fs.writeFileSync(this.compiledTemplateFilePath+"/index.mjs", contentJS);
             fs.writeFileSync(`${this.compiledTemplateFilePath}${slash}index.cjs`, contentJS);
         } catch (e) {
             event.repnply('TaskManager', {type: 'set-template-name-error', error: "Could not write compiled code to file "+this.compiledTemplateFilePath})
@@ -182,9 +136,6 @@ class InternalAPI {
         }
 
 
-        // const TemplateController = (await import(this.compiledTemplateFilePath+"/index.js")).default;
-        // this.currentTemplateObject = new TemplateController();
-        // process.exit()
         try {
 
             let importPath = `${this.compiledTemplateFilePath}/index.cjs`;
@@ -394,6 +345,73 @@ class InternalAPI {
     isDevelopmentEnv() {
         return process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development";
     }
+
+
+    extractNodeModules() {
+
+        const slash = process.platform === 'win32' ? "\\" : '/';
+
+
+        if (!this.isDevelopmentEnv()) {
+
+            // App is a build.
+            // Extracting files from app.asar
+
+            const asar = require('@electron/asar');
+            this.asarExtractedDirectory = this.compiledTemplateFilePath + `${slash}asar`
+            fs.mkdirSync(this.asarExtractedDirectory);
+            this.addToParentLog('extracting to '+this.asarExtractedDirectory)
+            asar.extractAll(app.getAppPath(), this.asarExtractedDirectory);
+            try {
+                const fullModulesPath = this.compiledTemplateFilePath + `${slash}asar${slash}dist${slash}bundled-node-modules${slash}modules`;
+                const targetModulesPath = this.compiledTemplateFilePath + `${slash}node_modules`;
+                this.addToParentLog('modules path: ' + fullModulesPath)
+                this.addToParentLog('copying to ' + targetModulesPath)
+                fs.cpSync(fullModulesPath, this.compiledTemplateFilePath + `${slash}node_modules`, {recursive: true});
+
+            } catch (e) {
+                this.addToParentLog('copy error: ' + e.toString())
+                return;
+            }
+        } else {
+
+            // Developer mode
+            // Copying files from local public/bundled-node-modules/modules
+            const sourceModulesPath = join(app.getAppPath()+`${slash}public${slash}bundled-node-modules${slash}modules`);
+            const targetModulesPath = join(this.compiledTemplateFilePath + `${slash}node_modules`);
+            console.log('source modules path', sourceModulesPath);
+            console.log('target modules path', targetModulesPath);
+            fs.cpSync(sourceModulesPath, targetModulesPath, {recursive: true});
+
+        }
+        this.addToParentLog('node_modules prepared');
+    }
+
+    definePuppeteerExecutablePath() {
+        let executablePath = '';
+        const slash = process.platform === 'win32' ? "\\\\" : '/';
+        if (process.platform === 'darwin' && process.arch === 'arm64') {
+            executablePath = 'mac_arm-114.0.5735.133/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome';
+        }
+        if (process.platform === 'win32') {
+            executablePath = 'win64-114.0.5735.133\\\\chrome-win64\\\\chrome.exe';
+        }
+        //TODO add more platforms
+
+        if (!this.isDevelopmentEnv()) {
+            this.puppeteerExecutablePath = `${this.asarExtractedDirectory}${slash}dist${slash}puppeteer${slash}${executablePath}`;
+        } else {
+            this.puppeteerExecutablePath = app.getAppPath() + `${slash}public${slash}puppeteer${slash}${executablePath}`;
+        }
+
+    }
+
+    removeAsarDirectory() {
+        if (this.asarExtractedDirectory) {
+            fs.rmdirSync(this.asarExtractedDirectory, {recursive: true})
+        }
+    }
+
 }
 
 export default InternalAPI
