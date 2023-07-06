@@ -1,0 +1,3 @@
+[submodule "public"]
+	path = public
+	url = git@git.anti-captcha.com:sup/opensubmitter-nodemodules.git
