@@ -391,20 +391,26 @@ class InternalAPI {
 
     definePuppeteerExecutablePath() {
         let executablePath = '';
-        const slash = process.platform === 'win32' ? "\\\\" : '/';
+        const slash = process.platform === 'win32' ? "\\" : '/';
         if (process.platform === 'darwin' && process.arch === 'arm64') {
             executablePath = 'mac_arm-114.0.5735.133/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome';
         }
         if (process.platform === 'win32') {
-            executablePath = 'win64-114.0.5735.133\\\\chrome-win64\\\\chrome.exe';
+            executablePath = 'win64-114.0.5735.133\\chrome-win64\\chrome.exe';
         }
         //TODO add more platforms
 
         if (!this.isDevelopmentEnv()) {
             this.puppeteerExecutablePath = `${this.asarExtractedDirectory}${slash}dist${slash}puppeteer${slash}${executablePath}`;
         } else {
-            this.puppeteerExecutablePath = app.getAppPath() + `${slash}public${slash}puppeteer${slash}${executablePath}`;
+            this.puppeteerExecutablePath = join(app.getAppPath(), `${slash}public${slash}puppeteer${slash}${executablePath}`);
+            
         }
+        if (process.platform === 'win32') {
+            //making double quotes so it could work in the template variable %PUPPETEER_EXECUTABLE_PATH%
+            this.puppeteerExecutablePath = this.puppeteerExecutablePath.replace(/\\/g, "\\\\"); 
+        }
+        this.addToParentLog('this.puppeteerExecutablePath: '+this.puppeteerExecutablePath);
 
     }
 
