@@ -8,20 +8,23 @@ The goal: a template-based open source web automation engine with Chrome browser
 - ✅ UI kit
 - ⏳ Templates engine
 - ✅ Multithreading
-- ❌ Templates backend
-- ❌ Templates gallery
+- ❌ Templates gallery backend at opensubmiiter.com
 - ❌ Scripts for automatic builds
 - ❌ Revenue sharing system
-- ❌ Official website 
+- ❌ Official website
+- ❌ Templates documentation
 
 ### Cloning the project
 
-``
+```
 git clone --recursive https://github.com/MoterHaker/opensubmitter.git
-``
+cd opensubmitter
+npm install
+npm run dev
+```
 
 For Windows users: git longpaths must be enabled to deal with "File name too long" errors:
 
-``
+```
 git config --system core.longpaths true
-``
+```
