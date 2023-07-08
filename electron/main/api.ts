@@ -42,8 +42,8 @@ class InternalAPI {
                     break;
 
                 case 'stop-job':
-                    //TODO: terminate threads
                     this.isRunningAllowed = false;
+                    this.killThreads();
                     this.moveAsarModulesBack();
                     break;
 
@@ -268,7 +268,6 @@ class InternalAPI {
         while (true) {
 
             if (!this.isRunningAllowed) {
-                //todo kill threads
                 break;
             }
 
@@ -509,6 +508,13 @@ class InternalAPI {
             fs.renameSync(targetModulesPath, fullModulesPath);
             console.log('moved modules back from', targetModulesPath, 'to', fullModulesPath);
         }
+    }
+
+    killThreads() {
+        for (const thread of this.threads) {
+            thread.child.kill()
+        }
+        this.threads = [];
     }
 
 }
