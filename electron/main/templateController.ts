@@ -1,4 +1,4 @@
-/// <reference path="../../src/interface.d.ts" />
+/// <reference path="../../src/interfaces-template.d.ts" />
 import Template from "./emptytemplate";
 import {Browser} from "puppeteer";
 //cut

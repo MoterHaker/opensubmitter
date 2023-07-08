@@ -34,20 +34,23 @@
                 <btn label="Run template" :disabled="isRunningBlocked" @click="runTemplateIPC"/>
             </div>
         </div>
-
+        <div class="subtitle mtop20" height="200">Thread Statuses:</div>
+        <thread-statuses :statuses="threadStatuses" />
         <div class="subtitle mtop20" height="200">Job logs:</div>
         <text-log v-model="textLogString" class="mtop10"/>
     </div>
 </template>
 
 <script setup lang="ts">
-/// <reference path="../../src/interface.d.ts" />
+/// <reference path="../../src/interfaces-template.d.ts" />
+/// <reference path="../../src/interfaces-app.d.ts" />
 import Btn from "../components/Btn.vue";
 import {computed, ComputedRef, ref} from 'vue'
 import { ipcRenderer } from 'electron'
 import Textfield from "../components/Textfield.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import TextLog from "../components/TextLog.vue";
+import ThreadStatuses from "../components/ThreadStatuses.vue";
 
 const fileName = ref('')
 const isRunningBlocked = ref(true);
@@ -62,6 +65,7 @@ const taskStatusData = ref<TaskStatusUpdate | null>({
     pending: 50
 });
 const textLogString = ref('')
+const threadStatuses = ref<ThreadStatus[]>([])
 
 
 function validateUserSettings(type?: UserSettingsInput, index?: number) {
@@ -149,6 +153,7 @@ function resetManager() {
     taskStatusData.value = null;
     textLogString.value = '';
     interfaceMode.value = 'settings';
+    threadStatuses.value = [];
 }
 function stopJobIPC() {
     isJobRunning.value = false;
@@ -187,6 +192,10 @@ ipcRenderer.on('TaskManager', (e, data) => {
 
         case 'add-log-message':
             textLogString.value = textLogString.value + data.message + "\n";
+            break;
+
+        case 'set-thread-statuses':
+            threadStatuses.value = data.statuses;
             break;
     }
 

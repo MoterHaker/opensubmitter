@@ -22,6 +22,12 @@
                 <btn label="100" @click="progressPerc = 100" class="sml-btn"></btn>
             </div>
 
+
+            <div style="padding: 20px 0">
+                Thread Statuses:<br>
+                <thread-statuses :statuses="threadStatuses" />
+            </div>
+
             <div>
                 Table:<br>
                 <table class="table-docs">
@@ -151,10 +157,27 @@ import BtnIcon from "../components/BtnIcon.vue";
 import AppToggler from "../components/AppToggler.vue";
 import Textfield from "../components/Textfield.vue";
 import ProgressBar from "../components/ProgressBar.vue";
+import ThreadStatuses from "../components/ThreadStatuses.vue";
 import {onMounted, ref} from "vue";
 
 const progressPerc = ref(20)
 const inputValue = ref('text');
+const threadStatuses = ref<ThreadStatus[]>([{
+    thread: 1,
+    status: 'checking proxy 8.8.8.1:3000'
+},{
+    thread: 2,
+    status: 'checking proxy 8.8.8.2:3000'
+},{
+    thread: 3,
+    status: 'checking proxy 8.8.8.3:3000'
+},{
+    thread: 4,
+    status: 'checking proxy 8.8.8.4:3000'
+},{
+    thread: 5,
+    status: 'checking proxy 8.8.8.5:3000'
+}])
 
 </script>
 

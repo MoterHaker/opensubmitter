@@ -1,15 +1,12 @@
-/// <reference path="../../src/interface.d.ts" />
-import axios from "axios";
-import puppeteer from "puppeteer";
+/// <reference path="../../src/interfaces-template.d.ts" />
+/// <reference path="../../src/interfaces-app.d.ts" />
 import {app, ipcMain} from 'electron'
 import { join } from 'node:path'
-import path from 'path'
 const { dialog } = require('electron')
 import ts, {ScriptTarget} from "typescript"
 import { utilityProcess } from "electron";
 import fs from "fs"
 import {tmpdir} from 'os';
-import asar, {extractAll} from "@electron/asar";
 
 
 class InternalAPI {
@@ -25,6 +22,7 @@ class InternalAPI {
     puppeteerExecutablePath = null;
     asarExtractedDirectory = null;
     previousFullModulesPath = null;
+    freedThreadNumbers: number[] = [];
 
     startListening() {
         ipcMain.on('TM', async(e, data) => {
@@ -184,7 +182,7 @@ class InternalAPI {
                         thread.textStatus = message.data.message;
                         this.eventHook.reply('TaskManager', {
                             type: 'add-log-message',
-                            message: child.pid + ": " + message.data.message
+                            message: 'thread '+thread.threadNumber + ": " + message.data.message
                         })
                         break;
                 }
@@ -194,9 +192,23 @@ class InternalAPI {
         }
     }
 
+    postThreadStatuses() {
+        const data: ThreadStatus[] = [];
+        for (const thread of this.threads) {
+            data.push({
+                thread: thread.threadNumber,
+                status: thread.textStatus
+            })
+        }
+        this.eventHook.reply('TaskManager', {
+            type: 'set-thread-statuses',
+            statuses: data
+        })
+    }
+
     printThreadsStatuses() {
         for (const thread of this.threads) {
-            console.log(`thread ${thread.child.pid} status: ${thread.textStatus}`)
+            console.log(`thread #${thread.threadNumber}, PID ${thread.child.pid} status: ${thread.textStatus}`)
         }
         console.log("\n\n");
     }
@@ -250,6 +262,7 @@ class InternalAPI {
         })
 
         let completedTasks = 0;
+        let threadQueueNumber = 1;
 
 
         while (true) {
@@ -259,10 +272,11 @@ class InternalAPI {
                 break;
             }
 
+            this.postThreadStatuses();
+
 
             if (this.threads.length >= this.taskThreadsAmount) {
                 console.log('reached threads limit')
-                this.printThreadsStatuses();
                 await this.delay(1000);
                 continue;
             }
@@ -297,7 +311,14 @@ class InternalAPI {
                         await this.childMessageHandler(child, data)
                     })
                     .on("exit", (code) => {
-                        this.threads = this.threads.filter(thread => thread.child.pid !== child.pid);
+                        this.threads = this.threads.filter(thread => {
+                            if (thread.child.pid !== child.pid) {
+                                return true;
+                            } else {
+                                this.freedThreadNumbers.push(thread.threadNumber);
+                                return false;
+                            }
+                        });
                         console.log("exiting utilityProcess pid " + child.pid)
                         completedTasks++;
                         event.reply('TaskManager', {
@@ -310,8 +331,15 @@ class InternalAPI {
                         })
                     });
 
+                let newThreadNumber = this.freedThreadNumbers.pop();
+                if (typeof newThreadNumber === "undefined") {
+                    newThreadNumber = threadQueueNumber;
+                    threadQueueNumber++;
+                }
+
                 this.threads.push({
                     child,
+                    threadNumber: newThreadNumber,
                     textStatus: "Started thread"
                 })
 

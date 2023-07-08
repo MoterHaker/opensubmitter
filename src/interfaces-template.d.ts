@@ -1,4 +1,3 @@
-import UtilityProcess = Electron.UtilityProcess;
 
 interface OpenSubmitterTemplateProtocol {
     config?: TemplateConfig,
@@ -10,7 +9,6 @@ interface OpenSubmitterTemplateProtocol {
 type FileOpenDialogType = ('open' | 'save')
 type TemplateTaskRunner = (task: TemplateTask) => Promise<any>;
 type TemplateTaskGenerator = (...args: any) => Promise<TemplateTask[]>;
-type TaskManagerInterfaceMode = ('settings' | 'running')
 
 interface TemplateTask {
     data: any
@@ -18,10 +16,14 @@ interface TemplateTask {
 
 interface TemplateConfig {
     name: string,
-    capabilities?: [string],
-    userSettings: Array<UserSetting>;
+    capabilities?: TemplateCapabilities[],
+    multiThreadingEnabled: boolean,
+    userSettings: Array<UserSetting>,
+    email?: string,
+    rewardTronAddress?: string
 }
 
+type TemplateCapabilities = ('axios' | 'puppeteer')
 type UserSettingsInput = ('OutputFile' | 'SourceFileTaskPerLine')
 
 interface UserSetting {
@@ -30,28 +32,4 @@ interface UserSetting {
     fileName?: string | null,
     required?: boolean,
     errorString?: string | null
-}
-
-interface TaskStatusUpdate {
-    status: string,
-    completed: number,
-    pending: number,
-    updateLogMessage?: string
-}
-
-interface TemplateControllerChild {
-    child: UtilityProcess,
-    textStatus: string
-}
-
-interface MessageWithType {
-    type: string,
-    data: object | any
-}
-
-interface TaskMessage {
-    type: 'start-task',
-    pid: number,
-    task: TemplateTask,
-    config: TemplateConfig | null
 }

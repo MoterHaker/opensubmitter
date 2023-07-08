@@ -1,4 +1,4 @@
-/// <reference path="../src/interface.d.ts" />
+/// <reference path="../src/interfaces-template.d.ts" />
 const fs = require("fs")
 
 class Template implements OpenSubmitterTemplateProtocol {
@@ -6,6 +6,7 @@ class Template implements OpenSubmitterTemplateProtocol {
     config: TemplateConfig = {
         name: 'Template tester from MotaHaker (puppeteer)',
         capabilities: ['puppeteer'],
+        multiThreadingEnabled: true,
         userSettings: [
             {
                 type: 'OutputFile',

@@ -1,4 +1,4 @@
-/// <reference path="../src/interface.d.ts" />
+/// <reference path="../src/interfaces-template.d.ts" />
 const fs = require("fs")
 const axios = require("axios");
 
@@ -7,6 +7,7 @@ class Template implements OpenSubmitterTemplateProtocol {
     config: TemplateConfig = {
         name: 'Template tester from MotaHaker (axios)',
         capabilities: ['axios'],
+        multiThreadingEnabled: true,
         userSettings: [
             {
                 type: 'OutputFile',

@@ -1,11 +1,14 @@
-/// <reference path="../src/interface.d.ts" />
+/// <reference path="../src/interfaces-template.d.ts" />
 
 export default class Template implements OpenSubmitterTemplateProtocol {
 
     axios = null;
 
     config: TemplateConfig = {
-        name: 'Proxy Checker from MotaHaker',
+        name: 'Proxy Checker Mofo',
+        email: 'author@email.com',
+        multiThreadingEnabled: true,
+        rewardTronAddress: 'TPNnu4Wc5dUtpVt5dpQce32WnTrd4P5555',
         capabilities: ['axios'],
         userSettings: [
             {
