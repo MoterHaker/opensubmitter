@@ -9,6 +9,12 @@
     },{
       "from": "electron/main/templateController.ts",
       "to": "src/templateController.ts"
+    },{
+      "from": "electron/main/asarextractor.js",
+      "to": "src/asarextractor.js"
+    },{
+      "from": "electron/main/extractor/nodemodules",
+      "to": "src/node_modules"
     }
   ],
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
