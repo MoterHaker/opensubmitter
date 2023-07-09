@@ -1,8 +1,9 @@
 <template>
     <div class="textfield" :class="{error : errorMessage}">
         <textarea
+                ref="scrollingTextarea"
                 :value="modelValue"
-                :style="{ minHeight: '200px' }"
+                :style="{ scrollTop: '100px', minHeight: '200px' }"
                 @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         />
         <div class="error-msg" v-if="errorMessage">
@@ -12,8 +13,14 @@
 </template>
 
 <script setup lang="ts">
+import {ref, watch} from "vue";
+const scrollingTextarea = ref(null);
 defineEmits(['update:modelValue'])
-defineProps(['modelValue', 'errorMessage'])
+const props = defineProps(['modelValue', 'errorMessage'])
+
+watch(() => props.modelValue, (newValue) => {
+    scrollingTextarea.value.scrollTop = scrollingTextarea.value.scrollHeight;
+})
 </script>
 
 <style lang="less" scoped>

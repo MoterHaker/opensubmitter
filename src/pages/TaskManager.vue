@@ -3,10 +3,18 @@
         <div v-if="interfaceMode == 'running'">
 
             {{ taskStatusData?.status }} {{ taskStatusData?.status == 'Running tasks' ? ' ('+taskStatusData?.pending + ' pending, ' + taskStatusData?.completed + ' completed)'  : ''}}
-            <progress-bar :percents="progressComputed"/>
+            <div class="progress-block">
+                <progress-bar :percents="progressComputed"/>
+                <btn label="Restart" @click="resetManager" v-if="!isJobRunning" class="btn-row"/>
+                <btn label="Stop" @click="stopJobIPC" v-if="isJobRunning" class="btn-row"/>
+            </div>
+
+            <div class="subtitle mtop20" height="200">Thread Statuses:</div>
+            <thread-statuses class="mtop10" :statuses="threadStatuses" />
+            <div class="subtitle mtop20" height="200">Job logs:</div>
+            <text-log v-model="textLogString" class="mtop10"/>
             <div class="run-btn">
-                <btn label="Restart" @click="resetManager" :disabled="isJobRunning" class="btn-row"/>
-                <btn label="Stop" @click="stopJobIPC" :disabled="!isJobRunning" class="btn-row"/>
+
             </div>
         </div>
         <div v-if="interfaceMode == 'settings'">
@@ -18,7 +26,7 @@
             <div v-if="userSettings.length > 0 && templateConfig">
                 <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
             </div>
-            <div v-for="(setting, index) in userSettings as UserSetting[]" :key="index" class="mtop10">
+            <div v-for="(setting, index) in userSettings as UserSetting[]" :key="index" class="mtop10 w50">
                 <div v-if="['SourceFileTaskPerLine'].indexOf(setting.type) !== -1" class="textfield-button">
                     <div>{{setting.title}}</div>
                     <Textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
@@ -29,21 +37,26 @@
                     <textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
                     <btn label="Select File" @click="selectFileForTemplateIPC('save', index)"/>
                 </div>
+                <div v-if="['TextInput'].indexOf(setting.type) !== -1" class="textfield-simple">
+                    <div>{{setting.title}}</div>
+                    <textfield v-model="setting.value" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
+                </div>
+            </div>
+            <div v-if="templateConfig" class="textfield-simple">
+                <div>Threads number</div>
+                <textfield v-if="templateConfig?.multiThreadingEnabled" v-model="threadsNumber" @update:modelValue="" :error-message="threadsError" style="width: 100px"/>
+                <div v-else>Multithreading is disabled in this template</div>
             </div>
             <div class="run-btn">
                 <btn label="Run template" :disabled="isRunningBlocked" @click="runTemplateIPC"/>
             </div>
         </div>
-        <div class="subtitle mtop20" height="200">Thread Statuses:</div>
-        <thread-statuses :statuses="threadStatuses" />
-        <div class="subtitle mtop20" height="200">Job logs:</div>
-        <text-log v-model="textLogString" class="mtop10"/>
     </div>
 </template>
 
 <script setup lang="ts">
-/// <reference path="../../src/interfaces-template.d.ts" />
-/// <reference path="../../src/interfaces-app.d.ts" />
+/// <reference path="type.d.ts" />
+/// <reference path="../../templates/type.d.ts" />
 import Btn from "../components/Btn.vue";
 import {computed, ComputedRef, ref} from 'vue'
 import { ipcRenderer } from 'electron'
@@ -66,6 +79,8 @@ const taskStatusData = ref<TaskStatusUpdate | null>({
 });
 const textLogString = ref('')
 const threadStatuses = ref<ThreadStatus[]>([])
+const threadsNumber = ref('10');
+const threadsError = ref('');
 
 
 function validateUserSettings(type?: UserSettingsInput, index?: number) {
@@ -86,7 +101,7 @@ function validateUserSettings(type?: UserSettingsInput, index?: number) {
             }
         } else {
             //check all fields silently
-            if (!validateInput(userSetting)) {
+            if (!validateInput(userSetting) || !validateThreads()) {
                 isEverythingChecked = false;
             } else {
                 userSetting.errorString = null;
@@ -101,21 +116,37 @@ function validateUserSettings(type?: UserSettingsInput, index?: number) {
 
 }
 function validateInput(setting: UserSetting) {
+    if (typeof setting.required === "undefined") {
+        return true;
+    }
+    if (typeof setting.required !== "undefined" && setting.required === false) {
+        return true;
+    }
     switch (setting.type) {
+
+        case 'TextInput':
+            if (setting.value) {
+                return setting.value!.length > 0;
+            }
+            break;
+
         case 'OutputFile':
         case 'SourceFileTaskPerLine':
-            console.log('validating setting.fileName', setting.fileName);
             //TODO check in internal API that file exists
-            if (typeof setting.required === "undefined") {
-                return true;
-            }
-            if (typeof setting.required !== "undefined" && setting.required === false) {
-                return true;
-            }
             if (setting.fileName) {
                 return setting.fileName!.length > 0; // || typeof setting.required  && setting.required === false
             }
             break;
+    }
+}
+
+function validateThreads() {
+    if (parseInt(threadsNumber.value) === 0) {
+        threadsError.value = 'Invalid value';
+        return false;
+    } else {
+        threadsError.value = '';
+        return true;
     }
 }
 
@@ -132,7 +163,10 @@ function runTemplateIPC() {
         console.log('running blocked');
         return;
     }
-    ipcRenderer.send('TM', { type: 'run-opened-file' });
+    ipcRenderer.send('TM', {
+        type: 'run-opened-file',
+        threadsNumber: parseInt(threadsNumber.value)
+    });
 }
 function openTemplateIPC() {
     ipcRenderer.send('TM', {type: 'select-template-dialog'})
@@ -163,12 +197,12 @@ function stopJobIPC() {
 ipcRenderer.on('TaskManager', (e, data) => {
     switch (data.type) {
         case 'set-template-name':
+            resetManager()
             fileName.value = data.filename;
             validateUserSettings()
             break;
 
         case 'set-template-config':
-            console.log('set-template-config message', data);
             templateConfig.value = data.config;
             if (data.config.userSettings) {
                 userSettings.value = data.config.userSettings;
@@ -177,6 +211,9 @@ ipcRenderer.on('TaskManager', (e, data) => {
             break;
 
         case 'set-template-name-error':
+            if (data.error && data.error.length > 0) {
+                resetManager()
+            }
             templateError.value = data.error;
             break;
 
@@ -225,5 +262,11 @@ ipcRenderer.on('TM-set-template-name-error', (e, errorString: string) => {
     width: auto !important;
 
 }
+.w50 {
+    display: inline-block;
+    width: 50%;
+    padding-right: 10px;
+}
+
 
 </style>

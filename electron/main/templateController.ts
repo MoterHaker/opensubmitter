@@ -1,4 +1,4 @@
-/// <reference path="../../src/interfaces-template.d.ts" />
+/// <reference path="../../templates/type.d.ts" />
 import Template from "./emptytemplate";
 import {Browser} from "puppeteer";
 //cut
@@ -31,14 +31,6 @@ class TemplateController extends Template {
             //messages from parent (main) process
             switch (message.type) {
                 case 'start-task':
-                    //todo: Import only if has puppeteer option
-                    this.log("importing puppeteer")
-                    try {
-                        this.puppeteer = await import("puppeteer");
-                    } catch (e) {
-                        this.log("could not import puppeteer: "+e.toString())
-                        return;
-                    }
 
                     await this.startTask(message);
                     break;
@@ -61,7 +53,13 @@ class TemplateController extends Template {
                         break;
 
                     case 'puppeteer':
-                        this.log('launching puppeteer');
+                        try {
+                            this.puppeteer = await import("puppeteer");
+                        } catch (e) {
+                            this.log("could not import puppeteer: "+e.toString())
+                            return;
+                        }
+                        this.log('launching puppeteer browser');
                         this.browser = await this.puppeteer.launch(this.getPuppeteerOptions());
                         this.page = await this.browser.newPage();
                         break;

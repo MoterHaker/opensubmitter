@@ -14,7 +14,10 @@
             </div>
             <div style="padding: 20px 0">
                 Progress bar:<br>
-                <progress-bar :percents="progressPerc" />
+                <div class="progress-block">
+                    <progress-bar :percents="progressPerc" />
+                    <btn label="Stop" @click="progressPerc = 0"></btn>
+                </div>
                 <br>
                 <btn label="0" @click="progressPerc = 0" class="sml-btn"></btn>
                 <btn label="20" @click="progressPerc = 20" class="sml-btn"></btn>
@@ -177,11 +180,39 @@ const threadStatuses = ref<ThreadStatus[]>([{
 },{
     thread: 5,
     status: 'checking proxy 8.8.8.5:3000'
+},{
+    thread: 6,
+    status: 'checking proxy 8.8.8.5:3000'
+},{
+    thread: 7,
+    status: 'checking proxy 8.8.8.5:3000'
+},{
+    thread: 8,
+    status: 'checking proxy 8.8.8.5:3000'
+},{
+    thread: 9,
+    status: 'checking proxy 8.8.8.5:3000'
+},{
+    thread: 10,
+    status: 'checking proxy 8.8.8.5:3000'
+},{
+    thread: 11,
+    status: 'checking proxy 8.8.8.5:3000'
+},{
+    thread: 12,
+    status: 'checking proxy 8.8.8.5:3000'
+},{
+    thread: 13,
+    status: 'checking proxy 8.8.8.5:3000'
+},{
+    thread: 14,
+    status: 'checking proxy 8.8.8.5:3000'
 }])
 
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+
 .sml-btn {
     width: 50px;
     display: inline-block;

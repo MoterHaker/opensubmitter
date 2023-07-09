@@ -1,4 +1,4 @@
-/// <reference path="../../src/interfaces-template.d.ts" />
+/// <reference path="../../templates/type.d.ts" />
 
 export default class Template implements OpenSubmitterTemplateProtocol {
 

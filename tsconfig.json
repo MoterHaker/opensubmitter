@@ -13,7 +13,7 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src"],
+  "include": ["src", "templates/type.d.ts", "src/type.d.ts"],
   "references": [
     { "path": "./tsconfig.node.json" }
   ]

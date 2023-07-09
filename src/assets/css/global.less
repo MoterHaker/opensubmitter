@@ -397,10 +397,27 @@ small.title {display: none;}
     position: relative;
     z-index: 1;
 }
+.textfield-simple {
+  display: grid;
+  column-gap: 20px;
+  column-count: 3;
+  margin-bottom: 10px;
+  :first-child {
+    grid-column-start: 1;
+    grid-column-end: 4;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  :last-child {
+    grid-column-start: 1;
+    grid-column-end: 4;
+  }
+}
 .textfield-button {
   display: grid;
   column-gap: 20px;
   column-count: 4;
+  margin-bottom: 10px;
   :first-child {
     grid-column-start: 1;
     grid-column-end: 5;
@@ -414,6 +431,21 @@ small.title {display: none;}
   :last-child {
     grid-column-start: 4;
     grid-column-end: 4;
+  }
+}
+.progress-block {
+  display: grid;
+  column-gap: 20px;
+  column-count: 6;
+  margin-top: 10px;
+  div:first-child {
+    grid-column-start: 1;
+    grid-column-end: 6;
+  }
+  button:last-child {
+    grid-column-start: 6;
+    grid-column-end: 6;
+    margin-top: 5px;
   }
 }
 @import 'tablets-landscape.less';

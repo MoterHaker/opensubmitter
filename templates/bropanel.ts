@@ -1,4 +1,4 @@
-/// <reference path="../src/interfaces-template.d.ts" />
+/// <reference path="type.d.ts" />
 const fs = require("fs")
 
 class Template implements OpenSubmitterTemplateProtocol {
@@ -10,6 +10,7 @@ class Template implements OpenSubmitterTemplateProtocol {
         userSettings: [
             {
                 type: 'OutputFile',
+                name: 'outputFile',
                 title: 'Where to write the output of the download',
                 fileName: "",
                 required: false

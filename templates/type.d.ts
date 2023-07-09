@@ -24,11 +24,13 @@ interface TemplateConfig {
 }
 
 type TemplateCapabilities = ('axios' | 'puppeteer')
-type UserSettingsInput = ('OutputFile' | 'SourceFileTaskPerLine')
+type UserSettingsInput = ('OutputFile' | 'SourceFileTaskPerLine' | 'TextInput')
 
 interface UserSetting {
     type: UserSettingsInput,
+    name: string,
     title: string,
+    value?: string | null,
     fileName?: string | null,
     required?: boolean,
     errorString?: string | null

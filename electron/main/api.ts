@@ -1,5 +1,5 @@
-/// <reference path="../../src/interfaces-template.d.ts" />
-/// <reference path="../../src/interfaces-app.d.ts" />
+/// <reference path="../../templates/type.d.ts" />
+/// <reference path="../../src/type.d.ts" />
 import {app, ipcMain} from 'electron'
 import { join } from 'node:path'
 const { dialog } = require('electron')
@@ -17,7 +17,7 @@ class InternalAPI {
     threads: TemplateControllerChild[] = [];
     isRunningAllowed = true;
     compiledTemplateFilePath = null;
-    taskThreadsAmount = 2; //TODO make an option
+    taskThreadsAmount = 1;
     eventHook = null;
     puppeteerExecutablePath = null;
     asarExtractedDirectory = null;
@@ -34,6 +34,11 @@ class InternalAPI {
                     break;
 
                 case 'run-opened-file':
+                    if (this.currentTemplateObject.config.multiThreadingEnabled) {
+                        this.taskThreadsAmount = data.threadsNumber;
+                    } else {
+                        this.taskThreadsAmount = 1;
+                    }
                     await this.runOpenedTemplate(e);
                     break;
 
@@ -154,7 +159,7 @@ class InternalAPI {
 
         } catch (e) {
             console.error(`could not open mjs file ${this.compiledTemplateFilePath}: `, e.toString());
-            event.reply('TaskManager', {type: 'set-template-name-error', error: `Could not import script from template ${this.compiledTemplateFilePath}${slash}index.cjs`})
+            event.reply('TaskManager', {type: 'set-template-name-error', error: `Could not import script from template`})
             return;
         }
 
@@ -173,7 +178,6 @@ class InternalAPI {
     }
 
     async childMessageHandler(child: UtilityProcess, message: MessageWithType) {
-        console.log("message from child: ", message);
         for (const thread of this.threads) {
             if (thread.child.pid === child.pid) {
 
@@ -275,7 +279,6 @@ class InternalAPI {
 
 
             if (this.threads.length >= this.taskThreadsAmount) {
-                console.log('reached threads limit')
                 await this.delay(1000);
                 continue;
             }
@@ -298,7 +301,7 @@ class InternalAPI {
                 const child = utilityProcess
                     .fork(this.compiledTemplateFilePath + "/index.cjs")
                     .on("spawn", () => {
-                        console.log("spawned new utilityProcess " + child.pid)
+                        // console.log("spawned new utilityProcess " + child.pid)
                         child.postMessage({
                             'type': "start-task",
                             "pid": child.pid,
@@ -318,7 +321,7 @@ class InternalAPI {
                                 return false;
                             }
                         });
-                        console.log("exiting utilityProcess pid " + child.pid)
+                        // console.log("exiting utilityProcess pid " + child.pid)
                         completedTasks++;
                         event.reply('TaskManager', {
                             type: 'set-running-status',
