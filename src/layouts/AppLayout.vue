@@ -31,7 +31,7 @@ const route = useRoute()
 @import '../assets/css/vars.less';
 
 .col-side-nav {
-    background: #151211;
+    background: #071F1F;
     display: flex;
     flex-direction: column;
     width: 200px;
