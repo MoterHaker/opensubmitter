@@ -18,6 +18,7 @@ class InternalAPI {
     isRunningAllowed = true;
     compiledTemplateFilePath = null;
     compiledTemplateDir = null;
+    selectedTemplateFilePath = null;
     taskThreadsAmount = 10;
     eventHook = null;
     puppeteerExecutablePath = null;
@@ -32,7 +33,10 @@ class InternalAPI {
             switch (data.type) {
 
                 case 'select-existing-template':
-                    await this.selectTemplateFile(data.fileName);
+                    this.selectedTemplateFilePath = data.fileName;
+                    await this.selectTemplateFile();
+                    this.loadTemplateSettings();
+                    this.sendTemplateSettings();
                     break;
 
                 case 'select-template-dialog':
@@ -60,6 +64,10 @@ class InternalAPI {
 
                 case 'read-local-templates':
                     await this.readLocalTemplates();
+                    break;
+
+                case 'reset-template-settings':
+                    await this.resetTemplateSettings();
                     break;
 
             }
@@ -129,7 +137,6 @@ class InternalAPI {
 
             } catch (e) {
                 console.log('could not compile: '+e.toString())
-                continue;
             }
 
         }
@@ -172,11 +179,13 @@ class InternalAPI {
             return;
         }
 
-        const filename = files.filePaths[0];
-        await this.selectTemplateFile(filename);
+        this.selectedTemplateFilePath = files.filePaths[0];
+        await this.selectTemplateFile();
+        this.loadTemplateSettings();
+        this.sendTemplateSettings();
     }
 
-    async selectTemplateFile(filename): Promise<void> {
+    async selectTemplateFile(): Promise<void> {
 
         const slash = process.platform === 'win32' ? "\\" : '/';
 
@@ -211,9 +220,9 @@ class InternalAPI {
         let contentTS = null;
 
         try {
-            contentTS = fs.readFileSync(filename).toString();
+            contentTS = fs.readFileSync(this.selectedTemplateFilePath).toString();
         } catch (e) {
-            this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not open "+filename})
+            this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not open "+this.selectedTemplateFilePath})
             return;
         }
 
@@ -260,21 +269,13 @@ class InternalAPI {
         }
 
         //responding to UI with file name and no errors status
-        this.eventHook.reply('TaskManager', { type: 'set-template-name', filename })
+        this.eventHook.reply('TaskManager', { type: 'set-template-name', filename: this.selectedTemplateFilePath })
         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "" })
 
         if (!this.currentTemplateObject.config) {
             console.log('no config in the template')
             return;
         }
-
-        this.loadTemplateSettings();
-
-        this.eventHook.reply('TaskManager', {
-            type: 'set-template-config',
-            config: this.currentTemplateObject.config,
-            taskThreadsAmount: this.taskThreadsAmount
-        })
     }
 
     async childMessageHandler(child: UtilityProcess, message: MessageWithType): Promise<void> {
@@ -700,6 +701,20 @@ class InternalAPI {
         } catch (e) {
             //do nothing
         }
+    }
+
+    sendTemplateSettings() {
+        this.eventHook.reply('TaskManager', {
+            type: 'set-template-config',
+            config: this.currentTemplateObject.config,
+            taskThreadsAmount: this.taskThreadsAmount
+        })
+    }
+
+    async resetTemplateSettings(): Promise<void> {
+        await this.selectTemplateFile();
+        this.saveTemplateSettings();
+        this.sendTemplateSettings();
     }
 
     getSettingsFilePath(): string {

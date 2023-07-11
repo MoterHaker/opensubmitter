@@ -37,8 +37,9 @@
                 <Textfield v-model="fileName" style="width:100%" :errorMessage="templateError"/>
                 <btn label="Open Template" @click="openTemplateIPC"/>
             </div>
-            <div v-if="userSettings.length > 0 && templateConfig">
+            <div v-if="userSettings.length > 0 && templateConfig" class="template-name-block">
                 <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
+                <btn label="Reset settings" @click="resetTemplateSettingsIPC"/>
             </div>
             <div v-for="(setting, index) in userSettings as UserSetting[]" :key="index" class="mtop10"
                  :class="{
@@ -197,6 +198,9 @@ function runTemplateIPC() {
 }
 function openTemplateIPC() {
     ipcRenderer.send('TM', {type: 'select-template-dialog'})
+}
+function resetTemplateSettingsIPC() {
+    ipcRenderer.send('TM', {type: 'reset-template-settings'})
 }
 
 function selectFileForTemplateIPC(type : FileOpenDialogType, index: number) {

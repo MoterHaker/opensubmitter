@@ -17,14 +17,14 @@ class Template implements OpenSubmitterTemplateProtocol {
                 type: 'SourceFileTaskPerLine',
                 name: 'proxyList',
                 title: 'Proxy List',
-                fileName: "/Users/flash/Documents/work/opensubmitter/templates/reproxy_pass_small.txt",
+                fileName: "",
                 required: true,
                 uiWidth: 100
             },{
                 type: 'OutputFile',
                 name: 'resultList',
                 title: 'Check Results',
-                fileName: "/Users/flash/Documents/work/opensubmitter/templates/out.txt",
+                fileName: "",
                 required: true,
                 uiWidth: 100
             },{
