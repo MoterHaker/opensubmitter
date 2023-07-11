@@ -1,6 +1,7 @@
 <template>
   <div>
-      <table class="table-docs max-height-300">
+      <div class="subtitle" v-if="props.statuses?.length == 0">No active threads</div>
+      <table class="table-docs max-height-300" v-if="props.statuses?.length > 0">
           <thead>
           <tr>
               <th class="thread-col">
@@ -30,6 +31,9 @@ const props = defineProps({
 </script>
 
 <style lang="scss" scoped>
+.subtitle {
+    font-size: 12px;
+}
 .thread-col {
     width: 100px;
 }

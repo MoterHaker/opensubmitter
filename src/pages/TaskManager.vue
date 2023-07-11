@@ -2,7 +2,7 @@
     <div>
         <div v-if="interfaceMode == 'running'">
 
-            {{ taskStatusData?.status }} {{ taskStatusData?.status == 'Running tasks' ? ' ('+taskStatusData?.pending + ' pending, ' + taskStatusData?.completed + ' completed)'  : ''}}
+            {{ taskStatusData?.status }} {{ taskStatusData?.status == 'Running tasks' ? ' ('+taskStatusData?.pending + ' pending, '+taskStatusData?.active + ' active, ' + taskStatusData?.completed + ' completed)'  : ''}}
             <div class="progress-block">
                 <progress-bar :percents="progressComputed"/>
                 <btn label="Restart" @click="resetManager" v-if="!isJobRunning" class="btn-row"/>
@@ -18,7 +18,21 @@
             </div>
         </div>
         <div v-if="interfaceMode == 'settings'">
-            <div class="textfield-button">
+            <div class="title">Open template from:</div>
+            <div class="padding10_0px">
+                <input type="radio" value="existing" v-model="templateSource" id="existingSource">
+                    <label for="existingSource">Local template folder</label>
+                <input type="radio" value="file" v-model="templateSource" id="fileSource">
+                    <label for="fileSource">Select template file</label>
+            </div>
+            <div v-if="templateSource == 'existing'">
+                <div class="title mtop10">Template name</div>
+                <select v-model="selectedTemplateFilename" class="template-select">
+                    <option disabled value="" selected>Select one..</option>
+                    <option v-for="template in templatesList" :value="template.filePath">{{ template.name }}</option>
+                </select>
+            </div>
+            <div class="textfield-button" v-if="templateSource == 'file'">
                 <div>Template file path</div>
                 <Textfield v-model="fileName" style="width:100%" :errorMessage="templateError"/>
                 <btn label="Open Template" @click="openTemplateIPC"/>
@@ -26,7 +40,11 @@
             <div v-if="userSettings.length > 0 && templateConfig">
                 <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
             </div>
-            <div v-for="(setting, index) in userSettings as UserSetting[]" :key="index" class="mtop10 w50">
+            <div v-for="(setting, index) in userSettings as UserSetting[]" :key="index" class="mtop10"
+                 :class="{
+                        'w50' : (!setting.uiWidth || setting.uiWidth === 50),
+                        'w100' : setting.uiWidth == 100
+                    }">
                 <div v-if="['SourceFileTaskPerLine'].indexOf(setting.type) !== -1" class="textfield-button">
                     <div>{{setting.title}}</div>
                     <Textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
@@ -58,13 +76,16 @@
 /// <reference path="type.d.ts" />
 /// <reference path="../../templates/type.d.ts" />
 import Btn from "../components/Btn.vue";
-import {computed, ComputedRef, ref} from 'vue'
+import {computed, ComputedRef, onMounted, ref, watch} from 'vue'
 import { ipcRenderer } from 'electron'
 import Textfield from "../components/Textfield.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import TextLog from "../components/TextLog.vue";
 import ThreadStatuses from "../components/ThreadStatuses.vue";
 
+const templateSource = ref('existing')
+const templatesList = ref<LocalTemplateListItem[]>([])
+const selectedTemplateFilename = ref('');
 const fileName = ref('')
 const isRunningBlocked = ref(true);
 const userSettings = ref([]);
@@ -72,16 +93,22 @@ const templateConfig = ref<TemplateConfig | null>(null);
 const templateError = ref('');
 const interfaceMode = ref<TaskManagerInterfaceMode>('settings');
 const isJobRunning = ref(false);
-const taskStatusData = ref<TaskStatusUpdate | null>({
-    status: 'Testing',
-    completed: 10,
-    pending: 50
-});
+const taskStatusData = ref<TaskStatusUpdate | null>( null);
 const textLogString = ref('')
 const threadStatuses = ref<ThreadStatus[]>([])
 const threadsNumber = ref('10');
 const threadsError = ref('');
 
+watch(() => templateSource.value, (newValue) => {
+    ipcRenderer.send('TM', {type: 'read-local-templates'});
+})
+watch(() => selectedTemplateFilename.value, () => {
+    fileName.value = selectedTemplateFilename.value;
+    ipcRenderer.send('TM', {type: 'select-existing-template', fileName: fileName.value });
+})
+onMounted(() => {
+    ipcRenderer.send('TM', {type: 'read-local-templates'});
+})
 
 function validateUserSettings(type?: UserSettingsInput, index?: number) {
     let isEverythingChecked = true;
@@ -180,6 +207,10 @@ function selectFileForTemplateIPC(type : FileOpenDialogType, index: number) {
     });
 }
 function resetManager() {
+    resetTemplate();
+    selectedTemplateFilename.value = '';
+}
+function resetTemplate() {
     fileName.value = '';
     isRunningBlocked.value = true;
     templateConfig.value = null;
@@ -197,13 +228,14 @@ function stopJobIPC() {
 ipcRenderer.on('TaskManager', (e, data) => {
     switch (data.type) {
         case 'set-template-name':
-            resetManager()
+            resetTemplate()
             fileName.value = data.filename;
             validateUserSettings()
             break;
 
         case 'set-template-config':
             templateConfig.value = data.config;
+            threadsNumber.value = data.taskThreadsAmount;
             if (data.config.userSettings) {
                 userSettings.value = data.config.userSettings;
                 validateUserSettings()
@@ -212,7 +244,7 @@ ipcRenderer.on('TaskManager', (e, data) => {
 
         case 'set-template-name-error':
             if (data.error && data.error.length > 0) {
-                resetManager()
+                resetTemplate()
             }
             templateError.value = data.error;
             break;
@@ -220,7 +252,7 @@ ipcRenderer.on('TaskManager', (e, data) => {
         case 'set-running-status':
             interfaceMode.value = 'running';
             taskStatusData.value = data.statusData;
-            if (data.statusData.status === 'Job complete') {
+            if (data.statusData.status === 'Job complete' || data.statusData.status.indexOf('Template error') !== -1) {
                 isJobRunning.value = false;
             } else {
                 isJobRunning.value = true;
@@ -234,6 +266,11 @@ ipcRenderer.on('TaskManager', (e, data) => {
         case 'set-thread-statuses':
             threadStatuses.value = data.statuses;
             break;
+
+        case 'template-file-list':
+            templatesList.value = data.list;
+            break;
+
     }
 
 })
@@ -266,6 +303,15 @@ ipcRenderer.on('TM-set-template-name-error', (e, errorString: string) => {
     display: inline-block;
     width: 50%;
     padding-right: 10px;
+}
+.w100 {
+    display: inline-block;
+    width: 100%;
+}
+.template-select {
+    width: 100%;
+    height: 40px;
+    margin-top: 10px;
 }
 
 

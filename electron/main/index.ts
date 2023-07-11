@@ -46,7 +46,7 @@ async function createWindow() {
     title: 'Main window',
     icon: `${__dirname}/../../src/assets/logo.png`,
     width: 1400,
-    height: 900,
+    height: 950,
     webPreferences: {
       preload,
       // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production

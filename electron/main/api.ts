@@ -17,20 +17,26 @@ class InternalAPI {
     threads: TemplateControllerChild[] = [];
     isRunningAllowed = true;
     compiledTemplateFilePath = null;
-    taskThreadsAmount = 1;
+    compiledTemplateDir = null;
+    taskThreadsAmount = 10;
     eventHook = null;
     puppeteerExecutablePath = null;
     asarExtractedDirectory = null;
     previousFullModulesPath = null;
     freedThreadNumbers: number[] = [];
 
-    startListening() {
+    startListening(): void {
         ipcMain.on('TM', async(e, data) => {
             if (!data.type) return;
+            this.eventHook = e;
             switch (data.type) {
 
+                case 'select-existing-template':
+                    await this.selectTemplateFile(data.fileName);
+                    break;
+
                 case 'select-template-dialog':
-                    await this.selectTemplateFile(e);
+                    await this.openTemplateDialog();
                     break;
 
                 case 'run-opened-file':
@@ -52,9 +58,87 @@ class InternalAPI {
                     this.moveAsarModulesBack();
                     break;
 
+                case 'read-local-templates':
+                    await this.readLocalTemplates();
+                    break;
+
             }
 
         });
+    }
+
+    async readLocalTemplates(): Promise<void> {
+        let templatesPath, templateParentPath;
+        const slash = process.platform === 'win32' ? "\\" : '/';
+        if (this.isDevelopmentEnv()) {
+            templatesPath = join(__dirname, `..${slash}..${slash}templates`);
+            templateParentPath = join(__dirname, `..${slash}..${slash}electron${slash}main${slash}templateController.ts`);
+        } else {
+            templatesPath = join(process.resourcesPath, 'templates')
+            templateParentPath = join(process.resourcesPath, `src${slash}templateController.ts`)
+        }
+
+        //reading parent template controller contents
+        const templateParentContent = fs.readFileSync(templateParentPath).toString().split("//cut")[1];
+        
+        //listing templates directory
+        const templatesList = fs.readdirSync(templatesPath, {withFileTypes: true})
+                                .filter(item => {
+                                    if (item.isDirectory()) return false;
+                                    let ext = item.name.substring(item.name.indexOf('.')+1);
+                                    return ['ts','js'].indexOf(ext) !== -1;
+                                })
+                                .map(item => item.name)
+
+        //temporary dir for compiled templates
+        const compiledPathDir = tmpdir() + `${slash}opsub_compiled`;
+        if (!fs.existsSync(compiledPathDir)) fs.mkdirSync(compiledPathDir);
+
+        const result: LocalTemplateListItem[] = [];
+        for (const templateFile of templatesList) {
+            const templatePath = `${templatesPath}${slash}${templateFile}`;
+            let compiledPath = `${compiledPathDir}${slash}${templateFile}.cjs`;
+
+            //combined Typescript contents of template and its parent controller
+            const contentTS = fs.readFileSync(templatePath).toString() + templateParentContent;
+
+            let contentJS;
+            try {
+
+                //compiling TS into JS, saving into .cjs file
+                contentJS = this.tsCompile(contentTS);
+                fs.writeFileSync(compiledPath, contentJS);
+
+                //importing compiled module
+                if (process.platform === 'win32') {
+                    compiledPath = `file:///${compiledPath}`.replace('\\', '/');
+                }
+
+                //creating new template object and getting configuration
+                const { TemplateController } = await import(compiledPath);
+                const templateObject = new TemplateController() as OpenSubmitterTemplateProtocol;
+
+                //extracting name and other data from template
+                if (templateObject.config && templateObject.config.name) {
+                    result.push({
+                        name: templateObject.config.name,
+                        description: templateObject.config?.description,
+                        filePath: templatePath
+                    });
+                }
+
+            } catch (e) {
+                console.log('could not compile: '+e.toString())
+                continue;
+            }
+
+        }
+
+        //sending to Vue
+        this.eventHook.reply('TaskManager', {
+            type: 'template-file-list',
+            list: result
+        })
     }
 
     async selectFileForTemplateSettings(e, data) {
@@ -76,26 +160,12 @@ class InternalAPI {
         }
         e.reply('TaskManager', {
             type: 'set-template-config',
-            config: this.currentTemplateObject.config
+            config: this.currentTemplateObject.config,
+            taskThreadsAmount: this.taskThreadsAmount
         })
     }
 
-
-    async selectTemplateFile(event) {
-
-        this.eventHook = event;
-
-        const slash = process.platform === 'win32' ? "\\" : '/';
-
-        let templateChildPath = null;
-        if (this.isDevelopmentEnv()) {
-            templateChildPath = join(__dirname, `..${slash}..${slash}electron${slash}main${slash}templateController.ts`);
-        } else {
-            templateChildPath = join(process.resourcesPath, `src${slash}templateController.ts`)
-        }
-        let templateChildContent = fs.readFileSync(templateChildPath).toString();
-        templateChildContent = templateChildContent.split("//cut")[1];
-
+    async openTemplateDialog() {
         const files: Electron.OpenDialogReturnValue = await dialog.showOpenDialog({ properties: ['openFile'] });
         if (!files || files.canceled) {
             console.log('canceled file opening')
@@ -103,16 +173,37 @@ class InternalAPI {
         }
 
         const filename = files.filePaths[0];
+        await this.selectTemplateFile(filename);
+    }
+
+    async selectTemplateFile(filename): Promise<void> {
+
+        const slash = process.platform === 'win32' ? "\\" : '/';
+
+        let templateParentPath = null;
+        if (this.isDevelopmentEnv()) {
+            templateParentPath = join(__dirname, `..${slash}..${slash}electron${slash}main${slash}templateController.ts`);
+        } else {
+            templateParentPath = join(process.resourcesPath, `src${slash}templateController.ts`)
+        }
+        
+        //reading parent template controller contents
+        const templateParentContent = fs.readFileSync(templateParentPath).toString().split("//cut")[1];
 
 
-        this.compiledTemplateFilePath = tmpdir() + `${slash}compiled`+Math.random();
+        //defining a directory for compiled template
+        this.compiledTemplateDir = tmpdir() + `${slash}opsubcompiledcustom`;
+        this.compiledTemplateFilePath = `${this.compiledTemplateDir}${slash}index${Math.random()}.cjs`
+
+        //directory for extracted contents of app.asar archive
         this.asarExtractedDirectory = tmpdir() + `${slash}opensubmitter-asar`;
 
-        fs.mkdirSync(this.compiledTemplateFilePath);
+        if (!fs.existsSync(this.compiledTemplateDir)) fs.mkdirSync(this.compiledTemplateDir);
 
-        console.log('temporary dir: ' + this.compiledTemplateFilePath);
-
+        //temporary modules instead of heavy real node_modules
         this.putFakeModuleReplacements();
+
+        //set the path to puppetter Chrome browser depending on the platform
         this.definePuppeteerExecutablePath();
 
 
@@ -122,62 +213,71 @@ class InternalAPI {
         try {
             contentTS = fs.readFileSync(filename).toString();
         } catch (e) {
-            event.reply('TaskManager', {type: 'set-template-name-error', error: "Could not open "+filename})
+            this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not open "+filename})
             return;
         }
 
-        contentTS = contentTS + templateChildContent;
+        //merging together template contents with parent controller
+        contentTS = contentTS + templateParentContent;
 
         try {
+            //compiling them into JavaScript
             contentJS = this.tsCompile(contentTS);
         } catch (e) {
-            event.reply('TaskManager', {type: 'set-template-name-error', error: "Could not compile TypeScript to Javascript"})
+            this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not compile TypeScript to Javascript"})
             return;
         }
 
-        //setting puppeteer executable path
+        //setting puppeteer executable path in the parent template controller
         contentJS = contentJS.replace('%PUPPETEER_EXECUTABLE_PATH%', this.puppeteerExecutablePath);
 
         try {
-            fs.writeFileSync(`${this.compiledTemplateFilePath}${slash}index.cjs`, contentJS);
+            //writing contents to Javascript module file
+            fs.writeFileSync(this.compiledTemplateFilePath, contentJS);
         } catch (e) {
-            event.repnply('TaskManager', {type: 'set-template-name-error', error: "Could not write compiled code to file "+this.compiledTemplateFilePath})
+            this.eventHook.repnply('TaskManager', {type: 'set-template-name-error', error: "Could not write compiled code to file "+this.compiledTemplateFilePath})
             return;
         }
 
 
         try {
 
-            let importPath = `${this.compiledTemplateFilePath}/index.cjs`;
-            console.log('platform '+process.platform);
+            //importing compiled module
+            let importPath = this.compiledTemplateFilePath
             if (process.platform === 'win32') {
-                importPath = `file:///${this.compiledTemplateFilePath}/index.cjs`.replace('\\', '/');
+                importPath = `file:///${this.compiledTemplateFilePath}`.replace('\\', '/');
             }
-            console.log('importing from '+importPath)
+
             const { TemplateController } = await import(importPath);
+
+            //creating new template controller which contains the template
             this.currentTemplateObject = new TemplateController();
 
         } catch (e) {
-            console.error(`could not open mjs file ${this.compiledTemplateFilePath}: `, e.toString());
-            event.reply('TaskManager', {type: 'set-template-name-error', error: `Could not import script from template`})
+            console.error(`could not open cjs file ${this.compiledTemplateFilePath}: `, e.toString());
+            this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: `Could not import script from template`})
             return;
         }
 
-        event.reply('TaskManager', { type: 'set-template-name', filename })
-        event.reply('TaskManager', { type: 'set-template-name-error', error: "" })
+        //responding to UI with file name and no errors status
+        this.eventHook.reply('TaskManager', { type: 'set-template-name', filename })
+        this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "" })
 
         if (!this.currentTemplateObject.config) {
             console.log('no config in the template')
             return;
         }
 
-        event.reply('TaskManager', {
+        this.loadTemplateSettings();
+
+        this.eventHook.reply('TaskManager', {
             type: 'set-template-config',
-            config: this.currentTemplateObject.config
+            config: this.currentTemplateObject.config,
+            taskThreadsAmount: this.taskThreadsAmount
         })
     }
 
-    async childMessageHandler(child: UtilityProcess, message: MessageWithType) {
+    async childMessageHandler(child: UtilityProcess, message: MessageWithType): Promise<void> {
         for (const thread of this.threads) {
             if (thread.child.pid === child.pid) {
 
@@ -196,7 +296,7 @@ class InternalAPI {
         }
     }
 
-    postThreadStatuses() {
+    postThreadStatuses(): void {
         const data: ThreadStatus[] = [];
         for (const thread of this.threads) {
             data.push({
@@ -210,14 +310,14 @@ class InternalAPI {
         })
     }
 
-    printThreadsStatuses() {
+    printThreadsStatuses(): void {
         for (const thread of this.threads) {
             console.log(`thread #${thread.threadNumber}, PID ${thread.child.pid} status: ${thread.textStatus}`)
         }
         console.log("\n\n");
     }
 
-    addToParentLog(message) {
+    addToParentLog(message): void {
         console.log(message);
         this.eventHook.reply('TaskManager', {
             type: 'add-log-message',
@@ -225,9 +325,10 @@ class InternalAPI {
         })
     }
 
-    async runOpenedTemplate(event) {
+    async runOpenedTemplate(event): Promise<void> {
 
         this.eventHook = event;
+        this.saveTemplateSettings();
         console.log("\n\n\n======NEW RUN======\n");
 
         event.reply('TaskManager', {
@@ -253,7 +354,20 @@ class InternalAPI {
             }
         })
         this.addToParentLog('Generating tasks..');
-        this.currentTasks = await this.currentTemplateObject.generateTasks();
+        try {
+            this.currentTasks = await this.currentTemplateObject.generateTasks();
+        } catch (e) {
+            this.addToParentLog('Template error: '+e.toString())
+            event.reply('TaskManager', {
+                type: 'set-running-status',
+                statusData: {
+                    status: 'Template error: '+e.toString(),
+                    completed: 0,
+                    pending: 0
+                }
+            })
+            return;
+        }
         console.log('this.currentTasks ' + JSON.stringify(this.currentTasks));
 
         event.reply('TaskManager', {
@@ -261,6 +375,7 @@ class InternalAPI {
             statusData: {
                 status: 'Running tasks',
                 completed: 0,
+                active: this.threads.length,
                 pending: this.currentTasks.length
             }
         })
@@ -283,7 +398,7 @@ class InternalAPI {
                 continue;
             }
 
-            const task = this.getTask();
+            const task = this.getNextTask();
             if (!task) {
                 console.log('no more tasks left')
                 if (this.threads.length > 0) {
@@ -299,7 +414,7 @@ class InternalAPI {
 
             try {
                 const child = utilityProcess
-                    .fork(this.compiledTemplateFilePath + "/index.cjs")
+                    .fork(this.compiledTemplateFilePath)
                     .on("spawn", () => {
                         // console.log("spawned new utilityProcess " + child.pid)
                         child.postMessage({
@@ -328,6 +443,7 @@ class InternalAPI {
                             statusData: {
                                 status: 'Running tasks',
                                 completed: completedTasks,
+                                active: this.threads.length,
                                 pending: this.currentTasks.length
                             }
                         })
@@ -345,6 +461,16 @@ class InternalAPI {
                     textStatus: "Started thread"
                 })
 
+                event.reply('TaskManager', {
+                    type: 'set-running-status',
+                    statusData: {
+                        status: 'Running tasks',
+                        completed: completedTasks,
+                        active: this.threads.length,
+                        pending: this.currentTasks.length
+                    }
+                })
+
             } catch (e) {
                 this.addToParentLog("Could not start thread process: "+e.toString())
             }
@@ -356,17 +482,18 @@ class InternalAPI {
             statusData: {
                 status: 'Job complete',
                 completed: completedTasks,
+                active: this.threads.length,
                 pending: this.currentTasks.length
             }
         })
 
         console.log('Removing temporary directory with compiled script');
         this.moveAsarModulesBack();
-        fs.rmdirSync(this.compiledTemplateFilePath, { recursive: true });
+        fs.rmdirSync(this.compiledTemplateDir, { recursive: true });
         this.addToParentLog(`Done! Completed ${completedTasks} tasks`);
     }
 
-    getTask(): TemplateTask | null {
+    getNextTask(): TemplateTask | null {
         if (this.currentTasks.length === 0) return null;
         return this.currentTasks.pop();
     }
@@ -381,13 +508,13 @@ class InternalAPI {
             }}).outputText;
     }
 
-    delay(time) {
+    delay(time): Promise<void> {
         return new Promise(function(resolve) {
             setTimeout(resolve, time)
         });
     }
 
-    isDevelopmentEnv() {
+    isDevelopmentEnv(): boolean {
         return process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development";
     }
 
@@ -397,16 +524,17 @@ class InternalAPI {
      * User might change his mind and choose another template, so we extract real
      * node_modules just before the template start.
      */
-    putFakeModuleReplacements() {
+    putFakeModuleReplacements(): void {
         const slash = process.platform === 'win32' ? "\\" : '/';
-        fs.mkdirSync(`${this.compiledTemplateFilePath}${slash}node_modules`);
-        fs.mkdirSync(`${this.compiledTemplateFilePath}${slash}node_modules${slash}axios`);
-        fs.mkdirSync(`${this.compiledTemplateFilePath}${slash}node_modules${slash}puppeteer`);
-        fs.writeFileSync(`${this.compiledTemplateFilePath}${slash}node_modules${slash}axios${slash}index.js`,"module.export={}");
-        fs.writeFileSync(`${this.compiledTemplateFilePath}${slash}node_modules${slash}puppeteer${slash}index.js`,"module.export={}");
+        if (fs.existsSync(`${this.compiledTemplateDir}${slash}node_modules`)) return;
+        fs.mkdirSync(`${this.compiledTemplateDir}${slash}node_modules`);
+        fs.mkdirSync(`${this.compiledTemplateDir}${slash}node_modules${slash}axios`);
+        fs.mkdirSync(`${this.compiledTemplateDir}${slash}node_modules${slash}puppeteer`);
+        fs.writeFileSync(`${this.compiledTemplateDir}${slash}node_modules${slash}axios${slash}index.js`,"module.export={}");
+        fs.writeFileSync(`${this.compiledTemplateDir}${slash}node_modules${slash}puppeteer${slash}index.js`,"module.export={}");
     }
 
-    async extractNodeModules() {
+    async extractNodeModules(): Promise<void> {
 
         const slash = process.platform === 'win32' ? "\\" : '/';
         let extractorPath = null;
@@ -438,7 +566,7 @@ class InternalAPI {
             }
 
             const fullModulesPath = `${this.asarExtractedDirectory}${slash}dist${slash}bundled-node-modules${slash}modules`;
-            const targetModulesPath = this.compiledTemplateFilePath + `${slash}node_modules`;
+            const targetModulesPath = this.compiledTemplateDir + `${slash}node_modules`;
 
             if (fs.existsSync(targetModulesPath)) {
                 console.log('removing fake dir', targetModulesPath);
@@ -447,12 +575,11 @@ class InternalAPI {
             console.log('moving', fullModulesPath, 'to', targetModulesPath);
             fs.renameSync(fullModulesPath, targetModulesPath)
 
-            return true;
+
         } else {
 
             // Developer mode
             // Copying files from local public/bundled-node-modules/modules
-
 
             await new Promise((resolve, reject) => {
                 const child = utilityProcess
@@ -461,20 +588,19 @@ class InternalAPI {
                         child.postMessage({
                             'type': "prepare-development",
                             "sourceModulesPath": join(app.getAppPath()+`${slash}public${slash}bundled-node-modules${slash}modules`),
-                            "targetModulesPath":join(this.compiledTemplateFilePath + `${slash}node_modules`)
+                            "targetModulesPath":join(this.compiledTemplateDir + `${slash}node_modules`)
                         })
                     })
                     .on("exit", (code) => {
                         resolve(code)
                     });
             })
-            return true;
 
         }
         console.log('node_modules prepared');
     }
 
-    definePuppeteerExecutablePath() {
+    definePuppeteerExecutablePath(): void {
         let executablePath = '';
         const slash = process.platform === 'win32' ? "\\" : '/';
         if (process.platform === 'darwin' && process.arch === 'arm64') {
@@ -495,15 +621,15 @@ class InternalAPI {
             //making double quotes so it could work in the template variable %PUPPETEER_EXECUTABLE_PATH%
             this.puppeteerExecutablePath = this.puppeteerExecutablePath.replace(/\\/g, "\\\\");
         }
-        console.log('this.puppeteerExecutablePath: '+this.puppeteerExecutablePath);
+        // console.log('this.puppeteerExecutablePath: '+this.puppeteerExecutablePath);
 
     }
 
-    moveAsarModulesBack() {
+    moveAsarModulesBack(): void {
         if (this.asarExtractedDirectory && !this.isDevelopmentEnv()) {
             const slash = process.platform === 'win32' ? "\\" : '/';
             const fullModulesPath = `${this.asarExtractedDirectory}${slash}dist${slash}bundled-node-modules${slash}modules`;
-            const targetModulesPath = this.compiledTemplateFilePath + `${slash}node_modules`;
+            const targetModulesPath = this.compiledTemplateDir + `${slash}node_modules`;
             if (!fs.existsSync(targetModulesPath)) {
                 console.log('moveAsarDirectoryBack: targetModulesPath does not exist: ',targetModulesPath);
                 return;
@@ -513,11 +639,76 @@ class InternalAPI {
         }
     }
 
-    killThreads() {
+    killThreads(): void {
         for (const thread of this.threads) {
             thread.child.kill()
         }
         this.threads = [];
+    }
+
+    saveTemplateSettings(): void {
+        if (!this.currentTemplateObject.config || !this.currentTemplateObject.config.userSettings) return; //non-existing config
+        let config = {};
+        const configPath = this.getSettingsFilePath();
+        if (fs.existsSync(configPath)) {
+            try {
+                config = JSON.parse(fs.readFileSync(configPath).toString())
+            } catch (e) {
+                //default empty config
+            }
+        }
+        config[this.currentTemplateObject.config.name] = [];
+        //loop through settings and extract field values
+        if (this.currentTemplateObject.config && this.currentTemplateObject.config.userSettings) {
+            for (const setting of this.currentTemplateObject.config.userSettings) {
+                config[this.currentTemplateObject.config.name].push({
+                    name: setting.name,
+                    value: setting.value,
+                    fileName: setting.fileName
+                });
+            }
+        }
+        config[this.currentTemplateObject.config.name].push({
+            name: '__taskThreadsAmount',
+            value: this.taskThreadsAmount
+        })
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2)); //save with pretty-printing
+    }
+
+    loadTemplateSettings(): void {
+        if (!this.currentTemplateObject.config || !this.currentTemplateObject.config.userSettings) return; //non-existing config
+        const configPath = this.getSettingsFilePath();
+        if (!fs.existsSync(configPath)) return;
+        try {
+            const config = JSON.parse(fs.readFileSync(configPath).toString());
+            if (typeof config[this.currentTemplateObject.config.name] === "undefined") return;
+
+            //loop through saved settings
+            for (const existingSetting of config[this.currentTemplateObject.config.name]) {
+                //loop through template settings
+                for (const setting of this.currentTemplateObject.config.userSettings) {
+                    //assign values if names are matching
+                    if (existingSetting.name === setting.name) {
+                        setting.fileName = existingSetting.fileName;
+                        setting.value = existingSetting.value;
+                    }
+                }
+                if (existingSetting.name === '__taskThreadsAmount') {
+                    this.taskThreadsAmount = existingSetting.value;
+                }
+            }
+        } catch (e) {
+            //do nothing
+        }
+    }
+
+    getSettingsFilePath(): string {
+        const slash = process.platform === 'win32' ? "\\" : '/';
+        if (this.isDevelopmentEnv()) {
+            return join(__dirname, `..${slash}..${slash}templates${slash}settings.json`);
+        } else {
+            return join(process.resourcesPath, `templates${slash}settings.json`)
+        }
     }
 
 }

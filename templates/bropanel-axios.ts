@@ -7,14 +7,15 @@ class Template implements OpenSubmitterTemplateProtocol {
     config: TemplateConfig = {
         name: 'Template tester from MotaHaker (axios)',
         capabilities: ['axios'],
-        multiThreadingEnabled: true,
+        multiThreadingEnabled: false,
         userSettings: [
             {
                 type: 'OutputFile',
                 name: 'outputFile',
                 title: 'Where to write the output of the download',
                 fileName: "",
-                required: false
+                required: false,
+                uiWidth: 100
             }
         ]
     };

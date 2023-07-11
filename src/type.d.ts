@@ -6,6 +6,7 @@ interface TaskStatusUpdate {
     status: string,
     completed: number,
     pending: number,
+    active: number,
     updateLogMessage?: string
 }
 
@@ -29,4 +30,10 @@ interface TaskMessage {
 interface ThreadStatus {
     thread: number,
     status: string
+}
+
+interface LocalTemplateListItem {
+    name: string,
+    description?: string,
+    filePath: string
 }

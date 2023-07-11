@@ -16,6 +16,7 @@ interface TemplateTask {
 
 interface TemplateConfig {
     name: string,
+    description?: string,
     capabilities?: TemplateCapabilities[],
     multiThreadingEnabled: boolean,
     userSettings: Array<UserSetting>,
@@ -25,6 +26,7 @@ interface TemplateConfig {
 
 type TemplateCapabilities = ('axios' | 'puppeteer')
 type UserSettingsInput = ('OutputFile' | 'SourceFileTaskPerLine' | 'TextInput')
+type UIWidth = (50 | 100)
 
 interface UserSetting {
     type: UserSettingsInput,
@@ -33,5 +35,6 @@ interface UserSetting {
     value?: string | null,
     fileName?: string | null,
     required?: boolean,
-    errorString?: string | null
+    errorString?: string | null,
+    uiWidth?: UIWidth
 }

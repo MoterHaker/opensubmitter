@@ -18,13 +18,15 @@ class Template implements OpenSubmitterTemplateProtocol {
                 name: 'proxyList',
                 title: 'Proxy List',
                 fileName: "/Users/flash/Documents/work/opensubmitter/templates/reproxy_pass_small.txt",
-                required: true
+                required: true,
+                uiWidth: 100
             },{
                 type: 'OutputFile',
                 name: 'resultList',
                 title: 'Check Results',
                 fileName: "/Users/flash/Documents/work/opensubmitter/templates/out.txt",
-                required: true
+                required: true,
+                uiWidth: 100
             },{
                 type: 'TextInput',
                 name: 'testWebsite',
@@ -84,7 +86,7 @@ class Template implements OpenSubmitterTemplateProtocol {
         const testWebsite = this.config.userSettings.find(setting => setting.name === 'testWebsite').value;
         const controlPhrase = this.config.userSettings.find(setting => setting.name === 'controlPhrase').value;
         const resultListFile = this.config.userSettings.find(setting => setting.name === 'resultList').fileName;
-        this.log("opening test website..")
+        this.log(`opening test website ${testWebsite}`)
         let result;
         try {
             result = await axios.get(testWebsite, {
@@ -103,7 +105,11 @@ class Template implements OpenSubmitterTemplateProtocol {
                 }
             })
         } catch (e) {
-            this.log(`proxy ${task.data.proxyAddress}:${task.data.proxyPort} failed: `+e.toString())
+            if (task.data.proxyLogin) {
+                this.log(`proxy ${task.data.proxyAddress}:${task.data.proxyPort}:${task.data.proxyLogin}:${task.data.proxyPassword} failed`)
+            } else {
+                this.log(`proxy ${task.data.proxyAddress}:${task.data.proxyPort} failed`)
+            }
         }
         if (result) {
             if (result.data.indexOf(controlPhrase) !== -1) {
