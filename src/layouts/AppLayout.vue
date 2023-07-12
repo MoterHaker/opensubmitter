@@ -3,9 +3,19 @@
 <!--        <component :is="modalToShow" />-->
         <div class="df-100vh ">
             <div class="col-side-nav">
-                <router-link to="/dashboard">Task Manager</router-link>
-                <router-link to="/templates">Templates</router-link>
-                <router-link to="/uikit">UI kit</router-link>
+                <div class="logo-wrap"><img src="../assets/images/logo.svg" alt=""></div>
+                <router-link class="menu-item" to="/dashboard">
+                    <img src="../assets/icons/play.svg" alt="">
+                    Task Manager
+                </router-link>
+                <router-link class="menu-item" to="/templates">
+                    <img src="../assets/icons/box.svg" alt="">
+                    Templates
+                </router-link>
+                <router-link class="menu-item" to="/uikit">
+                    <img src="../assets/icons/settings.svg" alt="">
+                    UI kit
+                </router-link>
             </div>
             <div class="col-right">
                 <div class="col-header">
@@ -30,30 +40,40 @@ const route = useRoute()
 <style lang="less" scoped>
 @import '../assets/css/vars.less';
 
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 18px;
+    height: 60px;
+    padding: 0 32px;
+    color: #67AAAA;
+    text-decoration: none;
+    font-weight: 500;
+    &.router-link-exact-active {
+        background: linear-gradient(90deg, rgba(0, 201, 205, 0.00) 0%, rgba(0, 201, 205, 0.30) 100%);
+        border-right: 3px solid #00C9CD;
+        color: #fff;
+    }
+}
+.logo-wrap {
+    padding-left: 32px;
+    margin-bottom: 32px;
+}
 .col-side-nav {
     background: #071F1F;
     display: flex;
     flex-direction: column;
-    width: 200px;
+    width: 256px;
     margin-right: 0px;
-    padding-right: 26px;
-    padding-left: 40px;
-    padding-top: 16px;
-    a {
-        padding: 16px 0;
-        color: rgba(255,255,255,.6);
-        text-decoration: none;
-    &.router-link-exact-active {
-          color: @selected;
-          text-decoration: none;
-        }
-    }
+    padding-top: 32px;
 }
 .col-right {
     flex: 1;
 }
 .col-content {
     padding: 40px;
+    background: #162828;
 }
 .col-header {
     .title {
@@ -65,7 +85,7 @@ const route = useRoute()
         opacity: 0.7;
     }
     padding: 40px;
-    background: #2f2826;
+    background: #182E2E;
 }
 
 @media (max-width: @phones-portrait) {

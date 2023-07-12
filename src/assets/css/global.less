@@ -1,4 +1,24 @@
 @import 'vars.less';
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-weight: 300;
+  src: url(../fonts/IBMPlexSans-Light.ttf);
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-weight: normal;
+  src: url(../fonts/IBMPlexSans-Regular.ttf);
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-weight: 500;
+  src: url(../fonts/IBMPlexSans-Medium.ttf);
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  font-weight: 700;
+  src: url(../fonts/IBMPlexSans-Bold.ttf);
+}
 *,
 *::before,
 *::after {
@@ -10,7 +30,7 @@ body {
     margin: 0;
     background: @bg;
     color: #fff;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
 }
 a {
     color: @link;
@@ -25,17 +45,20 @@ a {
     height: 40px;
     align-items: center;
     border-radius: 6px;
-    background-color: #464855;
+    background-color: #1F5151;
     padding-left: 16px;
     padding-right: 16px;
     text-decoration: none;
     color: #fff;
     border: 0;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'IBM Plex Sans', sans-serif;
     font-size: 18px;
     cursor: pointer;
+    &.ghost {
+      background-color: transparent;
+    }
     &:hover {
-        background-color: lighten(#464855, 5%);
+        background-color: lighten(#1F5151, 5%);
     }
     .icon {margin-right: 8px;}
     &.accent {background-color: @accent;}
@@ -45,9 +68,10 @@ a {
         padding: 4px 8px;
     }
     &.disabled {
-        background-color: #494A52;
-        color: #35363A;
+        background-color: #1F5151;
+        color: #194343;
         text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.11);
+        cursor: default;
     }
     &.loading {
         position: relative;
@@ -136,10 +160,7 @@ button.btn {
 .flex1 {flex: 1;}
 .gap6 {gap: 6px;}
 .gap8 {
-    & > * {
-        margin-left: 8px;
-        &:first-child {margin-left: 0;}
-    }
+    gap: 8px
 }
 .gap16 {
     & > * {
@@ -148,10 +169,7 @@ button.btn {
     }
 }
 .gap32 {
-    & > * {
-        margin-left: 32px;
-        &:first-child {margin-left: 0;}
-    }
+    gap: 32px;
 }
 .padding10_0px {
   padding: 10px 0;
