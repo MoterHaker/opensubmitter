@@ -18,11 +18,12 @@
                     <progress-bar :percents="progressPerc" />
                     <btn label="Stop" @click="progressPerc = 0"></btn>
                 </div>
-                <br>
-                <btn label="0" @click="progressPerc = 0" class="sml-btn"></btn>
-                <btn label="20" @click="progressPerc = 20" class="sml-btn"></btn>
-                <btn label="50" @click="progressPerc = 50" class="sml-btn"></btn>
-                <btn label="100" @click="progressPerc = 100" class="sml-btn"></btn>
+                <div class="df mt8 gap8">
+                    <btn label="0" @click="progressPerc = 0"></btn>
+                    <btn label="20" @click="progressPerc = 20"></btn>
+                    <btn label="50" @click="progressPerc = 50"></btn>
+                    <btn label="100" @click="progressPerc = 100"></btn>
+                </div>
             </div>
 
 
@@ -210,12 +211,3 @@ const threadStatuses = ref<ThreadStatus[]>([{
 }])
 
 </script>
-
-<style lang="scss" scoped>
-
-.sml-btn {
-    width: 50px;
-    display: inline-block;
-    margin-left: 10px;
-}
-</style>

@@ -55,6 +55,7 @@ a:hover {
   display: inline-flex;
   height: 40px;
   align-items: center;
+  justify-content: center;
   border-radius: 6px;
   background-color: #1F5151;
   padding-left: 16px;
@@ -84,8 +85,8 @@ a:hover {
   padding: 4px 8px;
 }
 .btn.disabled {
-  background-color: #1F5151;
-  color: #194343;
+  background-color: #274444;
+  color: #143434;
   text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.11);
   cursor: default;
 }
@@ -124,8 +125,7 @@ a:hover {
   line-height: 1.4;
 }
 button.btn {
-  display: block;
-  width: 100%;
+  display: flex;
 }
 .cta-big {
   background: #29B74E;
@@ -136,6 +136,9 @@ button.btn {
 }
 .mt24 {
   margin-top: 24px;
+}
+.mt8 {
+  margin-top: 8px;
 }
 .mt1 {
   margin-top: 1rem;
@@ -172,6 +175,10 @@ button.btn {
   vertical-align: middle;
 }
 .icon {
+  width: 32px;
+  height: 32px;
+}
+.btn .icon {
   width: 24px;
   height: 24px;
 }
@@ -371,32 +378,35 @@ button.btn {
   font-weight: 400;
   line-height: 1.42857143;
   text-decoration-skip-ink: auto;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Noto Sans", "Ubuntu", "Droid Sans", "Helvetica Neue", sans-serif;
   border-collapse: collapse;
   margin: 10px 0 0 0;
   overflow-x: auto;
   margin-top: 0;
   width: initial;
   padding: 0px;
-  background: #2B292F;
+  background: #101919;
   width: 100%;
+  border-radius: 6px;
 }
 .table-docs th {
   text-align: left;
-  background-color: #36353A;
   font-weight: bold;
   color: #AFAEB0;
   padding: 7px 10px;
-  border: 1px solid #464854;
 }
 .rtl .table-docs th {
   text-align: right;
 }
+.table-docs th:first-child {
+  border-radius: 6px 0 0 0;
+}
+.table-docs th:last-child {
+  border-radius: 0 6px 0 0;
+}
 .table-docs td {
-  padding: 7px 10px;
+  padding: 10px 10px;
   vertical-align: top;
   min-width: 8px;
-  border: 1px solid #464854;
   padding-left: 10px !important;
 }
 .page-docs {

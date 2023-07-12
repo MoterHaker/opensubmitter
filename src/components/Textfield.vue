@@ -27,9 +27,9 @@ defineProps(['modelValue', 'errorMessage'])
         }
     }
     input {
-        background: rgba(255, 255, 255, 0.05);
+        background: #101919;
         color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.17);
+        border: 1px solid #354545;
         border-radius: 6px;
         font-family: 'Montserrat', sans-serif;
         font-size: 16px;

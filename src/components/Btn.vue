@@ -3,9 +3,10 @@
         'disabled': props.disabled,
         'loading': props.loading,
         'ghost': props.ghost
-    }">{{ props.label }}</button>
+    }"><svg-icon :name="icon" />{{ props.label }}</button>
 </template>
 
 <script setup lang="ts">
-const props = defineProps(['label', 'disabled', 'loading', 'ghost'])
+    import SvgIcon from "./SvgIcon.vue"
+    const props = defineProps(['label', 'disabled', 'loading', 'ghost', 'icon'])
 </script>

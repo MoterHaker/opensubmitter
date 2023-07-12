@@ -20,7 +20,7 @@ const props = defineProps(['percents'])
 
 </script>
 
-<style lang="css" scoped>
+<style lang="less" scoped>
 .container {
     display: flex;
     justify-content: center;
@@ -31,25 +31,38 @@ const props = defineProps(['percents'])
 
 .progress-bar__container {
     width: 100%;
-    height: 2rem;
+    height: 16px;
     border-radius: 2rem;
     position: relative;
     overflow: hidden;
     transition: all 0.5s;
     will-change: transform;
-    box-shadow: 0 0 5px #e76f51;
+    background: #071F1F;
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.13) inset, 0px 1px 0px 0px rgba(255, 255, 255, 0.04);
+    &::after {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 100px;
+        // border: 1px solid #071F1F;
+        z-index: 2;
+        left: 0;
+        top: 0;
+        box-shadow: 0px 0px 0 1px #071F1F inset;
+    }
 }
 
 .progress-bar {
     position: absolute;
-    height: 100%;
+    z-index: 1;
+    background: linear-gradient(90deg, #00CD6B 0%, #00C9CD 100%);
     width: 100%;
-    content: "";
-    background-color: #e76f51;
     top:0;
     bottom: 0;
     left: -100%;
     border-radius: inherit;
+    /* border: 1px solid #071F1F; */
     display: flex;
     justify-content: center;
     align-items:center;

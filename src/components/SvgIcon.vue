@@ -1,17 +1,24 @@
-<template>
-    <svg :class="className">
-        <component :is="Object(icon)"></component>
-    </svg>
-</template>
+<script>
+import { defineAsyncComponent } from 'vue';
 
-<script setup lang="ts">
-interface Props {
-    icon: Object
-    className?: string
+export default {
+  props: {
+    name: {
+      type: String,
+      required: true,
+    },
+  },
 
-}
+  computed: {
+    dynamicComponent() {
+      const name = this.name;
 
-const props = withDefaults(defineProps<Props>(), {
-    className: () => 'icon16'
-})
+      return defineAsyncComponent(() => import(`./icons/${name}.vue`));
+    },
+  },
+};
 </script>
+
+<template>
+  <component :is="dynamicComponent" />
+</template>
