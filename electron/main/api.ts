@@ -6,7 +6,7 @@ const { dialog } = require('electron')
 import ts, {ScriptTarget} from "typescript"
 import { utilityProcess } from "electron";
 import fs from "fs"
-import {tmpdir} from 'os';
+import os, {tmpdir} from 'os';
 
 
 class InternalAPI {
@@ -100,7 +100,15 @@ class InternalAPI {
 
         //temporary dir for compiled templates
         const compiledPathDir = tmpdir() + `${slash}opsub_compiled`;
+        const node_modulesDir = `${compiledPathDir}${slash}node_modules`;
         if (!fs.existsSync(compiledPathDir)) fs.mkdirSync(compiledPathDir);
+        if (!fs.existsSync(node_modulesDir)) {
+            fs.mkdirSync(node_modulesDir)
+            fs.mkdirSync(`${node_modulesDir}${slash}axios`)
+            fs.mkdirSync(`${node_modulesDir}${slash}puppeteer`)
+            fs.writeFileSync(`${node_modulesDir}${slash}axios${slash}index.js`,"module.export={}");
+            fs.writeFileSync(`${node_modulesDir}${slash}puppeteer${slash}index.js`,"module.export={}");
+        }
 
         const result: LocalTemplateListItem[] = [];
         for (const templateFile of templatesList) {
@@ -490,7 +498,7 @@ class InternalAPI {
 
         console.log('Removing temporary directory with compiled script');
         this.moveAsarModulesBack();
-        fs.rmdirSync(this.compiledTemplateDir, { recursive: true });
+        await this.rmDirRecursive(this.compiledTemplateDir);
         this.addToParentLog(`Done! Completed ${completedTasks} tasks`);
     }
 
@@ -571,7 +579,7 @@ class InternalAPI {
 
             if (fs.existsSync(targetModulesPath)) {
                 console.log('removing fake dir', targetModulesPath);
-                fs.rmdirSync(targetModulesPath, {recursive: true});
+                await this.rmDirRecursive(targetModulesPath);
             }
             console.log('moving', fullModulesPath, 'to', targetModulesPath);
             fs.renameSync(fullModulesPath, targetModulesPath)
@@ -604,13 +612,30 @@ class InternalAPI {
     definePuppeteerExecutablePath(): void {
         let executablePath = '';
         const slash = process.platform === 'win32' ? "\\" : '/';
-        if (process.platform === 'darwin' && process.arch === 'arm64') {
-            executablePath = 'mac_arm-114.0.5735.133/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome';
+        const version = '114.0.5735.133';
+
+        switch (process.platform) {
+            case 'darwin':
+                if (process.arch === 'arm64') {
+                    executablePath = `mac_arm-${version}/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
+                } else {
+                    executablePath = `mac-${version}/chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
+                }
+                break;
+
+            case 'linux':
+                executablePath = `linux-${version}/chrome-linux/chrome`;
+                break;
+
+            case 'win32':
+                if (process.arch === 'x64' || (os.arch() === 'arm64' && this.isWindows11(os.release()))) {
+                    executablePath = `win64-${version}\\chrome-win64\\chrome.exe`;
+                } else {
+                    executablePath = `win32-${version}\\chrome-win32\\chrome.exe`;
+                }
+                break;
         }
-        if (process.platform === 'win32') {
-            executablePath = 'win64-114.0.5735.133\\chrome-win64\\chrome.exe';
-        }
-        //TODO add more platforms
+
 
         if (!this.isDevelopmentEnv()) {
             this.puppeteerExecutablePath = `${this.asarExtractedDirectory}${slash}dist${slash}puppeteer${slash}${executablePath}`;
@@ -619,11 +644,26 @@ class InternalAPI {
 
         }
         if (process.platform === 'win32') {
-            //making double quotes so it could work in the template variable %PUPPETEER_EXECUTABLE_PATH%
+            //making double quotes, so it could work in the template variable %PUPPETEER_EXECUTABLE_PATH%
             this.puppeteerExecutablePath = this.puppeteerExecutablePath.replace(/\\/g, "\\\\");
         }
-        // console.log('this.puppeteerExecutablePath: '+this.puppeteerExecutablePath);
 
+    }
+
+    //got it from puppeteer/browser/src/detectPlatform.ts
+    isWindows11(version: string): boolean {
+        const parts = version.split('.');
+        if (parts.length > 2) {
+            const major = parseInt(parts[0] as string, 10);
+            const minor = parseInt(parts[1] as string, 10);
+            const patch = parseInt(parts[2] as string, 10);
+            return (
+                major > 10 ||
+                (major === 10 && minor > 0) ||
+                (major === 10 && minor === 0 && patch >= 22000)
+            );
+        }
+        return false;
     }
 
     moveAsarModulesBack(): void {
@@ -724,6 +764,12 @@ class InternalAPI {
         } else {
             return join(process.resourcesPath, `templates${slash}settings.json`)
         }
+    }
+
+    rmDirRecursive(path) {
+        return new Promise(resolve => {
+            fs.rm(path, {recursive: true}, () => { resolve(true); })
+        })
     }
 
 }

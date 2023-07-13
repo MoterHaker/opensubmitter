@@ -12,7 +12,6 @@ export default {
   computed: {
     dynamicComponent() {
       const name = this.name;
-
       return defineAsyncComponent(() => import(`./icons/${name}.vue`));
     },
   },
@@ -20,5 +19,5 @@ export default {
 </script>
 
 <template>
-  <component :is="dynamicComponent" />
+  <span v-if="typeof this.name !== 'undefined'"><component :is="dynamicComponent" /></span>
 </template>
