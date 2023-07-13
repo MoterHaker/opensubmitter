@@ -318,28 +318,32 @@ button.btn {
     padding: 0px;
     background: #101919;
     width: 100%;
-    border-radius: 6px;
+    border-radius: 16px;
     th {
       text-align: left;
       .rtl & {text-align: right;}
-      // background-color: #244242;
       font-weight: bold;
-      color: #AFAEB0;
-      padding: 7px 10px;
-      // border: 1px solid #354F4F;
+      color: #4A5E5E;
+      padding: 16px 10px;
+      border-bottom: 1px solid #193131;
       &:first-child {
-        border-radius: 6px 0 0 0;
+        padding-left: 24px;
       }
       &:last-child {
-        border-radius: 0 6px 0 0;
+        padding-right: 24px;
       }
     }
     td {
-      padding: 10px 10px;
+      padding: 16px 10px;
       vertical-align: top;
       min-width: 8px;
-      // border: 1px solid #354F4F;
-      padding-left: 10px !important;
+      border-bottom: 1px solid #193131;
+      &:first-child {
+        padding-left: 24px;
+      }
+      &:last-child {
+        padding-right: 24px;
+      }
     }
 }
 .page-docs {
