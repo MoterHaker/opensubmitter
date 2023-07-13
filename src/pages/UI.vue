@@ -134,15 +134,6 @@
                 </table>
             </div>
 
-<!--            <div style="padding: 10px 0">-->
-<!--                Copy button:-->
-<!--                <btn-icon icon="copy" className="icon16" />-->
-<!--            </div>-->
-
-<!--            <div style="padding: 10px 0">-->
-<!--                Button with label:-->
-<!--                <btn label="Test me" />-->
-<!--            </div>-->
             <div>
                 Button with loader:
                 <btn label="Test me" :loading="true"/>
@@ -157,7 +148,6 @@
 </template>
 <script setup lang="ts">
 import Btn from "../components/Btn.vue";
-import BtnIcon from "../components/BtnIcon.vue";
 import AppToggler from "../components/AppToggler.vue";
 import Textfield from "../components/Textfield.vue";
 import ProgressBar from "../components/ProgressBar.vue";

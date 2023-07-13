@@ -22,13 +22,13 @@
             </div>
         </div>
         <div class="col-dn">
-            <btn-icon icon="check" />
+            <btn icon="check" />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import BtnIcon from "../components/BtnIcon.vue"
+import Btn from "../components/Btn.vue"
 </script>
 
 <style lang="less" scoped>

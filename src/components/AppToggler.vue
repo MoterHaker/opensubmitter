@@ -1,6 +1,6 @@
 <template>
     <div @click="toggleState = !toggleState" class="toggler btn" :class="{on: toggleState}">
-        <div class="checkbox"><svg-icon :icon="IconCheck" className="icon16" /></div>
+        <div class="checkbox"><svg-icon name="check" className="icon16" /></div>
         <div class="title">{{ toggleState ? 'On' : 'Off' }}</div>
     </div>
 </template>

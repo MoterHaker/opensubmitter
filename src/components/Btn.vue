@@ -3,7 +3,7 @@
         'disabled': props.disabled,
         'loading': props.loading,
         'ghost': props.ghost
-    }"><svg-icon :name="icon" />{{ props.label }}</button>
+    }"><svg-icon v-if="typeof icon !== 'undefined'" :name="icon" />{{ props.label }}</button>
 </template>
 
 <script setup lang="ts">
