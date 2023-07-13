@@ -27,10 +27,12 @@
             </div>
             <div v-if="templateSource == 'existing'">
                 <div class="title mtop10">Template name</div>
-                <select v-model="selectedTemplateFilename" class="template-select">
-                    <option disabled value="" selected>Select one..</option>
-                    <option v-for="template in templatesList" :value="template.filePath">{{ template.name }}</option>
-                </select>
+                <div class="select-wrap">
+                    <select v-model="selectedTemplateFilename" class="template-select">
+                        <option disabled value="" selected>Select one...</option>
+                        <option v-for="template in templatesList" :value="template.filePath">{{ template.name }}</option>
+                    </select>
+                </div>
             </div>
             <div class="textfield-button" v-if="templateSource == 'file'">
                 <div>Template file path</div>
@@ -39,7 +41,7 @@
             </div>
             <div v-if="userSettings.length > 0 && templateConfig" class="template-name-block">
                 <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
-                <btn label="Reset settings" @click="resetTemplateSettingsIPC"/>
+                <btn icon="reset" label="Reset settings" @click="resetTemplateSettingsIPC"/>
             </div>
             <div v-for="(setting, index) in userSettings as UserSetting[]" :key="index" class="mtop10"
                  :class="{
@@ -312,10 +314,56 @@ ipcRenderer.on('TM-set-template-name-error', (e, errorString: string) => {
     display: inline-block;
     width: 100%;
 }
+.select-wrap {
+    display: grid;
+    grid-template-areas: "select";
+    align-items: center;
+    position: relative;
+    margin-top: 10px;
+
+    select,
+    &::after {
+    grid-area: select;
+    }
+
+    border: 1px solid var(--select-border);
+    padding: 0 0.7em;
+
+    font-size: 1.25rem;
+    cursor: pointer;
+    line-height: 1.1;
+    background-color: #223333;
+    border-radius: 6px;
+    border: 1px solid #354F4F;
+
+    // Custom arrow
+    &:not(.select--multiple)::after {
+    content: "";
+    justify-self: end;
+    width: 0.8em;
+    height: 0.47em;
+    background: url('../assets/icons/caret.svg') no-repeat 50% 50%;
+    background-size: contain;
+    //background-color: #fff;
+    //clip-path: polygon(100% 0%, 0 0%, 50% 100%);
+  }
+}
 .template-select {
     width: 100%;
     height: 40px;
-    margin-top: 10px;
+    appearance: none;
+    background-color: transparent;
+    border: none;
+    padding: 0 1em 0 0;
+    margin: 0;
+    width: 100%;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: inherit;
+    line-height: inherit;
+    z-index: 1;
+    outline: none;
+    color: #fff;
 }
 
 

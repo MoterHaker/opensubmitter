@@ -1,0 +1,24 @@
+{
+  "Proxy Checker Mofo": [
+    {
+      "name": "proxyList",
+      "fileName": "/Volumes/EVO/Downloads/prox.txt"
+    },
+    {
+      "name": "resultList",
+      "fileName": ""
+    },
+    {
+      "name": "testWebsite",
+      "value": "https://www.google.com/"
+    },
+    {
+      "name": "controlPhrase",
+      "value": "initial-scale=1, minimum-scale=1"
+    },
+    {
+      "name": "__taskThreadsAmount",
+      "value": 10
+    }
+  ]
+}

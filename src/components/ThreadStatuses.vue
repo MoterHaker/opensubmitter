@@ -47,6 +47,7 @@ const props = defineProps({
     display: block;
     max-height: 300px;
     overflow: auto;
+    tr {margin-top: -1px;}
   }
 }
 </style>

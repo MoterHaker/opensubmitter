@@ -15,9 +15,11 @@ const toggleState = ref(false);
 <style lang="less" scoped>
 @import '../assets/css/vars.less';
 .toggler {
-    padding-left: 3px;
-    padding-right: 3px;
-    background-color: #5A5C68;
+    padding-left: 6px;
+    padding-right: 6px;
+    background-color: #244242;
+    box-shadow: 0px 0px 2px 1.5px rgba(0, 0, 0, 0.15) inset;
+    border: 1px solid #1A2424;
 }
 .title {
     width: 50px;
@@ -27,10 +29,10 @@ const toggleState = ref(false);
     transition: transform 0.25s;
 }
 .checkbox {
-    width: 34px;
-    height: 34px;
-    background-color: rgba(255,255,255,.23);
-    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    background-color: #426161;
+    border-radius: 3px;
     transition: all 0.25s;
     display: flex;
     align-items: center;
@@ -40,12 +42,12 @@ const toggleState = ref(false);
 .on {
     .checkbox {
         transform: translateX(66px);
-        background-color: @selected;
+        background-color: #01CCCF;
         color: #000;
         .icon16 {opacity: 1;}
     }
     .title {
-        transform: translateX(-34px);
+        transform: translateX(-28px);
     }
 }
 </style>

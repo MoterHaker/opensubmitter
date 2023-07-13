@@ -5,15 +5,15 @@
             <div class="col-side-nav">
                 <div class="logo-wrap"><img src="../assets/images/logo.svg" alt=""></div>
                 <router-link class="menu-item" to="/dashboard">
-                    <img src="../assets/icons/play.svg" alt="">
+                    <svg-icon name="play" />
                     Task Manager
                 </router-link>
                 <router-link class="menu-item" to="/templates">
-                    <img src="../assets/icons/box.svg" alt="">
+                    <svg-icon name="box" />
                     Templates
                 </router-link>
                 <router-link class="menu-item" to="/uikit">
-                    <img src="../assets/icons/settings.svg" alt="">
+                    <svg-icon name="settings" />
                     UI kit
                 </router-link>
             </div>
@@ -33,6 +33,7 @@
 
 <script setup lang="ts">
 import {useRoute} from "vue-router";
+import SvgIcon from "../components/SvgIcon.vue"
 
 const route = useRoute()
 </script>
