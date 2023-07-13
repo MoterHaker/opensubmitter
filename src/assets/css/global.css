@@ -386,28 +386,35 @@ button.btn {
   padding: 0px;
   background: #101919;
   width: 100%;
-  border-radius: 6px;
+  border-radius: 16px;
 }
 .table-docs th {
   text-align: left;
   font-weight: bold;
-  color: #AFAEB0;
-  padding: 7px 10px;
+  color: #4A5E5E;
+  padding: 16px 10px;
+  border-bottom: 1px solid #193131;
 }
 .rtl .table-docs th {
   text-align: right;
 }
 .table-docs th:first-child {
-  border-radius: 6px 0 0 0;
+  padding-left: 24px;
 }
 .table-docs th:last-child {
-  border-radius: 0 6px 0 0;
+  padding-right: 24px;
 }
 .table-docs td {
-  padding: 10px 10px;
+  padding: 16px 10px;
   vertical-align: top;
   min-width: 8px;
-  padding-left: 10px !important;
+  border-bottom: 1px solid #193131;
+}
+.table-docs td:first-child {
+  padding-left: 24px;
+}
+.table-docs td:last-child {
+  padding-right: 24px;
 }
 .page-docs {
   color: rgba(255, 255, 255, 0.75);
