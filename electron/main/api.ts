@@ -588,7 +588,7 @@ class InternalAPI {
         } else {
 
             // Developer mode
-            // Copying files from local public/bundled-node-modules/modules
+            // Copying files from local extra/bundled-node-modules/modules
 
             await new Promise((resolve, reject) => {
                 const child = utilityProcess
@@ -596,7 +596,7 @@ class InternalAPI {
                     .on("spawn", () => {
                         child.postMessage({
                             'type': "prepare-development",
-                            "sourceModulesPath": join(app.getAppPath()+`${slash}public${slash}bundled-node-modules${slash}modules`),
+                            "sourceModulesPath": join(app.getAppPath()+`${slash}extra${slash}bundled-node-modules${slash}modules`),
                             "targetModulesPath":join(this.compiledTemplateDir + `${slash}node_modules`)
                         })
                     })
@@ -640,7 +640,7 @@ class InternalAPI {
         if (!this.isDevelopmentEnv()) {
             this.puppeteerExecutablePath = `${this.asarExtractedDirectory}${slash}dist${slash}puppeteer${slash}${executablePath}`;
         } else {
-            this.puppeteerExecutablePath = join(app.getAppPath(), `${slash}public${slash}puppeteer${slash}${executablePath}`);
+            this.puppeteerExecutablePath = join(app.getAppPath(), `${slash}extra${slash}puppeteer${slash}${executablePath}`);
 
         }
         if (process.platform === 'win32') {
