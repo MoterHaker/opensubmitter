@@ -12,7 +12,6 @@ dist
 dist-ssr
 dist-electron
 release
-public
 templates/settings.json
 *.local
 
