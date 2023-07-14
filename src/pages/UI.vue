@@ -134,6 +134,8 @@
                 </table>
             </div>
 
+            <job-log />
+
             <div>
                 Button with loader:
                 <btn label="Test me" :loading="true"/>
@@ -152,6 +154,7 @@ import AppToggler from "../components/AppToggler.vue";
 import Textfield from "../components/Textfield.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import ThreadStatuses from "../components/ThreadStatuses.vue";
+import JobLog from "../components/JobLog.vue";
 import {onMounted, ref} from "vue";
 
 const progressPerc = ref(20)

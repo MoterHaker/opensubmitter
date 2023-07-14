@@ -31,7 +31,7 @@ defineProps(['modelValue', 'errorMessage'])
         color: #fff;
         border: 1px solid #354545;
         border-radius: 6px;
-        font-family: 'Montserrat', sans-serif;
+        font-family: inherit;
         font-size: 16px;
         height: 40px;
         width: 100%;
