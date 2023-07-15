@@ -3,7 +3,7 @@
         <textarea
                 ref="scrollingTextarea"
                 :value="modelValue"
-                :style="{ scrollTop: '100px', minHeight: '200px' }"
+                :style="styling"
                 @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         />
         <div class="error-msg" v-if="errorMessage">
@@ -14,12 +14,16 @@
 
 <script setup lang="ts">
 import {ref, watch} from "vue";
+interface Scrollable {
+    scrollHeight: number
+}
 const scrollingTextarea = ref(null);
+const styling = ref({ scrollTop: '100px', minHeight: '200px' })
 defineEmits(['update:modelValue'])
 const props = defineProps(['modelValue', 'errorMessage'])
 
 watch(() => props.modelValue, (newValue) => {
-    scrollingTextarea.value.scrollTop = scrollingTextarea.value.scrollHeight;
+    styling.value.scrollTop = (scrollingTextarea.value! as Scrollable).scrollHeight + 'px';
 })
 </script>
 

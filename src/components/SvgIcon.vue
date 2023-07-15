@@ -1,23 +1,13 @@
-<script>
-import { defineAsyncComponent } from 'vue';
+<script setup lang="ts">
+import { defineAsyncComponent, computed } from 'vue';
 
-export default {
-  props: {
-    name: {
-      type: String,
-      required: true,
-    },
-  },
+const props = defineProps(['name']);
+const dynamicComponent = computed(() => {
+    return defineAsyncComponent(() => import(`./icons/${props.name}.vue`));
+})
 
-  computed: {
-    dynamicComponent() {
-      const name = this.name;
-      return defineAsyncComponent(() => import(`./icons/${name}.vue`));
-    },
-  },
-};
 </script>
 
 <template>
-  <span v-if="typeof this.name !== 'undefined'"><component :is="dynamicComponent" /></span>
+  <span v-if="typeof props.name !== 'undefined'"><component :is="dynamicComponent" /></span>
 </template>

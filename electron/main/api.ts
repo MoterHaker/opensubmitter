@@ -25,6 +25,8 @@ class InternalAPI {
     asarExtractedDirectory = null;
     previousFullModulesPath = null;
     freedThreadNumbers: number[] = [];
+    areModulesExtracted = false;
+    modulesVersion = '0001';
 
     startListening(): void {
         ipcMain.on('TM', async(e, data) => {
@@ -59,7 +61,6 @@ class InternalAPI {
                 case 'stop-job':
                     this.isRunningAllowed = false;
                     this.killThreads();
-                    this.moveAsarModulesBack();
                     break;
 
                 case 'read-local-templates':
@@ -73,6 +74,7 @@ class InternalAPI {
             }
 
         });
+        this.extractNodeModules();
     }
 
     async readLocalTemplates(): Promise<void> {
@@ -209,16 +211,7 @@ class InternalAPI {
 
 
         //defining a directory for compiled template
-        this.compiledTemplateDir = tmpdir() + `${slash}opsubcompiledcustom`;
         this.compiledTemplateFilePath = `${this.compiledTemplateDir}${slash}index${Math.random()}.cjs`
-
-        //directory for extracted contents of app.asar archive
-        this.asarExtractedDirectory = tmpdir() + `${slash}opensubmitter-asar`;
-
-        if (!fs.existsSync(this.compiledTemplateDir)) fs.mkdirSync(this.compiledTemplateDir);
-
-        //temporary modules instead of heavy real node_modules
-        this.putFakeModuleReplacements();
 
         //set the path to puppetter Chrome browser depending on the platform
         this.definePuppeteerExecutablePath();
@@ -340,16 +333,33 @@ class InternalAPI {
         this.saveTemplateSettings();
         console.log("\n\n\n======NEW RUN======\n");
 
-        event.reply('TaskManager', {
-            type: 'set-running-status',
-            statusData: {
-                status: 'Preparing modules',
-                completed: 0,
-                pending: 0
+        for (let wait = 0;wait < 120; wait++) {
+            if (!this.areModulesExtracted) {
+                event.reply('TaskManager', {
+                    type: 'set-running-status',
+                    statusData: {
+                        status: 'Preparing modules',
+                        completed: 0,
+                        pending: 0
+                    }
+                })
+                console.log('wating modules extraction..', wait)
+                await this.delay(500);
+            } else {
+                break;
             }
-        })
-
-        await this.extractNodeModules();
+            if (wait == 119) {
+                event.reply('TaskManager', {
+                    type: 'set-running-status',
+                    statusData: {
+                        status: 'Failed to copy modules. Too slow computer?',
+                        completed: 0,
+                        pending: 0
+                    }
+                })
+                return;
+            }
+        }
 
         this.isRunningAllowed = true;
 
@@ -496,9 +506,6 @@ class InternalAPI {
             }
         })
 
-        console.log('Removing temporary directory with compiled script');
-        this.moveAsarModulesBack();
-        await this.rmDirRecursive(this.compiledTemplateDir);
         this.addToParentLog(`Done! Completed ${completedTasks} tasks`);
     }
 
@@ -528,24 +535,33 @@ class InternalAPI {
     }
 
     /**
-     * Put empty axios and puppeteer modules into temporary directory instead of
-     * copying the whole node_modules or extracting app.arar file.
-     * User might change his mind and choose another template, so we extract real
-     * node_modules just before the template start.
+     * Extract node_modules, move to a temporary directory where compiled templates will be run from.
+     * Doing all this in a separate thread in asarextractor.js to offload the main process.
      */
-    putFakeModuleReplacements(): void {
-        const slash = process.platform === 'win32' ? "\\" : '/';
-        if (fs.existsSync(`${this.compiledTemplateDir}${slash}node_modules`)) return;
-        fs.mkdirSync(`${this.compiledTemplateDir}${slash}node_modules`);
-        fs.mkdirSync(`${this.compiledTemplateDir}${slash}node_modules${slash}axios`);
-        fs.mkdirSync(`${this.compiledTemplateDir}${slash}node_modules${slash}puppeteer`);
-        fs.writeFileSync(`${this.compiledTemplateDir}${slash}node_modules${slash}axios${slash}index.js`,"module.export={}");
-        fs.writeFileSync(`${this.compiledTemplateDir}${slash}node_modules${slash}puppeteer${slash}index.js`,"module.export={}");
-    }
-
     async extractNodeModules(): Promise<void> {
 
         const slash = process.platform === 'win32' ? "\\" : '/';
+
+        //directory for extracted contents of app.asar archive
+        this.asarExtractedDirectory = tmpdir() + `${slash}opensubmitter-asar`;
+
+        //directory for compiled templates
+        this.compiledTemplateDir = tmpdir() + `${slash}opsubcompiledcustom`;
+
+        if (!fs.existsSync(this.compiledTemplateDir)) fs.mkdirSync(this.compiledTemplateDir);
+
+        const targetModulesPath = join(this.compiledTemplateDir, `${slash}node_modules`);
+
+        //checking if modules have the latest version already
+        if (fs.existsSync(targetModulesPath) && fs.existsSync(`${targetModulesPath}${slash}version.txt`)) {
+            const version = fs.readFileSync(`${targetModulesPath}${slash}version.txt`).toString();
+            if (version === this.modulesVersion) {
+                console.log('node_modules version is matching, skipping new copying');
+                this.areModulesExtracted = true;
+                return;
+            }
+        }
+
         let extractorPath = null;
         if (this.isDevelopmentEnv()) {
             extractorPath = join(__dirname, `..${slash}..${slash}electron${slash}main${slash}asarextractor.js`);
@@ -555,8 +571,11 @@ class InternalAPI {
 
         if (!this.isDevelopmentEnv()) {
 
+            const fullModulesPath = `${this.asarExtractedDirectory}${slash}dist${slash}bundled-node-modules${slash}modules`;
+
+
             //extracting app.asar if not extracted yet
-            if (!this.asarExtractedDirectory || !fs.existsSync(`${this.asarExtractedDirectory}${slash}dist${slash}bundled-node-modules${slash}modules`)){
+            if (!fs.existsSync(fullModulesPath)){
 
                 await new Promise((resolve, reject) => {
                     const child = utilityProcess
@@ -565,7 +584,9 @@ class InternalAPI {
                             child.postMessage({
                                 'type': "prepare-production",
                                 "asarExtractedDirectory": this.asarExtractedDirectory,
-                                "appPath": app.getAppPath()
+                                "appPath": app.getAppPath(),
+                                "fullModulesPath": fullModulesPath,
+                                "targetModulesPath": targetModulesPath
                             })
                         })
                         .on("exit", (code) => {
@@ -573,17 +594,6 @@ class InternalAPI {
                         });
                 })
             }
-
-            const fullModulesPath = `${this.asarExtractedDirectory}${slash}dist${slash}bundled-node-modules${slash}modules`;
-            const targetModulesPath = this.compiledTemplateDir + `${slash}node_modules`;
-
-            if (fs.existsSync(targetModulesPath)) {
-                console.log('removing fake dir', targetModulesPath);
-                await this.rmDirRecursive(targetModulesPath);
-            }
-            console.log('moving', fullModulesPath, 'to', targetModulesPath);
-            fs.renameSync(fullModulesPath, targetModulesPath)
-
 
         } else {
 
@@ -597,7 +607,7 @@ class InternalAPI {
                         child.postMessage({
                             'type': "prepare-development",
                             "sourceModulesPath": join(app.getAppPath()+`${slash}extra${slash}bundled-node-modules${slash}modules`),
-                            "targetModulesPath":join(this.compiledTemplateDir + `${slash}node_modules`)
+                            "targetModulesPath": targetModulesPath
                         })
                     })
                     .on("exit", (code) => {
@@ -606,7 +616,9 @@ class InternalAPI {
             })
 
         }
-        console.log('node_modules prepared');
+        fs.writeFileSync(`${targetModulesPath}${slash}version.txt`, this.modulesVersion);
+        this.areModulesExtracted = true;
+        console.log('node_modules and browsers are prepared');
     }
 
     definePuppeteerExecutablePath(): void {
@@ -664,20 +676,6 @@ class InternalAPI {
             );
         }
         return false;
-    }
-
-    moveAsarModulesBack(): void {
-        if (this.asarExtractedDirectory && !this.isDevelopmentEnv()) {
-            const slash = process.platform === 'win32' ? "\\" : '/';
-            const fullModulesPath = `${this.asarExtractedDirectory}${slash}dist${slash}bundled-node-modules${slash}modules`;
-            const targetModulesPath = this.compiledTemplateDir + `${slash}node_modules`;
-            if (!fs.existsSync(targetModulesPath)) {
-                console.log('moveAsarDirectoryBack: targetModulesPath does not exist: ',targetModulesPath);
-                return;
-            }
-            fs.renameSync(targetModulesPath, fullModulesPath);
-            console.log('moved modules back from', targetModulesPath, 'to', fullModulesPath);
-        }
     }
 
     killThreads(): void {

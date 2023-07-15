@@ -76,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-/// <reference path="type.d.ts" />
+/// <reference path="../type.d.ts" />
 /// <reference path="../../templates/type.d.ts" />
 import Btn from "../components/Btn.vue";
 import {computed, ComputedRef, onMounted, ref, watch} from 'vue'

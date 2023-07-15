@@ -1,7 +1,7 @@
 <template>
   <div>
       <div class="subtitle" v-if="props.statuses?.length == 0">No active threads</div>
-      <table class="table-docs max-height-300" v-if="props.statuses?.length > 0">
+      <table class="table-docs max-height-300" v-if="props.statuses && props.statuses?.length > 0">
           <thead>
           <tr>
               <th class="thread-col">
