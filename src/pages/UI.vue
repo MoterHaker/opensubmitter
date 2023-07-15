@@ -32,6 +32,9 @@
                 <thread-statuses :statuses="threadStatuses" />
             </div>
 
+            <text-log v-model="jobText"></text-log>
+            <btn label="add text" @click="addLogToText"></btn>
+
             <div>
                 Table:<br>
                 <table class="table-docs">
@@ -134,8 +137,6 @@
                 </table>
             </div>
 
-            <job-log />
-
             <div>
                 Button with loader:
                 <btn label="Test me" :loading="true"/>
@@ -154,7 +155,7 @@ import AppToggler from "../components/AppToggler.vue";
 import Textfield from "../components/Textfield.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import ThreadStatuses from "../components/ThreadStatuses.vue";
-import JobLog from "../components/JobLog.vue";
+import TextLog from "../components/TextLog.vue";
 import {onMounted, ref} from "vue";
 
 const progressPerc = ref(20)
@@ -202,5 +203,31 @@ const threadStatuses = ref<ThreadStatus[]>([{
     thread: 14,
     status: 'checking proxy 8.8.8.5:3000'
 }])
+
+const jobText = ref('Generating tasks..\n' +
+    'All threads have finished their work\n' +
+    'Done! Completed 42 tasks\n' +
+    'Generating tasks..\n' +
+    'All threads have finished their work\n' +
+    'Done! Completed 42 tasksGenerating tasks..\n' +
+    'All threads have finished their work\n' +
+    'Done! Completed 42 tasks\n' +
+    'Generating tasks..\n' +
+    'All threads have finished their work\n' +
+    'Done! Completed 42 tasksGenerating tasks..\n' +
+    'All threads have finished their work\n' +
+    'Done! Completed 42 tasks\n' +
+    'Generating tasks..\n' +
+    'All threads have finished their work\n' +
+    'Done! Completed 42 tasksGenerating tasks..\n' +
+    'All threads have finished their work\n' +
+    'Done! Completed 42 tasks\n' +
+    'Generating tasks..\n' +
+    'All threads have finished their work\n' +
+    'Done! Completed 42 tasks');
+
+function addLogToText() {
+    jobText.value += Math.random()+"\n";
+}
 
 </script>

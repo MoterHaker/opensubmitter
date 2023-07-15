@@ -1,11 +1,11 @@
 <template>
     <div class="textfield" :class="{error : errorMessage}">
-        <textarea
+        <pre
                 ref="scrollingTextarea"
                 :value="modelValue"
                 :style="styling"
-                @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-        />
+                class="joblog"
+        >{{ props.modelValue }}</pre>
         <div class="error-msg" v-if="errorMessage">
             {{ errorMessage }}
         </div>
@@ -15,38 +15,32 @@
 <script setup lang="ts">
 import {ref, watch} from "vue";
 interface Scrollable {
-    scrollHeight: number
+    scrollHeight: number,
+    scrollTop: number
 }
 const scrollingTextarea = ref(null);
-const styling = ref({ scrollTop: '100px', minHeight: '200px' })
+const styling = ref({ scrollTop: '10px', minHeight: '200px' })
 defineEmits(['update:modelValue'])
 const props = defineProps(['modelValue', 'errorMessage'])
 
 watch(() => props.modelValue, (newValue) => {
-    styling.value.scrollTop = (scrollingTextarea.value! as Scrollable).scrollHeight + 'px';
+    (scrollingTextarea.value! as Scrollable).scrollTop = (scrollingTextarea.value! as Scrollable).scrollHeight;
 })
 </script>
 
 <style lang="less" scoped>
 @import '../assets/css/vars.less';
-.textfield {
-  &.short input {width: 6ch !important;}
-  &.error {
-    input {
-      border-color: @textError;
-    }
-  }
-  textarea {
+.joblog {
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.17);
+    border: 1px solid #354545;
     border-radius: 6px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 16px;
-    height: 40px;
-    width: 100%;
+    font-size: 13px;
     display: block;
-    padding: 0 6px;
-  }
+    padding: 8px 16px 16px;
+    line-height: 1.4;
+    max-height: 138px;
+    overflow: auto;
 }
+
 </style>
