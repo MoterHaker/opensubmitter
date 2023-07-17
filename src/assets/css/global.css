@@ -66,15 +66,13 @@ a:hover {
   font-family: 'IBM Plex Sans', sans-serif;
   font-size: 18px;
   cursor: pointer;
+  gap: 8px;
 }
 .btn.ghost {
   background-color: transparent;
 }
 .btn:hover {
   background-color: #266363;
-}
-.btn .icon {
-  margin-right: 8px;
 }
 .btn.accent {
   background-color: #29B74E;
@@ -178,9 +176,16 @@ button.btn {
   width: 32px;
   height: 32px;
 }
-.btn .icon {
+.btn .icon,
+.textfield .icon {
   width: 24px;
   height: 24px;
+}
+.textfield .icon {
+  position: absolute;
+  margin-top: 8px;
+  margin-left: 8px;
+  color: #426666;
 }
 .icon16 {
   width: 16px;
@@ -405,7 +410,7 @@ button.btn {
   padding-right: 24px;
 }
 .table-docs td {
-  padding: 16px 10px;
+  padding: 10px 10px;
   vertical-align: top;
   min-width: 8px;
   border-bottom: 1px solid #193131;

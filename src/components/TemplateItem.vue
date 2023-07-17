@@ -10,25 +10,26 @@
         <div class="col-stats">
             <div class="col">
                 <div class="statname">Views</div>
-                <div class="statval">12,569</div>
+                <div class="statval">{{ views }}</div>
             </div>
             <div class="col">
                 <div class="statname">Downloads</div>
-                <div class="statval">12,569</div>
+                <div class="statval">{{ downloads }}</div>
             </div>
             <div class="col">
                 <div class="statname">Runs</div>
-                <div class="statval">12,569</div>
+                <div class="statval">{{ runs }}</div>
             </div>
         </div>
         <div class="col-dn">
-            <btn icon="check" />
+            <btn icon="download" />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import Btn from "../components/Btn.vue"
+const props = defineProps(['views', 'downloads', 'runs'])
 </script>
 
 <style lang="less" scoped>
@@ -38,6 +39,10 @@ import Btn from "../components/Btn.vue"
     padding: 16px;
     display: flex;
     align-items: center;
+    cursor: pointer;
+    &:hover {
+        background: #2B3E3E;
+    }
 }
 .col-text {
     width: 40%;
@@ -64,6 +69,7 @@ import Btn from "../components/Btn.vue"
 .statval {
     font-size: 32px;
     font-weight: 300;
+    width: 6ch;
 }
 .col-icon {
     margin-right: 16px;
