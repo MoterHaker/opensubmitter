@@ -1,5 +1,5 @@
 <template>
-    <div class="template-item">
+    <router-link to="/template" class="template-item">
         <div class="col-icon">
             <img src="../assets/images/temp-icon-proxy.png" alt="">
         </div>
@@ -24,7 +24,7 @@
         <div class="col-dn">
             <btn icon="download" />
         </div>
-    </div>
+    </router-link>
 </template>
 
 <script setup lang="ts">
@@ -40,6 +40,8 @@ const props = defineProps(['views', 'downloads', 'runs'])
     display: flex;
     align-items: center;
     cursor: pointer;
+    color: #fff;
+    text-decoration: none;
     &:hover {
         background: #2B3E3E;
     }
@@ -61,15 +63,6 @@ const props = defineProps(['views', 'downloads', 'runs'])
         overflow: hidden;
         text-overflow: ellipsis;
     }
-}
-.statname {
-    font-size: 14px;
-    font-weight: bold;
-}
-.statval {
-    font-size: 32px;
-    font-weight: 300;
-    width: 6ch;
 }
 .col-icon {
     margin-right: 16px;

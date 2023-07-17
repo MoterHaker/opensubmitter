@@ -35,6 +35,7 @@ body {
 a {
     color: @link;
     &:hover {text-decoration: none;}
+    &.btn {text-decoration: none;}
 }
 .text-white {color: #fff;}
 .text-current {color: currentColor;}
@@ -64,7 +65,7 @@ a {
     }
     &.accent {background-color: @accent;}
     &.btn-small {
-        font-size: 12px;
+        font-size: 13px;
         height: auto;
         padding: 4px 8px;
     }
@@ -279,6 +280,15 @@ button.btn {
     opacity: .3;
     cursor: pointer;
     &:hover {opacity: 1;}
+}
+.statname {
+  font-size: 14px;
+  font-weight: bold;
+}
+.statval {
+  font-size: 32px;
+  font-weight: 300;
+  width: 6ch;
 }
 .modal-wrap {
     position: fixed;

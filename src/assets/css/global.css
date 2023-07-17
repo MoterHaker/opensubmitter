@@ -42,6 +42,9 @@ a {
 a:hover {
   text-decoration: none;
 }
+a.btn {
+  text-decoration: none;
+}
 .text-white {
   color: #fff;
 }
@@ -78,7 +81,7 @@ a:hover {
   background-color: #29B74E;
 }
 .btn.btn-small {
-  font-size: 12px;
+  font-size: 13px;
   height: auto;
   padding: 4px 8px;
 }
@@ -346,6 +349,15 @@ button.btn {
 }
 .close:hover {
   opacity: 1;
+}
+.statname {
+  font-size: 14px;
+  font-weight: bold;
+}
+.statval {
+  font-size: 32px;
+  font-weight: 300;
+  width: 6ch;
 }
 .modal-wrap {
   position: fixed;
