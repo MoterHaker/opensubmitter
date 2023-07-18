@@ -78,7 +78,11 @@ a.btn {
   background-color: #266363;
 }
 .btn.accent {
-  background-color: #29B74E;
+  background-color: #00C9CD;
+  color: #162828;
+}
+.btn.accent:hover {
+  background-color: #00e2e7;
 }
 .btn.btn-small {
   font-size: 13px;
@@ -129,7 +133,7 @@ button.btn {
   display: flex;
 }
 .cta-big {
-  background: #29B74E;
+  background: #00C9CD;
   border-radius: 4px;
   font-size: 21px;
   font-weight: bold;
@@ -207,6 +211,9 @@ button.btn {
 .df {
   display: flex;
 }
+.dir-col {
+  flex-direction: column;
+}
 .alitc {
   align-items: center;
 }
@@ -225,11 +232,8 @@ button.btn {
 .gap8 {
   gap: 8px;
 }
-.gap16 > * {
-  margin-left: 16px;
-}
-.gap16 > *:first-child {
-  margin-left: 0;
+.gap16 {
+  gap: 16px;
 }
 .gap32 {
   gap: 32px;
@@ -295,7 +299,39 @@ button.btn {
   margin-top: 16px;
 }
 .form-row {
-  margin-top: 24px;
+  margin-top: 16px;
+}
+.form-row:first-child {
+  margin-top: 0;
+}
+.flabel {
+  margin-bottom: 8px;
+}
+.textarea {
+  background: #101919;
+  color: #fff;
+  border: 1px solid #354545;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 16px;
+  display: block;
+  padding: 6px;
+}
+.textarea::placeholder {
+  color: #426666;
+}
+.page-msg {
+  padding: 40px;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+.page-msg .title {
+  margin-top: 16px;
+  font-size: 54px;
+  font-weight: bold;
+  margin-bottom: 24px;
 }
 .continue-with {
   margin-top: 16px;

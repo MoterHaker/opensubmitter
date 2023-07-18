@@ -1,9 +1,9 @@
 <template>
     <div>
         <div class="block-search">
-            <div class="df gap32">
+            <div class="df gap16">
                 <Textfield icon="search" placeholder="Search" />
-                <Btn icon="add-file" ghost="true" label="Submit a template" />
+                <Btn label="Find" />
             </div>
             <div class="tags df gap8">
                 Try tags:
@@ -12,7 +12,16 @@
             </div>
         </div>
 
-        <div class="templates-list">
+        <div class="page-msg" v-if="noResult">
+            <img src="../assets/images/no-result.svg" alt="">
+            <div class="title">No results found</div>
+            <div class="request-wrap df dir-col alitc gap16">
+                <div class="text">Can't find a template which suits your needs?</div>
+                <router-link to="/request" class="accent btn">Request a template</router-link>
+            </div>
+        </div>
+
+        <div class="templates-list" v-if="!noResult">
             <template-item views="12,569" downloads="55,885" runs="122,556" />
             <template-item views="321" downloads="535" runs="8,547" />
         </div>
@@ -22,8 +31,12 @@
     import Textfield from "../components/Textfield.vue"
     import Btn from "../components/Btn.vue"
     import TemplateItem from "../components/TemplateItem.vue"
+    const noResult = true
 </script>
 <style lang="less" scoped>
+.request-wrap {
+    font-size: 24px;
+}
 .templates-list {
     margin-top: 32px;
     gap: 16px;
