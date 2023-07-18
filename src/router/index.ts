@@ -29,6 +29,14 @@ const routes: Array<RouteRecordRaw> = [
           subtitle: "Find templates"
         }
       },{
+        name: 'template',
+        path: 'template',
+        component: () => import('../pages/Template.vue'),
+        meta: {
+          title: "Template name",
+          subtitle: "Template description"
+        }
+      },{
         name: 'uikit',
         path: 'uikit',
         component: () => import('../pages/UI.vue'),

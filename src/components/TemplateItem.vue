@@ -1,5 +1,5 @@
 <template>
-    <div class="template-item">
+    <router-link to="/template" class="template-item">
         <div class="col-icon">
             <img src="../assets/images/temp-icon-proxy.png" alt="">
         </div>
@@ -10,25 +10,26 @@
         <div class="col-stats">
             <div class="col">
                 <div class="statname">Views</div>
-                <div class="statval">12,569</div>
+                <div class="statval">{{ views }}</div>
             </div>
             <div class="col">
                 <div class="statname">Downloads</div>
-                <div class="statval">12,569</div>
+                <div class="statval">{{ downloads }}</div>
             </div>
             <div class="col">
                 <div class="statname">Runs</div>
-                <div class="statval">12,569</div>
+                <div class="statval">{{ runs }}</div>
             </div>
         </div>
         <div class="col-dn">
-            <btn icon="check" />
+            <btn icon="download" />
         </div>
-    </div>
+    </router-link>
 </template>
 
 <script setup lang="ts">
 import Btn from "../components/Btn.vue"
+const props = defineProps(['views', 'downloads', 'runs'])
 </script>
 
 <style lang="less" scoped>
@@ -38,6 +39,12 @@ import Btn from "../components/Btn.vue"
     padding: 16px;
     display: flex;
     align-items: center;
+    cursor: pointer;
+    color: #fff;
+    text-decoration: none;
+    &:hover {
+        background: #2B3E3E;
+    }
 }
 .col-text {
     width: 40%;
@@ -56,14 +63,6 @@ import Btn from "../components/Btn.vue"
         overflow: hidden;
         text-overflow: ellipsis;
     }
-}
-.statname {
-    font-size: 14px;
-    font-weight: bold;
-}
-.statval {
-    font-size: 32px;
-    font-weight: 300;
 }
 .col-icon {
     margin-right: 16px;

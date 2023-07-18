@@ -20,7 +20,8 @@
             <div class="col-right">
                 <div class="col-header">
                     <div class="title">{{ route.meta.title }}</div>
-                    <div class="subtitle">{{ route.meta.subtitle }}</div>
+                    <router-link to="/templates" class="btn btn-small subtitle" v-if="isActiveRoute('/template')"><SvgIcon name="arrow-back" /> Go back</router-link>
+                    <div class="subtitle" v-if="!isActiveRoute('/template')">{{ route.meta.subtitle }}</div>
                 </div>
                 <div class="col-content">
                     <router-view  />
@@ -36,6 +37,10 @@ import {useRoute} from "vue-router";
 import SvgIcon from "../components/SvgIcon.vue"
 
 const route = useRoute()
+
+const isActiveRoute = (routePath: string): boolean => {
+    return route.path === routePath;
+};
 </script>
 
 <style lang="less" scoped>
