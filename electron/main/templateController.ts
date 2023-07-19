@@ -14,14 +14,12 @@ class TemplateController extends Template {
     axios = null;
     task = null;
     puppeteerExecutablePath = '%PUPPETEER_EXECUTABLE_PATH%';
+    protected antiCaptchaAPIKey: string = null;
 
     async startMessaging() {
         if (!process || typeof process.parentPort === "undefined") {
             return;
         }
-
-
-
 
         this.parentPort = process.parentPort;
         this.parentPort.on('message', async(e) => {
@@ -42,6 +40,7 @@ class TemplateController extends Template {
         this.myPID = message.pid;
         this.task = message.task;
         this.config = message.config
+        this.antiCaptchaAPIKey = message.antiCaptchaAPIKey;
 
         //setting modules
         if (this.config && this.config.capabilities) {
@@ -137,6 +136,12 @@ class TemplateController extends Template {
         return new Promise(function(resolve) {
             setTimeout(resolve, time)
         });
+    }
+
+    async solveCaptcha(captcha: Captcha): Promise<string> {
+        const ac = require("@antiadmin/anticaptchaofficial");
+        ac.setAPIKey(this.antiCaptchaAPIKey);
+        return ""
     }
 
 }

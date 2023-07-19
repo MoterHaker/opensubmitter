@@ -21,7 +21,7 @@
   "scripts": {
     "dev": "vite",
     "buildold": "vue-tsc --noEmit && vite build && electron-builder",
-    "build":    "vue-tsc --noEmit && ./extra/prepare-build.sh mac_arm && vite build && electron-builder && ./extra/teardown-build.sh",
+    "build": "vue-tsc --noEmit && ./extra/prepare-build.sh mac_arm && vite build && electron-builder && ./extra/teardown-build.sh",
     "buildwin": "vue-tsc --noEmit && vite build && electron-builder -w --x64",
     "preview": "vite preview"
   },
@@ -39,6 +39,7 @@
     "vue-tsc": "^1.2.0"
   },
   "dependencies": {
+    "@antiadmin/anticaptchaofficial": "^1.0.39",
     "@electron/asar": "^3.2.4",
     "axios": "^1.4.0",
     "less": "^4.1.3",

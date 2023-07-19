@@ -25,7 +25,8 @@ interface TaskMessage {
     type: 'start-task',
     pid: number,
     task: TemplateTask,
-    config: TemplateConfig | null
+    config: TemplateConfig | null,
+    antiCaptchaAPIKey: string
 }
 interface ThreadStatus {
     thread: number,

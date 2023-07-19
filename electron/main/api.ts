@@ -7,6 +7,7 @@ import ts, {ScriptTarget} from "typescript"
 import { utilityProcess } from "electron";
 import fs from "fs"
 import os, {tmpdir} from 'os';
+import ac from "@antiadmin/anticaptchaofficial"
 
 
 class InternalAPI {
@@ -27,6 +28,8 @@ class InternalAPI {
     freedThreadNumbers: number[] = [];
     areModulesExtracted = false;
     modulesVersion = '0001';
+    protected antiCaptchaAPIKey: string = "";
+    protected savedSettings = {};
 
     startListening(): void {
         ipcMain.on('TM', async(e, data) => {
@@ -70,6 +73,16 @@ class InternalAPI {
                 case 'reset-template-settings':
                     await this.resetTemplateSettings();
                     break;
+
+                case 'save-settings':
+                    await this.saveAppSettings(data);
+                    break;
+
+                case 'get-settings':
+                    this.readSettings();
+                    break;
+
+
 
             }
 
@@ -440,7 +453,8 @@ class InternalAPI {
                             'type': "start-task",
                             "pid": child.pid,
                             "task": task,
-                            "config": this.currentTemplateObject.config ? this.currentTemplateObject.config : null
+                            "config": this.currentTemplateObject.config ? this.currentTemplateObject.config : null,
+                            "antiCaptchaAPIKey": this.antiCaptchaAPIKey
                         } as TaskMessage)
                     })
                     .on('message', async (data) => {
@@ -768,6 +782,56 @@ class InternalAPI {
         return new Promise(resolve => {
             fs.rm(path, {recursive: true}, () => { resolve(true); })
         })
+    }
+
+    readSettings() {
+        const configPath = this.getSettingsFilePath();
+        if (!fs.existsSync(configPath)) return;
+        try {
+            const config = JSON.parse(fs.readFileSync(configPath).toString());
+            if (typeof config["___settings"] === "undefined") return;
+            this.savedSettings = config["___settings"];
+            this.eventHook.reply('Settings', {
+                type: 'set-settings',
+                settings: this.savedSettings
+            })
+        } catch (e) {
+            //do nothing
+        }
+    }
+
+    async saveAppSettings(data) {
+        this.antiCaptchaAPIKey = data.antiCaptchaAPIKey;
+        const ac = require("@antiadmin/anticaptchaofficial");
+        ac.setAPIKey(this.antiCaptchaAPIKey);
+        try {
+            const balance = await ac.getBalance();
+            this.eventHook.reply('Settings', {
+                type: 'set-balance-value',
+                balance
+            })
+            this.savedSettings["antiCaptchaAPIKey"] = this.antiCaptchaAPIKey;
+            this.saveSettingsFile();
+        } catch (e) {
+            this.eventHook.reply('Settings', {
+                type: 'set-key-error'
+            })
+            console.log("got error: ", e.toString());
+        }
+    }
+
+    saveSettingsFile() {
+        let config = {};
+        const configPath = this.getSettingsFilePath();
+        if (fs.existsSync(configPath)) {
+            try {
+                config = JSON.parse(fs.readFileSync(configPath).toString())
+            } catch (e) {
+                //default empty config
+            }
+        }
+        config["___settings"] = this.savedSettings;
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2)); //save with pretty-printing
     }
 
 }

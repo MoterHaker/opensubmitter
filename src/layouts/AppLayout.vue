@@ -12,8 +12,11 @@
                     <svg-icon name="box" />
                     Templates
                 </router-link>
-                <router-link class="menu-item" to="/uikit">
+                <router-link class="menu-item" to="/settings">
                     <svg-icon name="settings" />
+                    Settings
+                </router-link>
+                <router-link class="menu-item" to="/uikit" v-if="isDevelopmentEnv">
                     UI kit
                 </router-link>
             </div>
@@ -52,7 +55,10 @@ const showBackBtn = (): boolean => {
     if (isActiveRoute('/template') || isActiveRoute('/request')) {
         return true;
     } else {return false;}
-};
+}
+function isDevelopmentEnv(): boolean {
+    return typeof process.env !== "undefined" && typeof process.env.NODE_ENV !== "undefined" && process.env.NODE_ENV === "development";
+}
 </script>
 
 <style lang="less" scoped>

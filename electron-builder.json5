@@ -35,6 +35,12 @@
     "target": [
       "dmg"
     ],
+    "category": "public.app-category.developer-tools",
+    "target": "dmg",
+    "hardenedRuntime" : true,
+    "gatekeeperAssess": false,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist",
     "icon": "src/assets/logo.png"
   },
   "win": {

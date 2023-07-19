@@ -29,6 +29,14 @@ const routes: Array<RouteRecordRaw> = [
           subtitle: "Find templates"
         }
       },{
+        name: 'settings',
+        path: 'settings',
+        component: () => import('../pages/Settings.vue'),
+        meta: {
+          title: "Settings",
+          subtitle: "App Settings"
+        }
+      },{
         name: 'template',
         path: 'template',
         component: () => import('../pages/Template.vue'),
