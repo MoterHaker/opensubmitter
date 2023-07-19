@@ -17,11 +17,17 @@
                     UI kit
                 </router-link>
             </div>
-            <div class="col-right">
+            <div class="col-main">
                 <div class="col-header">
-                    <div class="title">{{ route.meta.title }}</div>
-                    <router-link to="/templates" class="btn btn-small subtitle" v-if="isActiveRoute('/template')"><SvgIcon name="arrow-back" /> Go back</router-link>
-                    <div class="subtitle" v-if="!isActiveRoute('/template')">{{ route.meta.subtitle }}</div>
+                    <div class="col-left">
+                        <div class="title">{{ route.meta.title }}</div>
+                        <router-link to="/templates" class="btn btn-small subtitle" v-if="showBackBtn()"><SvgIcon name="arrow-back" /> Go back</router-link>
+                        <div class="subtitle" v-if="!showBackBtn()">{{ route.meta.subtitle }}</div>
+                    </div>
+                    <div v-if="isActiveRoute('/templates')" class="col-right df gap16">
+                        <router-link to="/request" class="btn ghost" v-if="!isActiveRoute('/request')"><SvgIcon name="request-template" /> Request a template</router-link>
+                        <router-link to="/request" class="btn ghost" v-if="!isActiveRoute('/request')"><SvgIcon name="add-file" /> Submit a template</router-link>
+                    </div>
                 </div>
                 <div class="col-content">
                     <router-view  />
@@ -35,11 +41,17 @@
 <script setup lang="ts">
 import {useRoute} from "vue-router";
 import SvgIcon from "../components/SvgIcon.vue"
+import Btn from "../components/Btn.vue"
 
 const route = useRoute()
 
 const isActiveRoute = (routePath: string): boolean => {
     return route.path === routePath;
+};
+const showBackBtn = (): boolean => {
+    if (isActiveRoute('/template') || isActiveRoute('/request')) {
+        return true;
+    } else {return false;}
 };
 </script>
 
@@ -74,7 +86,7 @@ const isActiveRoute = (routePath: string): boolean => {
     margin-right: 0px;
     padding-top: 32px;
 }
-.col-right {
+.col-main {
     flex: 1;
 }
 .col-content {
@@ -90,8 +102,14 @@ const isActiveRoute = (routePath: string): boolean => {
         margin-top: 10px;
         opacity: 0.7;
     }
-    padding: 40px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
     background: #182E2E;
+    .col-right {
+        margin-left: auto;
+    }
 }
 
 @media (max-width: @phones-portrait) {
