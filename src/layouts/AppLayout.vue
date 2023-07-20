@@ -69,6 +69,8 @@ function isDevelopmentEnv(): boolean {
 <style lang="less" scoped>
 @import '../assets/css/vars.less';
 
+@sidebarWidth: 256px;
+@headerHeight: 120px;
 .update-available {
     border-radius: 8px;
     border: 2px solid #00C9CD;
@@ -107,18 +109,33 @@ function isDevelopmentEnv(): boolean {
     background: #071F1F;
     display: flex;
     flex-direction: column;
-    width: 256px;
+    width: @sidebarWidth;
     margin-right: 0px;
     padding-top: 32px;
+    position: fixed;
+    height: 100vh;
+    z-index: 10;
 }
 .col-main {
     flex: 1;
+    padding-top: @headerHeight;
+    padding-left: @sidebarWidth;
 }
 .col-content {
     padding: 40px;
     background: #162828;
 }
 .col-header {
+    height: @headerHeight;
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
+    background: #182E2E;
+    position: fixed;
+    left: @sidebarWidth;
+    right: 0;
+    top: 0;
+    z-index: 10;
     .title {
         font-size: 24px;
     }
@@ -127,11 +144,6 @@ function isDevelopmentEnv(): boolean {
         margin-top: 10px;
         opacity: 0.7;
     }
-    height: 120px;
-    display: flex;
-    align-items: center;
-    padding: 0 40px;
-    background: #182E2E;
     .col-right {
         margin-left: auto;
     }
