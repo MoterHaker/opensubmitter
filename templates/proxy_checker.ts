@@ -43,7 +43,7 @@ class Template implements OpenSubmitterTemplateProtocol {
         ]
     };
 
-    async generateTasks(...args: any): Promise<TemplateTask[]> {
+    async generateTasks(): Promise<TemplateTask[]> {
         //reading proxy list file, form an array of proxies
         const proxies = fs.readFileSync(this.config.userSettings.find(setting => setting.name === 'proxyList').fileName)
                           .toString()

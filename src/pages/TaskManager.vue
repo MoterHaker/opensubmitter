@@ -33,6 +33,7 @@
                         <option v-for="template in templatesList" :value="template.filePath">{{ template.name }}</option>
                     </select>
                 </div>
+                <div v-if="templateError.length > 0" class="error mtop10">{{ templateError }}</div>
             </div>
             <div class="textfield-button" v-if="templateSource == 'file'">
                 <div>Template file path</div>
@@ -240,6 +241,7 @@ ipcRenderer.on('TaskManager', (e, data) => {
             break;
 
         case 'set-template-config':
+            if (templateError.value.length > 0) return;
             templateConfig.value = data.config;
             threadsNumber.value = data.taskThreadsAmount;
             if (data.config.userSettings) {
@@ -281,6 +283,12 @@ ipcRenderer.on('TaskManager', (e, data) => {
 
 })
 
+/*
+
+
+
+
+* */
 
 ipcRenderer.on('TM-set-template-config', (e, data) => {
 
@@ -292,7 +300,9 @@ ipcRenderer.on('TM-set-template-name-error', (e, errorString: string) => {
 
 <style lang="less">
 @import '../assets/css/vars.less';
-
+.error {
+    color: red;
+}
 .run-btn {
     display: table;
     margin: 50px auto 0;

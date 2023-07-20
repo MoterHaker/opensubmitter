@@ -27,11 +27,11 @@ class InternalAPI {
     previousFullModulesPath = null;
     freedThreadNumbers: number[] = [];
     areModulesExtracted = false;
-    modulesVersion = '0001';
-    protected antiCaptchaAPIKey: string = "";
-    protected savedSettings = {};
+    modulesVersion = '0002';
+    protected savedSettings: AppSettings = {};
 
     startListening(): void {
+        this.readSettings();
         ipcMain.on('TM', async(e, data) => {
             if (!data.type) return;
             this.eventHook = e;
@@ -301,7 +301,7 @@ class InternalAPI {
                         thread.textStatus = message.data.message;
                         this.eventHook.reply('TaskManager', {
                             type: 'add-log-message',
-                            message: 'thread '+thread.threadNumber + ": " + message.data.message
+                            message: 'Thread '+thread.threadNumber + ": " + message.data.message
                         })
                         break;
                 }
@@ -346,37 +346,11 @@ class InternalAPI {
         this.saveTemplateSettings();
         console.log("\n\n\n======NEW RUN======\n");
 
-        for (let wait = 0;wait < 120; wait++) {
-            if (!this.areModulesExtracted) {
-                event.reply('TaskManager', {
-                    type: 'set-running-status',
-                    statusData: {
-                        status: 'Preparing modules',
-                        completed: 0,
-                        pending: 0
-                    }
-                })
-                console.log('wating modules extraction..', wait)
-                await this.delay(500);
-            } else {
-                break;
-            }
-            if (wait == 119) {
-                event.reply('TaskManager', {
-                    type: 'set-running-status',
-                    statusData: {
-                        status: 'Failed to copy modules. Too slow computer?',
-                        completed: 0,
-                        pending: 0
-                    }
-                })
-                return;
-            }
+        if (!await this.checkIfModulesAreExtracted()) {
+            return;
         }
 
         this.isRunningAllowed = true;
-
-
         event.reply('TaskManager', {
             type: 'set-running-status',
             statusData: {
@@ -386,6 +360,7 @@ class InternalAPI {
             }
         })
         this.addToParentLog('Generating tasks..');
+
         try {
             this.currentTasks = await this.currentTemplateObject.generateTasks();
         } catch (e) {
@@ -400,7 +375,7 @@ class InternalAPI {
             })
             return;
         }
-        console.log('this.currentTasks ' + JSON.stringify(this.currentTasks));
+        // console.log('this.currentTasks ' + JSON.stringify(this.currentTasks));
 
         event.reply('TaskManager', {
             type: 'set-running-status',
@@ -454,7 +429,7 @@ class InternalAPI {
                             "pid": child.pid,
                             "task": task,
                             "config": this.currentTemplateObject.config ? this.currentTemplateObject.config : null,
-                            "antiCaptchaAPIKey": this.antiCaptchaAPIKey
+                            "antiCaptchaAPIKey": this.savedSettings.antiCaptchaAPIKey
                         } as TaskMessage)
                     })
                     .on('message', async (data) => {
@@ -486,7 +461,12 @@ class InternalAPI {
                 if (typeof newThreadNumber === "undefined") {
                     newThreadNumber = threadQueueNumber;
                     threadQueueNumber++;
+                    // console.log(`got newThreadNumber from threadQueueNumber, newThreadNumber = ${newThreadNumber}, threadQueueNumber = ${threadQueueNumber}`)
+                } else {
+                    // console.log('popped from freedThreadNumbers: ', newThreadNumber)
                 }
+
+                // console.log('adding thread with number ',newThreadNumber)
 
                 this.threads.push({
                     child,
@@ -633,6 +613,37 @@ class InternalAPI {
         fs.writeFileSync(`${targetModulesPath}${slash}version.txt`, this.modulesVersion);
         this.areModulesExtracted = true;
         console.log('node_modules and browsers are prepared');
+    }
+
+    async checkIfModulesAreExtracted() {
+        for (let wait = 0;wait < 120; wait++) {
+            if (!this.areModulesExtracted) {
+                this.eventHook.reply('TaskManager', {
+                    type: 'set-running-status',
+                    statusData: {
+                        status: 'Preparing modules',
+                        completed: 0,
+                        pending: 0
+                    }
+                })
+                console.log('wating modules extraction..', wait)
+                await this.delay(500);
+            } else {
+                break;
+            }
+            if (wait == 119) {
+                this.eventHook.reply('TaskManager', {
+                    type: 'set-running-status',
+                    statusData: {
+                        status: 'Failed to copy modules. Too slow computer?',
+                        completed: 0,
+                        pending: 0
+                    }
+                })
+                return false;
+            }
+        }
+        return true;
     }
 
     definePuppeteerExecutablePath(): void {
@@ -791,26 +802,27 @@ class InternalAPI {
             const config = JSON.parse(fs.readFileSync(configPath).toString());
             if (typeof config["___settings"] === "undefined") return;
             this.savedSettings = config["___settings"];
-            this.eventHook.reply('Settings', {
-                type: 'set-settings',
-                settings: this.savedSettings
-            })
+            if (this.eventHook) {
+                this.eventHook.reply('Settings', {
+                    type: 'set-settings',
+                    settings: this.savedSettings
+                })
+            }
         } catch (e) {
             //do nothing
         }
     }
 
     async saveAppSettings(data) {
-        this.antiCaptchaAPIKey = data.antiCaptchaAPIKey;
         const ac = require("@antiadmin/anticaptchaofficial");
-        ac.setAPIKey(this.antiCaptchaAPIKey);
+        ac.setAPIKey(data.antiCaptchaAPIKey);
         try {
             const balance = await ac.getBalance();
             this.eventHook.reply('Settings', {
                 type: 'set-balance-value',
                 balance
             })
-            this.savedSettings["antiCaptchaAPIKey"] = this.antiCaptchaAPIKey;
+            this.savedSettings["antiCaptchaAPIKey"] = data.antiCaptchaAPIKey;
             this.saveSettingsFile();
         } catch (e) {
             this.eventHook.reply('Settings', {

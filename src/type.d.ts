@@ -38,3 +38,6 @@ interface LocalTemplateListItem {
     description?: string,
     filePath: string
 }
+interface AppSettings {
+    antiCaptchaAPIKey?: string
+}

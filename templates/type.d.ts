@@ -39,22 +39,32 @@ interface UserSetting {
     uiWidth?: UIWidth
 }
 
-type CaptchaType = ('image' | 'RecaptchaV2' | 'RecaptchaV3' | 'HCaptcha' | 'FunCaptcha')
+type CaptchaType = ('image' | 'RecaptchaV2' | 'RecaptchaV3' | 'HCaptcha' | 'FunCaptcha' | 'Geetest3' | 'Geetest4' | 'Turnstile')
 interface Captcha {
     type: CaptchaType,
-    imageBody?: string,         //  for image captcha
-    imageBodyBase64?: string,   //  alternative for image captcha
+    imageBodyBase64?: string,   //  for image captcha
     websiteURL?: string,        //  for all JS captchas
-    websiteKey?: string,
-    v3score?: (0.3 | 0.7 | 0.9) //  for Recaptcha V3
-    isInvisible?: boolean       //  for Recaptcha V2 and HCaptcha,
-    extraParameters?: object    //  any extra parameters go here
+    websiteKey?: string,        //  "websiteKey" for Recaptcha, HCaptcha and Turnstile, "gt" and "captchaId" for Geetest, "websitePublicKey" for FunCaptcha
+    extraParameters?: ExtraCaptchaParameters    //  any other extra parameters go here
 
     // If set, captcha will be solved via this proxy.
     // If not set, captcha will be solved without proxy.
+    proxyType?: ('http' | 'socks4' | 'socks5'),
     proxyAddress?: string,
     proxyPort?: number,
     proxyLogin?: string,
     proxyPassword?: string
+}
 
+interface ExtraCaptchaParameters {
+    userAgent: string,                  //  custom user-agent, required for proxy-on tasks
+    v3score?: (0.3 | 0.7 | 0.9)         //  for Recaptcha V3
+    pageAction: string | null           //  page action for Recaptcha V3 and Turnstile
+    isInvisible?: boolean               //  for Recaptcha V2 and HCaptcha
+    recaptchaDataSValue?: string        //  "data-s" value for Recaptcha V2 (google.com domains captcha)
+    enterprisePayload?: any             //  custom enterprise payload data for HCaptcha or FunCaptcha
+    APISubdomain?: string               //  API subdomain value for FunCaptcha or Geetest
+    funcaptchaDataBlob?: string         //  extra token for FunCaptcha
+    geetestChallenge?: string           //  challenge token for Geetest
+    geetest4InitParameters?: any        //  initialization parameters for Geetest4
 }

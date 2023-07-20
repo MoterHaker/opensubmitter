@@ -41,6 +41,9 @@ watch(() => props.modelValue, (newValue) => {
     line-height: 1.4;
     max-height: 138px;
     overflow: auto;
+    max-width: 100%;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 </style>
