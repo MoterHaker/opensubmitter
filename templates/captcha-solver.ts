@@ -7,7 +7,19 @@ class Template implements OpenSubmitterTemplateProtocol {
     config: TemplateConfig = {
         name: 'Captcha solving example from MotaHaker',
         multiThreadingEnabled: true,
-        userSettings: []
+        userSettings: [],
+        resultTableHeader: [
+            {
+                title: 'Captcha type',
+                nowrap: true,
+            },{
+                title: 'Solution'
+            },{
+                title: 'Status',
+                nowrap: true,
+                isResult: true
+            }
+        ]
     };
 
 
@@ -97,9 +109,28 @@ class Template implements OpenSubmitterTemplateProtocol {
             let result = await this.solveCaptcha(task.data as Captcha)
             if (typeof result === "object") result = JSON.stringify(result);
             this.log(task.data.type+" solved: " + result);
+
+            // post to results table in UI
+            this.postResultToTable({
+                'Captcha type': task.data.type,
+                'Solution': result,
+                'Status': true
+            })
         } catch (e) {
             this.log("could not solve captcha type "+task.data.type+": "+e.toString())
+
+            // post to results table in UI
+            this.postResultToTable({
+                'Captcha type': task.data.type,
+                'Solution': '',
+                'Status': false
+            })
         }
+    }
+
+    // will be overwritten by Template Controller
+    postResultToTable(result: object) {
+
     }
 
     // will be overwritten by Template Controller

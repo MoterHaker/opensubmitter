@@ -13,9 +13,28 @@
             <thread-statuses class="mtop10" :statuses="threadStatuses" />
             <div class="subtitle mtop20" height="200">Job logs:</div>
             <text-log v-model="textLogString" class="mtop10"/>
-            <div class="run-btn">
 
-            </div>
+            <table class="table-docs" v-if="resultTableHeader">
+                <thead>
+                <tr>
+                    <td v-for="row in resultTableHeader">
+                        {{row.title}}
+                    </td>
+                </tr>
+                </thead>
+                <tbody v-if="resultsData.length == 0">
+                    <tr><td colspan="100" align="center">No results yet</td></tr>
+                </tbody>
+                <tbody v-if="resultsData.length > 0">
+                    <tr v-for="row in resultsData">
+                        <td v-for="property in row" :class="getResultCellPropertyClasses(property)">
+                            <span v-if="!property.isResult">{{ property.value }}</span>
+                            <span v-else>{{ property.value ? 'Success' : 'Failed' }}</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
         </div>
         <div v-if="interfaceMode == 'settings'">
             <div class="title">Open template from:</div>
@@ -99,6 +118,8 @@ const interfaceMode = ref<TaskManagerInterfaceMode>('settings');
 const isJobRunning = ref(false);
 const taskStatusData = ref<TaskStatusUpdate | null>( null);
 const textLogString = ref('')
+const resultTableHeader = ref<ResultTableRow[] | null>(null);
+const resultsData = ref<ResultTableRow[][]>([]);
 const threadStatuses = ref<ThreadStatus[]>([])
 const threadsNumber = ref('10');
 const threadsError = ref('');
@@ -113,6 +134,20 @@ watch(() => selectedTemplateFilename.value, () => {
 onMounted(() => {
     ipcRenderer.send('TM', {type: 'read-local-templates'});
 })
+
+function getResultCellPropertyClasses(property: ResultTableRow) {
+    const res = {};
+    if (typeof property.isResult === "boolean" && property.isResult) {
+        res[property.value === true ? 'success' : 'error'] = true;
+    }
+    if (typeof property.nowrap === "boolean" && property.nowrap) {
+        res['nowrap'] = true;
+    } else {
+        res['break-word'] = true;
+    }
+    console.log('returning non-empty', res, property)
+    return res;
+}
 
 function validateUserSettings(type?: UserSettingsInput, index?: number) {
     let isEverythingChecked = true;
@@ -226,6 +261,8 @@ function resetTemplate() {
     textLogString.value = '';
     interfaceMode.value = 'settings';
     threadStatuses.value = [];
+    resultTableHeader.value = null;
+    resultsData.value = [];
 }
 function stopJobIPC() {
     isJobRunning.value = false;
@@ -247,6 +284,9 @@ ipcRenderer.on('TaskManager', (e, data) => {
             if (data.config.userSettings) {
                 userSettings.value = data.config.userSettings;
                 validateUserSettings()
+            }
+            if (data.config.resultTableHeader) {
+                resultTableHeader.value = data.config.resultTableHeader;
             }
             break;
 
@@ -279,6 +319,11 @@ ipcRenderer.on('TaskManager', (e, data) => {
             templatesList.value = data.list;
             break;
 
+        case 'post-result-to-table':
+            console.log('post-result-to-table', data.result);
+            resultsData.value.push(data.result as ResultTableRow[])
+            break;
+
     }
 
 })
@@ -300,6 +345,16 @@ ipcRenderer.on('TM-set-template-name-error', (e, errorString: string) => {
 
 <style lang="less">
 @import '../assets/css/vars.less';
+.break-word span {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.nowrap span {
+    text-wrap: none;
+}
+.success {
+    color: #00CD6B;
+}
 .error {
     color: red;
 }

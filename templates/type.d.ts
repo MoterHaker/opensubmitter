@@ -14,6 +14,13 @@ interface TemplateTask {
     data: any
 }
 
+interface ResultTableRow {
+    title: string,              //  title for the table heading
+    value?: string,             //  text of the result
+    isResult?: boolean,         //  this field will serve as a colored task result status Success/Failed
+    nowrap?: boolean            //  this tells not to break the text
+}
+
 interface TemplateConfig {
     name: string,
     description?: string,
@@ -21,7 +28,8 @@ interface TemplateConfig {
     multiThreadingEnabled: boolean,
     userSettings: Array<UserSetting>,
     email?: string,
-    rewardTronAddress?: string
+    rewardTronAddress?: string,
+    resultTableHeader?: ResultTableRow[]
 }
 
 type TemplateCapabilities = ('axios' | 'puppeteer')

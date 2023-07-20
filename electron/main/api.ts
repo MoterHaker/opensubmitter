@@ -210,6 +210,8 @@ class InternalAPI {
 
     async selectTemplateFile(): Promise<void> {
 
+        if (!this.selectedTemplateFilePath) return;
+
         const slash = process.platform === 'win32' ? "\\" : '/';
 
         let templateParentPath = null;
@@ -302,6 +304,13 @@ class InternalAPI {
                         this.eventHook.reply('TaskManager', {
                             type: 'add-log-message',
                             message: 'Thread '+thread.threadNumber + ": " + message.data.message
+                        })
+                        break;
+
+                    case 'post-result-to-table':
+                        this.eventHook.reply('TaskManager', {
+                            type: 'post-result-to-table',
+                            result: message.data
                         })
                         break;
                 }

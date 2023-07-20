@@ -78,6 +78,29 @@ class TemplateController extends Template {
         this.messageToParent('log-update', { message })
     }
 
+    override postResultToTable(result: object) {
+        if (!this.config.resultTableHeader) {
+            return;
+        }
+        const fillResults = Object.assign({}, this.config.resultTableHeader);
+        const postResult: ResultTableRow[] = [];
+        Object.keys(fillResults).forEach(key => {
+            const title = fillResults[key].title;
+
+            //find matching property
+            const matchingProperty = Object.entries(result).find(([resultKey, resultValue]) => resultKey === title);
+            fillResults[key]['value'] = matchingProperty[1];
+            postResult.push({
+                title,
+                value: matchingProperty[1],
+                isResult: fillResults[key].isResult,
+                nowrap: fillResults[key].nowrap
+            } as ResultTableRow)
+        });
+
+        this.messageToParent('post-result-to-table', postResult)
+    }
+
     private messageToParent(type: string, data: object) {
         this.parentPort.postMessage({
             type,

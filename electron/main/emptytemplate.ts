@@ -13,6 +13,10 @@ export default class Template implements OpenSubmitterTemplateProtocol {
 
     }
 
+    postResultToTable(result: object) {
+
+    }
+
     log(message) {
 
     }
