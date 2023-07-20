@@ -19,6 +19,11 @@
                 <router-link class="menu-item" to="/uikit" v-if="isDevelopmentEnv">
                     UI kit
                 </router-link>
+
+                <div class="update-available">
+                    <div class="title">v. 1.2.3 is available</div>
+                    <Btn label="Update now" />
+                </div>
             </div>
             <div class="col-main">
                 <div class="col-header">
@@ -64,6 +69,20 @@ function isDevelopmentEnv(): boolean {
 <style lang="less" scoped>
 @import '../assets/css/vars.less';
 
+.update-available {
+    border-radius: 8px;
+    border: 2px solid #00C9CD;
+    padding: 16px;
+    margin: 24px;
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    .title {
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
+}
 .menu-item {
     display: flex;
     align-items: center;
