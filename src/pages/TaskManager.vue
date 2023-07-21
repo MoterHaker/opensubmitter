@@ -9,11 +9,12 @@
                 <btn label="Stop" @click="stopJobIPC" v-if="isJobRunning" class="btn-row"/>
             </div>
 
-            <div class="subtitle mtop20" height="200">Thread Statuses:</div>
-            <thread-statuses class="mtop10" :statuses="threadStatuses" />
+            <div class="subtitle mtop20" height="200" v-if="threadStatuses.length > 0">Thread Statuses:</div>
+            <thread-statuses class="mtop10" :statuses="threadStatuses" v-if="threadStatuses.length > 0"/>
             <div class="subtitle mtop20" height="200">Job logs:</div>
             <text-log v-model="textLogString" class="mtop10"/>
 
+            <div v-if="resultTableHeader" class="subtitle mtop20 mbottom10" height="200">Job results:</div>
             <table class="table-docs" v-if="resultTableHeader">
                 <thead>
                 <tr>

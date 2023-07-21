@@ -128,17 +128,17 @@ class Template implements OpenSubmitterTemplateProtocol {
         }
     }
 
-    // will be overwritten by Template Controller
+    // will be overridden by Template Controller
     postResultToTable(result: object) {
 
     }
 
-    // will be overwritten by Template Controller
+    // will be overridden by Template Controller
     async solveCaptcha(captcha: Captcha): Promise<string | object> {
         return ""
     }
 
-    // will be overwritten by Template Controller
+    // will be overridden by Template Controller
     log(msg: string) {
 
     }

@@ -40,6 +40,16 @@ class Template implements OpenSubmitterTemplateProtocol {
                 value: "initial-scale=1, minimum-scale=1",
                 required: true
             }
+        ],
+        resultTableHeader: [
+            {
+                title: 'Proxy',
+                nowrap: true,
+            },{
+                title: 'Test result',
+                nowrap: true,
+                isResult: true
+            }
         ]
     };
 
@@ -88,6 +98,7 @@ class Template implements OpenSubmitterTemplateProtocol {
         const resultListFile = this.config.userSettings.find(setting => setting.name === 'resultList').fileName;
         this.log(`opening test website ${testWebsite}`)
         let result;
+        const proxyString = task.data.proxyLogin ? `${task.data.proxyAddress}:${task.data.proxyPort}:${task.data.proxyLogin}:${task.data.proxyPassword}` : `${task.data.proxyAddress}:${task.data.proxyPort}`;
         try {
             result = await axios.get(testWebsite, {
                 timeout: 5000,
@@ -105,34 +116,38 @@ class Template implements OpenSubmitterTemplateProtocol {
                 }
             })
         } catch (e) {
-            if (task.data.proxyLogin) {
-                this.log(`proxy ${task.data.proxyAddress}:${task.data.proxyPort}:${task.data.proxyLogin}:${task.data.proxyPassword} failed`)
-            } else {
-                this.log(`proxy ${task.data.proxyAddress}:${task.data.proxyPort} failed`)
-            }
+            this.log(`proxy ${proxyString} failed`)
+
+            // post to results table in UI
+            this.postResultToTable({
+                // see config.resultTableHeader for reference
+                'Proxy': proxyString,
+                'Test result': false
+            })
         }
         if (result) {
             if (result.data.indexOf(controlPhrase) !== -1) {
-                this.log(`proxy ${task.data.proxyAddress}:${task.data.proxyPort} is good`)
-                if (task.data.proxyLogin) {
-                    fs.appendFileSync(resultListFile, `${task.data.proxyAddress}:${task.data.proxyPort}:${task.data.proxyLogin}:${task.data.proxyPassword}\n`)
-                } else {
-                    fs.appendFileSync(resultListFile, `${task.data.proxyAddress}:${task.data.proxyPort}\n`)
-                }
+                this.log(`proxy ${proxyString} is good`)
+                fs.appendFileSync(resultListFile, `${proxyString}\n`)
+
+                // post to results table in UI
+                this.postResultToTable({
+                    // see config.resultTableHeader for reference
+                    'Proxy': proxyString,
+                    'Test result': true
+                })
             }
         }
-        await this.delay(500); //todo remove
     }
 
-    //overridden by super class
+    // will be overridden by Template Controller
+    postResultToTable(result: object) {
+
+    }
+
+    // will be overridden by Template Controller
     log(msg: string) {
 
-    }
-
-    delay(time) {
-        return new Promise(function(resolve) {
-            setTimeout(resolve, time)
-        });
     }
 
 }
