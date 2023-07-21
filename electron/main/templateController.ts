@@ -67,9 +67,11 @@ class TemplateController extends Template {
             }
         }
 
-        // this.log('starting task');
-        await this.runTask(this.task);
-        // this.log('exiting thread');
+        try {
+            await this.runTask(this.task);
+        } catch (e) {
+            this.log('Template execution error: '+e.toString());
+        }
         process.exit();
     }
 
