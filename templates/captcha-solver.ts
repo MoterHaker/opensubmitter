@@ -6,6 +6,8 @@ class Template implements OpenSubmitterTemplateProtocol {
 
     config: TemplateConfig = {
         name: 'Captcha solving example from MotaHaker',
+        description: 'A template demonstrating captcha solving capabilities of Open Submitter. ' +
+                     'It simply solves several captchas of different in multi-threaded mode using Anti-Captcha API service. API key must be provided in the settings.',
         multiThreadingEnabled: true,
         userSettings: [],
         resultTableHeader: [

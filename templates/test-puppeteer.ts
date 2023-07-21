@@ -1,28 +1,26 @@
 /// <reference path="type.d.ts" />
 const fs = require("fs")
-const axios = require("axios");
 
 class Template implements OpenSubmitterTemplateProtocol {
 
     config: TemplateConfig = {
-        name: 'Template tester from MotaHaker (axios)',
-        capabilities: ['axios'],
-        multiThreadingEnabled: false,
+        name: 'Template tester from MoterHaker (puppeteer)',
+        description: 'Open a website with puppeteer-chromium in headless mode',
+        capabilities: ['puppeteer'],
+        multiThreadingEnabled: true,
         userSettings: [
             {
                 type: 'OutputFile',
                 name: 'outputFile',
                 title: 'Where to write the output of the download',
                 fileName: "",
-                required: false,
-                uiWidth: 100
+                required: false
             }
         ]
     };
 
     //dummy variables, will be overridden by parent manager class
     page = null;
-    axios: typeof axios | null;
 
     async generateTasks(...args: any): Promise<TemplateTask[]> {
         return [{
@@ -36,13 +34,16 @@ class Template implements OpenSubmitterTemplateProtocol {
 
 
     async runTask(task: TemplateTask) {
-        let result = '';
         try {
             this.log('navigating...');
-            result = (await this.axios.get("http://bropanel.com/")).data;
+            await this.page.goto('https://antigate.com/iptest.php', {
+                waitUntil: "networkidle0",
+                timeout: 20000
+            });
         } catch (e) {
             this.log('err while loading the page: ' + e);
         }
+        const result = await this.page.content();
         if (result.indexOf('<ip>') !== -1) {
             this.log('IP: '+result.split("<ip>")[1].split("</ip>")[0]);
         } else {

@@ -23,7 +23,7 @@ interface ResultTableRow {
 
 interface TemplateConfig {
     name: string,
-    description?: string,
+    description: string,
     capabilities?: TemplateCapabilities[],
     multiThreadingEnabled: boolean,
     userSettings: Array<UserSetting>,

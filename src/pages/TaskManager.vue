@@ -35,8 +35,8 @@
                     </tr>
                 </tbody>
             </table>
-
         </div>
+
         <div v-if="interfaceMode == 'settings'">
             <div class="title">Open template from:</div>
             <div class="padding10_0px">
@@ -60,6 +60,7 @@
                 <Textfield v-model="fileName" style="width:100%" :errorMessage="templateError"/>
                 <btn label="Open Template" @click="openTemplateIPC"/>
             </div>
+            <div v-if="selectedTemplateFilename" class="mtop10 mbottom10">{{ templateConfig?.description }}</div>
             <div v-if="userSettings.length > 0 && templateConfig" class="template-name-block">
                 <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
                 <btn icon="reset" label="Reset settings" @click="resetTemplateSettingsIPC"/>
@@ -77,7 +78,7 @@
                 <div v-if="['OutputFile'].indexOf(setting.type) !== -1" class="textfield-button">
                     <div>{{setting.title}}</div>
                     <textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
-                    <btn label="Select File" @click="selectFileForTemplateIPC('save', index)"/>
+                    <btn label="Create File" @click="selectFileForTemplateIPC('save', index)"/>
                 </div>
                 <div v-if="['TextInput'].indexOf(setting.type) !== -1" class="textfield-simple">
                     <div>{{setting.title}}</div>
@@ -146,7 +147,6 @@ function getResultCellPropertyClasses(property: ResultTableRow) {
     } else {
         res['break-word'] = true;
     }
-    console.log('returning non-empty', res, property)
     return res;
 }
 

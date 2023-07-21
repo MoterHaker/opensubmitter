@@ -30,6 +30,13 @@ class InternalAPI {
     modulesVersion = '0002';
     protected savedSettings: AppSettings = {};
 
+    // A list to exclude templates from auto-scanning in production mode
+    excludeTemplatesFromProduction = [
+        'bad-template.ts', //should not even appear in the list
+        'test-puppeteer.ts',
+        'test-axios.ts'
+    ];
+
     startListening(): void {
         this.readSettings();
         ipcMain.on('TM', async(e, data) => {
@@ -108,6 +115,7 @@ class InternalAPI {
         const templatesList = fs.readdirSync(templatesPath, {withFileTypes: true})
                                 .filter(item => {
                                     if (item.isDirectory()) return false;
+                                    if (!this.isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) return false;
                                     let ext = item.name.substring(item.name.indexOf('.')+1);
                                     return ['ts','js'].indexOf(ext) !== -1;
                                 })
@@ -225,7 +233,7 @@ class InternalAPI {
         const templateParentContent = fs.readFileSync(templateParentPath).toString().split("//cut")[1];
 
 
-        //defining a directory for compiled template
+        //defining the path for compiled template
         this.compiledTemplateFilePath = `${this.compiledTemplateDir}${slash}index${Math.random()}.cjs`
 
         //set the path to puppetter Chrome browser depending on the platform
@@ -284,6 +292,8 @@ class InternalAPI {
             return;
         }
 
+        if (!this.validateTemplateObject()) return;
+
         //responding to UI with file name and no errors status
         this.eventHook.reply('TaskManager', { type: 'set-template-name', filename: this.selectedTemplateFilePath })
         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "" })
@@ -292,6 +302,55 @@ class InternalAPI {
             console.log('no config in the template')
             return;
         }
+    }
+
+    validateTemplateObject(): boolean {
+        const pleaseRefer = ". Please refer to our documentation at https://opensubmitter.com/documentation";
+        if (!this.currentTemplateObject.config) {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config property"+pleaseRefer })
+            return false;
+        }
+        if (!this.currentTemplateObject.config.name) {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.name property"+pleaseRefer })
+            return false;
+        }
+        if (typeof this.currentTemplateObject.config.name !== "string") {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.name is of incorrect type"+pleaseRefer })
+            return false;
+        }
+        if (!this.currentTemplateObject.config.description) {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.description property"+pleaseRefer })
+            return false;
+        }
+        if (typeof this.currentTemplateObject.config.description !== "string") {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.description is of incorrect type"+pleaseRefer })
+            return false;
+        }
+        if (typeof this.currentTemplateObject.config.multiThreadingEnabled === "undefined") {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.multiThreadingEnabled property"+pleaseRefer })
+            return false;
+        }
+        if (typeof this.currentTemplateObject.config.multiThreadingEnabled !== "boolean") {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.multiThreadingEnabled is of incorrect type"+pleaseRefer })
+            return false;
+        }
+        if (!this.currentTemplateObject.config.userSettings) {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.userSettings property"+pleaseRefer })
+            return false;
+        }
+        if (typeof this.currentTemplateObject.config.userSettings !== "object") {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.userSettings is of incorrect type"+pleaseRefer })
+            return false;
+        }
+        if (typeof this.currentTemplateObject.generateTasks !== "function") {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's generateTasks function is missing"+pleaseRefer })
+            return false;
+        }
+        if (typeof this.currentTemplateObject.runTask !== "function") {
+            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's runTask function is missing"+pleaseRefer })
+            return false;
+        }
+        return true;
     }
 
     async childMessageHandler(child: UtilityProcess, message: MessageWithType): Promise<void> {

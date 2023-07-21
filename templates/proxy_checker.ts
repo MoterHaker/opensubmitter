@@ -7,7 +7,8 @@ class Template implements OpenSubmitterTemplateProtocol {
     axios = null;
 
     config: TemplateConfig = {
-        name: 'Proxy Checker Mofo',
+        name: 'Proxy Checker from MoterHaker',
+        description: 'This template checks a proxy list and writes checked proxies into a file. Checking is done by downloading a specified URL address and checking if the control string is present.',
         email: 'author@email.com',
         multiThreadingEnabled: true,
         rewardTronAddress: 'TPNnu4Wc5dUtpVt5dpQce32WnTrd4P5555',
