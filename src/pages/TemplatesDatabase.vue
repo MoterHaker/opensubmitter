@@ -2,8 +2,7 @@
     <div>
         <div class="block-search">
             <div class="df gap16">
-                <Textfield icon="search" placeholder="Search" />
-                <Btn label="Find" />
+                <Textfield icon="search" placeholder="Search" v-model="searchString" />
             </div>
             <div class="tags df gap8">
                 Try tags:
@@ -12,7 +11,7 @@
             </div>
         </div>
 
-        <div class="page-msg" v-if="noResult">
+        <div class="page-msg" v-if="searchString.length > 0 && searchResults.length == 0 && delayInt === null">
             <img src="../assets/images/no-result.svg" alt="">
             <div class="title">No results found</div>
             <div class="request-wrap df dir-col alitc gap16">
@@ -21,17 +20,38 @@
             </div>
         </div>
 
-        <div class="templates-list" v-if="!noResult">
-            <template-item views="12,569" downloads="55,885" runs="122,556" />
-            <template-item views="321" downloads="535" runs="8,547" />
+        <div class="templates-list"  v-if="searchString.length > 0 && searchResults.length > 0">
+            <template-item  v-for="template in resultsComputed" :template="template"/>
         </div>
     </div>
 </template>
 <script setup lang="ts">
-    import Textfield from "../components/Textfield.vue"
-    import Btn from "../components/Btn.vue"
-    import TemplateItem from "../components/TemplateItem.vue"
-    const noResult = true
+import Textfield from "../components/Textfield.vue"
+import TemplateItem from "../components/TemplateItem.vue"
+const noResult = false
+import { useAPI } from "../composables/api"
+
+import {computed, onMounted, ref, watch} from "vue";
+
+const { searchString, searchResults, searchTemplates } = useAPI();
+const selectedCategory = ref('');
+const delayInt = ref<any>(null);
+
+const resultsComputed = computed((): PublicTemplate[] => {
+    return searchResults.value.map(item => item as PublicTemplate);
+})
+
+watch(searchString, (newValue, oldValue) => {
+    search()
+});
+
+function search() {
+    clearInterval(delayInt.value);
+    delayInt.value = setTimeout(async() => {
+        await searchTemplates(searchString.value, selectedCategory.value)
+        delayInt.value = null;
+    }, 1000);
+}
 </script>
 <style lang="less" scoped>
 .request-wrap {

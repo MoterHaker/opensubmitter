@@ -1,24 +1,24 @@
 <template>
     <router-link to="/template" class="template-item">
         <div class="col-icon">
-            <img src="../assets/images/temp-icon-proxy.png" alt="">
+            <img :src="template.icon">
         </div>
         <div class="col-text">
-            <div class="title">Proxy Checker Mofo</div>
-            <div class="desc">Check your proxies for availability and speed at google.com search page</div>
+            <div class="title">{{ template.name }}</div>
+            <div class="desc">{{ template.description }}</div>
         </div>
         <div class="col-stats">
             <div class="col">
                 <div class="statname">Views</div>
-                <div class="statval">{{ views }}</div>
+                <div class="statval">{{ template.views }}</div>
             </div>
             <div class="col">
                 <div class="statname">Downloads</div>
-                <div class="statval">{{ downloads }}</div>
+                <div class="statval">{{ template.downloads }}</div>
             </div>
             <div class="col">
                 <div class="statname">Runs</div>
-                <div class="statval">{{ runs }}</div>
+                <div class="statval">{{ template.runs }}</div>
             </div>
         </div>
         <div class="col-dn">
@@ -28,8 +28,11 @@
 </template>
 
 <script setup lang="ts">
+/// <reference path="../components/type.d.ts" />
 import Btn from "../components/Btn.vue"
-const props = defineProps(['views', 'downloads', 'runs'])
+const props = defineProps<{
+    template: PublicTemplate;
+}>();
 </script>
 
 <style lang="less" scoped>
