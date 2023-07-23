@@ -3,51 +3,59 @@
         <div class="template-info">
             <div class="col-desc">
                 <div class="desc">
-                    Check your proxies for availability and speed at google.com search page
+                    {{ (searchStore.selectedTemplate as PublicTemplate).description }}
                 </div>
                 <div class="meta">
-                    Submitted: 24.05.2023<br>
-                    Updated: 27.05.2023<br>
-                    <a href="">author@email.com</a>
+                    Submitted: {{ (searchStore.selectedTemplate as PublicTemplate).created }}
+                    <btn class="mtop10" icon="download" label="Download template" @click="searchStore.downloadTemplateInMain((searchStore.selectedTemplate as PublicTemplate).id)"/>
                 </div>
             </div>
             <div class="col-stats">
                 <div class="col">
                     <div class="statname">Views</div>
-                    <div class="statval">2,569</div>
+                    <div class="statval">{{ (searchStore.selectedTemplate as PublicTemplate).views }}</div>
                 </div>
                 <div class="col">
                     <div class="statname">Downloads</div>
-                    <div class="statval">55,698</div>
+                    <div class="statval">{{ (searchStore.selectedTemplate as PublicTemplate).downloads }}</div>
                 </div>
                 <div class="col">
                     <div class="statname">Runs</div>
-                    <div class="statval">658,458</div>
+                    <div class="statval">{{ (searchStore.selectedTemplate as PublicTemplate).runs }}</div>
                 </div>
             </div>
         </div>
         <div class="source">
             Source code:
-            <source-code class="mt8" :code="code" />
+            <source-code class="mt8" :code="templateContent ? templateContent.contents : ''" :is-loading="templateContent == null"/>
         </div>
     </div>
 </template>
 <script setup lang="ts">
+/// <reference path="../composables/type.d.ts" />
+
+import {useRoute} from "vue-router";
+import {useSearchStore} from "../composables/search";
+const searchStore = useSearchStore();
 import SourceCode from "../components/SourceCode.vue"
-const code = `{
-    "errorId":0,
-    "status":"ready",
-    "solution":
-    {
-        "gRecaptchaResponse":"3AHJ_VuvYIBNBW5yyv0zRYJ75VkOKvhKj9_xGBJKnQimF72rfoq3Iy-DyGHMwLAo6a3" "gRecaptchaResponse":"3AHJ_VuvYIBNBW5yyv0zRYJ75VkOKvhKj9_xGBJKnQimF72rfoq3Iy-DyGHMwLAo6a3"
-    },
-    "cost":"0.001500",
-    "ip":"46.98.54.221",
-    "createTime":1472205564,
-    "endTime":1472205570,
-    "solveCount":"0"
-}
-`
+import {onBeforeUnmount, onMounted, ref} from "vue";
+import {useTitleStore} from "../composables/titles";
+const titleStore = useTitleStore();
+import { useAPI } from "../composables/api";
+import Btn from "../components/Btn.vue";
+const { downloadTemplate } = useAPI();
+const templateContent = ref<TemplateContent | null>(null);
+
+
+onMounted(async() => {
+    titleStore.title = searchStore.selectedTemplate!.name
+    templateContent.value = await downloadTemplate(searchStore.selectedTemplate!.id)
+})
+onBeforeUnmount(() => {
+    titleStore.title = '';
+})
+
+const code = `..loading..`;
 </script>
 <style lang="less" scoped>
 .template-info {

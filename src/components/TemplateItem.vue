@@ -1,13 +1,14 @@
 <template>
-    <router-link to="/template" class="template-item">
-        <div class="col-icon">
+    <div class="template-item">
+        <div class="col-icon" @click="viewTemplate">
             <img :src="template.icon">
         </div>
-        <div class="col-text">
+        <div class="col-text" @click="viewTemplate">
             <div class="title">{{ template.name }}</div>
             <div class="desc">{{ template.description }}</div>
+            <div class="category">{{ template.category }}</div>
         </div>
-        <div class="col-stats">
+        <div class="col-stats" @click="viewTemplate">
             <div class="col">
                 <div class="statname">Views</div>
                 <div class="statval">{{ template.views }}</div>
@@ -22,17 +23,32 @@
             </div>
         </div>
         <div class="col-dn">
-            <btn icon="download" />
+            <btn icon="download" @click="searchStore.downloadTemplateInMain(template.id)"/>
         </div>
-    </router-link>
+    </div>
 </template>
 
 <script setup lang="ts">
-/// <reference path="../components/type.d.ts" />
+/// <reference path="../composables/type.d.ts" />
 import Btn from "../components/Btn.vue"
+import {useSearchStore} from "../composables/search";
+import {onMounted} from "vue";
+import {useRoute, useRouter} from "vue-router";
+const searchStore = useSearchStore();
+const router = useRouter()
 const props = defineProps<{
     template: PublicTemplate;
 }>();
+
+
+function viewTemplate() {
+    router.push('/template');
+    searchStore.selectedTemplate = props.template
+}
+function download() {
+    console.log('download')
+}
+
 </script>
 
 <style lang="less" scoped>
@@ -65,6 +81,11 @@ const props = defineProps<{
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+    .category {
+        margin-top: 5px;
+        font-size: 11px;
+        font-weight: 300;
     }
 }
 .col-icon {

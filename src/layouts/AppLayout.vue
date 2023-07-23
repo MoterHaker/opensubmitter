@@ -1,6 +1,5 @@
 <template>
     <div>
-<!--        <component :is="modalToShow" />-->
         <div class="df-100vh ">
             <div class="col-side-nav">
                 <div class="logo-wrap"><img src="../assets/images/logo.svg" alt=""></div>
@@ -16,7 +15,7 @@
                     <svg-icon name="settings" />
                     Settings
                 </router-link>
-                <router-link class="menu-item" to="/uikit" v-if="isDevelopmentEnv">
+                <router-link class="menu-item" to="/uikit" v-if="isDevelopmentEnv()">
                     UI kit
                 </router-link>
 
@@ -28,7 +27,7 @@
             <div class="col-main">
                 <div class="col-header">
                     <div class="col-left">
-                        <div class="title">{{ route.meta.title }}</div>
+                        <div class="title">{{ titleStore.title != '' ? titleStore.title : route.meta.title }}</div>
                         <router-link to="/templates" class="btn btn-small subtitle" v-if="showBackBtn()"><SvgIcon name="arrow-back" /> Go back</router-link>
                         <div class="subtitle" v-if="!showBackBtn()">{{ route.meta.subtitle }}</div>
                     </div>
@@ -50,7 +49,10 @@
 import {useRoute} from "vue-router";
 import SvgIcon from "../components/SvgIcon.vue"
 import Btn from "../components/Btn.vue"
-
+import {onUpdated} from "vue";
+import {useSearchStore} from "../composables/search";
+import {useTitleStore} from "../composables/titles";
+const titleStore = useTitleStore();
 const route = useRoute()
 
 const isActiveRoute = (routePath: string): boolean => {
@@ -64,6 +66,7 @@ const showBackBtn = (): boolean => {
 function isDevelopmentEnv(): boolean {
     return typeof process.env !== "undefined" && typeof process.env.NODE_ENV !== "undefined" && process.env.NODE_ENV === "development";
 }
+
 </script>
 
 <style lang="less" scoped>

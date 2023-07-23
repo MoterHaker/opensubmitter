@@ -89,6 +89,11 @@ class InternalAPI {
                     this.readSettings();
                     break;
 
+                case 'download-template':
+                    //TODO
+                    console.log('downloading', data.id)
+                    break;
+
 
 
             }

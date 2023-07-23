@@ -138,9 +138,9 @@ onMounted(() => {
 })
 
 function getResultCellPropertyClasses(property: ResultTableRow) {
-    const res = {};
+    const res: any = {};
     if (typeof property.isResult === "boolean" && property.isResult) {
-        res[property.value === true ? 'success' : 'error'] = true;
+        res[property.value ? 'success' : 'error'] = true;
     }
     if (typeof property.nowrap === "boolean" && property.nowrap) {
         res['nowrap'] = true;

@@ -18,7 +18,7 @@ const apiKey = ref('')
 const apiKeyValid = ref(false);
 const balance = ref('--.--')
 const errorString = ref<string | null>(null)
-let updateInterval = null;
+let updateInterval: any = null;
 
 function requestBalance() {
     clearInterval(updateInterval)

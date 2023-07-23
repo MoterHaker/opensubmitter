@@ -1,6 +1,6 @@
 
 interface TemplateContent {
-    content: string
+    contents: string
 }
 
 interface PublicTemplate {
@@ -13,4 +13,5 @@ interface PublicTemplate {
     views: number
     downloads: number
     runs: number
+    created: string
 }

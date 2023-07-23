@@ -2,16 +2,18 @@
     <div>
         <div class="block-search">
             <div class="df gap16">
-                <Textfield icon="search" placeholder="Search" v-model="searchString" />
+                <Textfield icon="search" placeholder="Search" v-model="searchStore.searchString"/>
             </div>
-            <div class="tags df gap8">
-                Try tags:
-                <div class="tag">Accounts Generator</div>
-                <div class="tag">Submitter</div>
+            <div class="tags df gap8" v-if="searchStore.categoriesList.length > 0">
+                Try categories:
+                <div class="tag"
+                     :class="{ 'selected' : searchStore.selectedCategory == category }"
+                     v-for="category in searchStore.categoriesList"
+                     @click="searchStore.selectCategory(category)">{{ category }}</div>
             </div>
         </div>
 
-        <div class="page-msg" v-if="searchString.length > 0 && searchResults.length == 0 && delayInt === null">
+        <div class="page-msg" v-if="searchStore.searchString.length > 0 && searchStore.searchResults.length == 0 && searchStore.delayInt === null">
             <img src="../assets/images/no-result.svg" alt="">
             <div class="title">No results found</div>
             <div class="request-wrap df dir-col alitc gap16">
@@ -20,38 +22,24 @@
             </div>
         </div>
 
-        <div class="templates-list"  v-if="searchString.length > 0 && searchResults.length > 0">
-            <template-item  v-for="template in resultsComputed" :template="template"/>
+        <div class="templates-list"  v-if="searchStore.searchResults.length > 0">
+            <template-item  v-for="template in searchStore.searchResults" :template="template"/>
         </div>
     </div>
 </template>
 <script setup lang="ts">
 import Textfield from "../components/Textfield.vue"
 import TemplateItem from "../components/TemplateItem.vue"
-const noResult = false
-import { useAPI } from "../composables/api"
+import { useSearchStore } from '../composables/search'
 
 import {computed, onMounted, ref, watch} from "vue";
 
-const { searchString, searchResults, searchTemplates } = useAPI();
-const selectedCategory = ref('');
-const delayInt = ref<any>(null);
+const searchStore = useSearchStore();
 
-const resultsComputed = computed((): PublicTemplate[] => {
-    return searchResults.value.map(item => item as PublicTemplate);
+onMounted(() => {
+    searchStore.doSearch()
 })
 
-watch(searchString, (newValue, oldValue) => {
-    search()
-});
-
-function search() {
-    clearInterval(delayInt.value);
-    delayInt.value = setTimeout(async() => {
-        await searchTemplates(searchString.value, selectedCategory.value)
-        delayInt.value = null;
-    }, 1000);
-}
 </script>
 <style lang="less" scoped>
 .request-wrap {
@@ -79,6 +67,9 @@ function search() {
         cursor: pointer;
         &:hover {
             background: #3B4E4E;
+        }
+        &.selected {
+            background: #557272;
         }
     }
 }

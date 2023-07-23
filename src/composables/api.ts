@@ -4,23 +4,21 @@ import {ref} from "vue"
 
 export const useAPI = () => {
 
-    // const searchString = ref('');
-    const searchString = useState('searchString', () => '');
-    const searchResults = ref<PublicTemplate[]>([]);
     const apiErrorCode = ref('');
     const apiErrorTranslated = ref('');
 
-    const getTemplateCategories = async(id: number): Promise<[] | null> => {
+    const getTemplateCategories = async(): Promise<string[]> => {
         try {
-            return await fetchData('template/get_categories', { });
+            return (await fetchData('template/get_categories', { })).categories;
         } catch (e) {
             errorFallback('template/get_categories')
         }
-        return null;
+        return [];
     }
 
     const downloadTemplate = async(id: number): Promise<TemplateContent | null> => {
-        const env = (process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development") ? "development" : "production";
+        // const env = (process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development") ? "development" : "production";
+        const env = 'production';
         try {
             return await fetchData('template/download', { id, env });
         } catch (e) {
@@ -49,19 +47,18 @@ export const useAPI = () => {
         return false;
     }
 
-    const searchTemplates = async(search: string, category: string): Promise<boolean> => {
+    const searchTemplates = async(search: string, category: string): Promise<PublicTemplate[]> => {
         try {
-            searchResults.value = (await fetchData('template/search', {search, category })).list;
-            return true;
+            return (await fetchData('template/search', {search, category })).list;
         } catch (e) {
             errorFallback('template/search')
         }
-        return false;
+        return [];
     }
 
     const fetchData = async (path: string, postData: any): Promise<any> => {
 
-        const isDevelopment = process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development";
+        // const isDevelopment = process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development";
         let baseUrl = 'https://opensubmitter.com/api/';
         // if (isDevelopment) {
         //     baseUrl = 'http://127.0.0.1:9005/api/'
@@ -142,8 +139,6 @@ export const useAPI = () => {
     return {
         // refs:
         apiErrorTranslated,
-        searchString,
-        searchResults,
 
         // methods:
         searchTemplates,
