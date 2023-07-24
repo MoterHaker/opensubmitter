@@ -1,7 +1,8 @@
 <template>
     <div>
         <div class="block-search">
-            <div class="df gap16">
+            <div class="df gap16 search-wrap">
+                <Loader width="24" height="24" />
                 <Textfield icon="search" placeholder="Search" v-model="searchStore.searchString"/>
             </div>
             <div class="tags df gap8" v-if="searchStore.categoriesList.length > 0">
@@ -33,6 +34,7 @@ import TemplateItem from "../components/TemplateItem.vue"
 import { useSearchStore } from '../composables/search'
 
 import {computed, onMounted, ref, watch} from "vue";
+import Loader from "../components/Loader.vue";
 
 const searchStore = useSearchStore();
 
@@ -42,6 +44,14 @@ onMounted(() => {
 
 </script>
 <style lang="less" scoped>
+.search-wrap {
+    position: relative;
+    .cir-loader {
+        position: absolute;
+        right: 8px;
+        top: 7px;
+    }
+}
 .request-wrap {
     font-size: 24px;
 }
