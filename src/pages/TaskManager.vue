@@ -40,27 +40,27 @@
         <div v-if="interfaceMode == 'settings'">
             <div class="title">Open template from:</div>
             <div class="padding10_0px">
-                <input type="radio" value="existing" v-model="templateSource" id="existingSource">
+                <input type="radio" value="existing" v-model="taskManagerStore.templateSource" id="existingSource">
                     <label for="existingSource">Local template folder</label>
-                <input type="radio" value="file" v-model="templateSource" id="fileSource">
+                <input type="radio" value="file" v-model="taskManagerStore.templateSource" id="fileSource">
                     <label for="fileSource">Select template file</label>
             </div>
-            <div v-if="templateSource == 'existing'">
+            <div v-if="taskManagerStore.templateSource == 'existing'">
                 <div class="title mtop10">Template name</div>
                 <div class="select-wrap">
-                    <select v-model="selectedTemplateFilename" class="template-select">
+                    <select v-model="taskManagerStore.selectedTemplateFilename" class="template-select">
                         <option disabled value="" selected>Select one...</option>
                         <option v-for="template in templatesList" :value="template.filePath">{{ template.name }}</option>
                     </select>
                 </div>
                 <div v-if="templateError.length > 0" class="error mtop10">{{ templateError }}</div>
             </div>
-            <div class="textfield-button" v-if="templateSource == 'file'">
+            <div class="textfield-button" v-if="taskManagerStore.templateSource == 'file'">
                 <div>Template file path</div>
-                <Textfield v-model="fileName" style="width:100%" :errorMessage="templateError"/>
+                <Textfield v-model="taskManagerStore.fileName" style="width:100%" :errorMessage="templateError"/>
                 <btn label="Open Template" @click="openTemplateIPC"/>
             </div>
-            <div v-if="selectedTemplateFilename" class="mtop10 mbottom10">{{ templateConfig?.description }}</div>
+            <div v-if="taskManagerStore.selectedTemplateFilename" class="mtop10 mbottom10">{{ templateConfig?.description }}</div>
             <div v-if="userSettings.length > 0 && templateConfig" class="template-name-block">
                 <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
                 <btn icon="reset" label="Reset settings" @click="resetTemplateSettingsIPC"/>
@@ -107,11 +107,11 @@ import Textfield from "../components/Textfield.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import TextLog from "../components/TextLog.vue";
 import ThreadStatuses from "../components/ThreadStatuses.vue";
+import {useRouter} from "vue-router";
+import {useTaskManagerStore} from "../composables/task-manager";
 
-const templateSource = ref('existing')
+const taskManagerStore = useTaskManagerStore();
 const templatesList = ref<LocalTemplateListItem[]>([])
-const selectedTemplateFilename = ref('');
-const fileName = ref('')
 const isRunningBlocked = ref(true);
 const userSettings = ref([]);
 const templateConfig = ref<TemplateConfig | null>(null);
@@ -125,14 +125,9 @@ const resultsData = ref<ResultTableRow[][]>([]);
 const threadStatuses = ref<ThreadStatus[]>([])
 const threadsNumber = ref('10');
 const threadsError = ref('');
+const router = useRouter();
 
-watch(() => templateSource.value, (newValue) => {
-    ipcRenderer.send('TM', {type: 'read-local-templates'});
-})
-watch(() => selectedTemplateFilename.value, () => {
-    fileName.value = selectedTemplateFilename.value;
-    ipcRenderer.send('TM', {type: 'select-existing-template', fileName: fileName.value });
-})
+
 onMounted(() => {
     ipcRenderer.send('TM', {type: 'read-local-templates'});
 })
@@ -251,10 +246,10 @@ function selectFileForTemplateIPC(type : FileOpenDialogType, index: number) {
 }
 function resetManager() {
     resetTemplate();
-    selectedTemplateFilename.value = '';
+    taskManagerStore.selectedTemplateFilename = '';
 }
 function resetTemplate() {
-    fileName.value = '';
+    taskManagerStore.fileName = '';
     isRunningBlocked.value = true;
     templateConfig.value = null;
     userSettings.value = [];
@@ -274,7 +269,7 @@ ipcRenderer.on('TaskManager', (e, data) => {
     switch (data.type) {
         case 'set-template-name':
             resetTemplate()
-            fileName.value = data.filename;
+            taskManagerStore.fileName = data.filename;
             validateUserSettings()
             break;
 
@@ -325,16 +320,21 @@ ipcRenderer.on('TaskManager', (e, data) => {
             resultsData.value.push(data.result as ResultTableRow[])
             break;
 
+        case 'switch-to-loaded-template':
+            router.push('/dashboard');
+            for (const templateRow of templatesList.value) {
+                if (templateRow.filePath.indexOf(data.path) !== -1) {
+                    taskManagerStore.selectedTemplateFilename = templateRow.filePath
+                    return;
+                }
+            }
+            break;
+
     }
 
 })
 
-/*
 
-
-
-
-* */
 
 ipcRenderer.on('TM-set-template-config', (e, data) => {
 

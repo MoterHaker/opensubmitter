@@ -19,10 +19,10 @@
                     UI kit
                 </router-link>
 
-                <div class="update-available">
-                    <div class="title">v. 1.2.3 is available</div>
-                    <Btn label="Update now" />
-                </div>
+<!--                <div class="update-available">-->
+<!--                    <div class="title">v. 1.2.3 is available</div>-->
+<!--                    <Btn label="Update now" />-->
+<!--                </div>-->
             </div>
             <div class="col-main">
                 <div class="col-header">

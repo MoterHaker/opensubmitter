@@ -8,6 +8,7 @@ import { utilityProcess } from "electron";
 import fs from "fs"
 import os, {tmpdir} from 'os';
 import ac from "@antiadmin/anticaptchaofficial"
+import axios from "axios";
 
 
 class InternalAPI {
@@ -90,8 +91,7 @@ class InternalAPI {
                     break;
 
                 case 'download-template':
-                    //TODO
-                    console.log('downloading', data.id)
+                    await this.downloadTemplate(data.id)
                     break;
 
 
@@ -100,6 +100,38 @@ class InternalAPI {
 
         });
         this.extractNodeModules();
+    }
+
+    async downloadTemplate(id: number): Promise<void> {
+        let templatesPath;
+        const slash = process.platform === 'win32' ? "\\" : '/';
+        if (this.isDevelopmentEnv()) {
+            templatesPath = join(__dirname, `..${slash}..${slash}templates`);
+        } else {
+            templatesPath = join(process.resourcesPath, 'templates')
+        }
+        const templatePath = `${templatesPath}${slash}${id}.ts`;
+        try {
+            const result = await axios.post('https://opensubmitter.com/api/template/download', {
+                id,
+                env: 'prod'
+            }, {
+                    headers: {
+                        Accept: 'Accept: application/json'
+                    }
+                }
+            )
+            fs.writeFileSync(templatePath, result.data.contents);
+            await this.readLocalTemplates();
+            await this.eventHook.reply('TaskManager', {
+                type: 'switch-to-loaded-template',
+                path: `${slash}${id}.ts`
+            })
+
+        } catch (e) {
+            console.error('Could not download template: '+e.toString());
+            return;
+        }
     }
 
     async readLocalTemplates(): Promise<void> {
@@ -120,7 +152,7 @@ class InternalAPI {
         const templatesList = fs.readdirSync(templatesPath, {withFileTypes: true})
                                 .filter(item => {
                                     if (item.isDirectory()) return false;
-                                    if (!this.isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) return false;
+                                    if (!this.isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) { console.log('excludingng', item); return false };
                                     let ext = item.name.substring(item.name.indexOf('.')+1);
                                     return ['ts','js'].indexOf(ext) !== -1;
                                 })

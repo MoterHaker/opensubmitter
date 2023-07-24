@@ -23,7 +23,7 @@
             </div>
         </div>
         <div class="col-dn">
-            <btn icon="download" @click="searchStore.downloadTemplateInMain(template.id)"/>
+            <btn icon="download" :loading="isLoading" @click="download(template.id)"/>
         </div>
     </div>
 </template>
@@ -32,21 +32,23 @@
 /// <reference path="../composables/type.d.ts" />
 import Btn from "../components/Btn.vue"
 import {useSearchStore} from "../composables/search";
-import {onMounted} from "vue";
+import {onMounted, ref} from "vue";
 import {useRoute, useRouter} from "vue-router";
 const searchStore = useSearchStore();
 const router = useRouter()
 const props = defineProps<{
     template: PublicTemplate;
 }>();
+const isLoading = ref(false)
 
 
 function viewTemplate() {
     router.push('/template');
     searchStore.selectedTemplate = props.template
 }
-function download() {
-    console.log('download')
+function download(id: number) {
+    isLoading.value = true
+    searchStore.downloadTemplateInMain(id)
 }
 
 </script>

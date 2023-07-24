@@ -7,7 +7,7 @@
                 </div>
                 <div class="meta">
                     Submitted: {{ (searchStore.selectedTemplate as PublicTemplate).created }}
-                    <btn class="mtop10" icon="download" label="Download template" @click="searchStore.downloadTemplateInMain((searchStore.selectedTemplate as PublicTemplate).id)"/>
+                    <btn class="mtop10" :loading="isLoading" icon="download" label="Download template" @click="download((searchStore.selectedTemplate as PublicTemplate).id)"/>
                 </div>
             </div>
             <div class="col-stats">
@@ -43,13 +43,19 @@ import {useTitleStore} from "../composables/titles";
 const titleStore = useTitleStore();
 import { useAPI } from "../composables/api";
 import Btn from "../components/Btn.vue";
-const { downloadTemplate } = useAPI();
+const { reportTemplateView, downloadTemplate } = useAPI();
 const templateContent = ref<TemplateContent | null>(null);
+const isLoading = ref(false)
 
+function download(id: number){
+    isLoading.value = true;
+    searchStore.downloadTemplateInMain(id);
+}
 
 onMounted(async() => {
     titleStore.title = searchStore.selectedTemplate!.name
     templateContent.value = await downloadTemplate(searchStore.selectedTemplate!.id)
+    await reportTemplateView(searchStore.selectedTemplate!.id);
 })
 onBeforeUnmount(() => {
     titleStore.title = '';
