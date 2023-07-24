@@ -16,6 +16,16 @@ export const useAPI = () => {
         return [];
     }
 
+    const requestNewTemplate = async(email: string, address: string, message: string): Promise<boolean> => {
+        try {
+            await fetchData('template/request', { email, address, message });
+            return true;
+        } catch (e) {
+            errorFallback('template/request')
+        }
+        return false;
+    }
+
     const downloadTemplate = async(id: number): Promise<TemplateContent | null> => {
         // const env = (process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development") ? "development" : "production";
         const env = 'production';
@@ -145,7 +155,8 @@ export const useAPI = () => {
         reportTemplateView,
         reportTemplateRun,
         downloadTemplate,
-        getTemplateCategories
+        getTemplateCategories,
+        requestNewTemplate
     }
 
 }

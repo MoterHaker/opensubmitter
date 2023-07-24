@@ -33,7 +33,7 @@
                     </div>
                     <div v-if="isActiveRoute('/templates')" class="col-right df gap16">
                         <router-link to="/request" class="btn ghost" v-if="!isActiveRoute('/request')"><SvgIcon name="request-template" /> Request a template</router-link>
-                        <router-link to="/request" class="btn ghost" v-if="!isActiveRoute('/request')"><SvgIcon name="add-file" /> Submit a template</router-link>
+                        <a href="https://opensubmitter.com/request-template" target="_blank" class="btn ghost" v-if="!isActiveRoute('/request')"><SvgIcon name="add-file" /> Submit a template</a>
                     </div>
                 </div>
                 <div class="col-content">
