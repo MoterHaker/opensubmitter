@@ -63,7 +63,7 @@
             <div v-if="taskManagerStore.selectedTemplateFilename" class="mtop10 mbottom10">{{ templateConfig?.description }}</div>
             <div v-if="userSettings.length > 0 && templateConfig" class="template-name-block">
                 <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
-                <btn icon="reset" label="Reset settings" @click="resetTemplateSettingsIPC"/>
+                <btn icon="reset" label="Reset settings" @click="resetTemplateSettingsIPC" v-if="isTemplateSettingsResetAvailable"/>
             </div>
             <div v-for="(setting, index) in userSettings as UserSetting[]" :key="index" class="mtop10"
                  :class="{
@@ -125,8 +125,15 @@ const resultsData = ref<ResultTableRow[][]>([]);
 const threadStatuses = ref<ThreadStatus[]>([])
 const threadsNumber = ref('10');
 const threadsError = ref('');
+const isTemplateSettingsResetAvailable = ref(false);
 const router = useRouter();
 
+
+
+watch(() => taskManagerStore.templateSource, (newValue) => {
+    ipcRenderer.send('TM', {type: 'read-local-templates'});
+    resetTemplate();
+})
 
 onMounted(() => {
     ipcRenderer.send('TM', {type: 'read-local-templates'});
@@ -234,6 +241,7 @@ function openTemplateIPC() {
     ipcRenderer.send('TM', {type: 'select-template-dialog'})
 }
 function resetTemplateSettingsIPC() {
+    isTemplateSettingsResetAvailable.value = false;
     ipcRenderer.send('TM', {type: 'reset-template-settings'})
 }
 
@@ -283,6 +291,9 @@ ipcRenderer.on('TaskManager', (e, data) => {
             }
             if (data.config.resultTableHeader) {
                 resultTableHeader.value = data.config.resultTableHeader;
+            }
+            if (data.settingsWereSaved) {
+                isTemplateSettingsResetAvailable.value = true;
             }
             break;
 

@@ -15,10 +15,6 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
         ipcRenderer.send('TM', {type: 'select-existing-template', fileName: fileName.value });
     })
 
-    watch(() => templateSource.value, (newValue) => {
-        ipcRenderer.send('TM', {type: 'read-local-templates'});
-    })
-
     return {
         // ref:
         templateSource,

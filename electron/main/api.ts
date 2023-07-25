@@ -9,27 +9,27 @@ import fs from "fs"
 import os, {tmpdir} from 'os';
 import ac from "@antiadmin/anticaptchaofficial"
 import axios from "axios";
+import {pathsConfig} from "./pathsconfig";
 
 
 class InternalAPI {
 
     currentTemplateClass = null;
     currentTemplateObject?: OpenSubmitterTemplateProtocol | null = null;
+    templateSettingsWereSaved: bool = false;
     currentTasks: TemplateTask[] = [];
     threads: TemplateControllerChild[] = [];
     isRunningAllowed = true;
     compiledTemplateFilePath = null;
-    compiledTemplateDir = null;
     selectedTemplateFilePath = null;
     taskThreadsAmount = 10;
     eventHook = null;
-    puppeteerExecutablePath = null;
-    asarExtractedDirectory = null;
-    previousFullModulesPath = null;
     freedThreadNumbers: number[] = [];
     areModulesExtracted = false;
     modulesVersion = '0002';
     protected savedSettings: AppSettings = {};
+
+    protected paths = pathsConfig();
 
     // A list to exclude templates from auto-scanning in production mode
     excludeTemplatesFromProduction = [
@@ -103,14 +103,8 @@ class InternalAPI {
     }
 
     async downloadTemplate(id: number): Promise<void> {
-        let templatesPath;
-        const slash = process.platform === 'win32' ? "\\" : '/';
-        if (this.isDevelopmentEnv()) {
-            templatesPath = join(__dirname, `..${slash}..${slash}templates`);
-        } else {
-            templatesPath = join(process.resourcesPath, 'templates')
-        }
-        const templatePath = `${templatesPath}${slash}${id}.ts`;
+
+        const templatePath = `${this.paths.templatesDirectory}${this.paths.slash}${id}.ts`;
         try {
             const result = await axios.post('https://opensubmitter.com/api/template/download', {
                 id,
@@ -125,7 +119,7 @@ class InternalAPI {
             await this.readLocalTemplates();
             await this.eventHook.reply('TaskManager', {
                 type: 'switch-to-loaded-template',
-                path: `${slash}${id}.ts`
+                path: `${this.paths.slash}${id}.ts`
             })
 
         } catch (e) {
@@ -135,21 +129,12 @@ class InternalAPI {
     }
 
     async readLocalTemplates(): Promise<void> {
-        let templatesPath, templateParentPath;
-        const slash = process.platform === 'win32' ? "\\" : '/';
-        if (this.isDevelopmentEnv()) {
-            templatesPath = join(__dirname, `..${slash}..${slash}templates`);
-            templateParentPath = join(__dirname, `..${slash}..${slash}electron${slash}main${slash}templateController.ts`);
-        } else {
-            templatesPath = join(process.resourcesPath, 'templates')
-            templateParentPath = join(process.resourcesPath, `src${slash}templateController.ts`)
-        }
 
         //reading parent template controller contents
-        const templateParentContent = fs.readFileSync(templateParentPath).toString().split("//cut")[1];
+        const templateParentContent = fs.readFileSync(this.paths.templateControllerPath).toString().split("//cut")[1];
         
         //listing templates directory
-        const templatesList = fs.readdirSync(templatesPath, {withFileTypes: true})
+        const templatesList = fs.readdirSync(this.paths.templatesDirectory, {withFileTypes: true})
                                 .filter(item => {
                                     if (item.isDirectory()) return false;
                                     if (!this.isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) { console.log('excludingng', item); return false };
@@ -159,21 +144,19 @@ class InternalAPI {
                                 .map(item => item.name)
 
         //temporary dir for compiled templates
-        const compiledPathDir = tmpdir() + `${slash}opsub_compiled`;
-        const node_modulesDir = `${compiledPathDir}${slash}node_modules`;
-        if (!fs.existsSync(compiledPathDir)) fs.mkdirSync(compiledPathDir);
-        if (!fs.existsSync(node_modulesDir)) {
-            fs.mkdirSync(node_modulesDir)
-            fs.mkdirSync(`${node_modulesDir}${slash}axios`)
-            fs.mkdirSync(`${node_modulesDir}${slash}puppeteer`)
-            fs.writeFileSync(`${node_modulesDir}${slash}axios${slash}index.js`,"module.export={}");
-            fs.writeFileSync(`${node_modulesDir}${slash}puppeteer${slash}index.js`,"module.export={}");
+        if (!fs.existsSync(this.paths.temporaryCompiledTemplatesDirectory)) fs.mkdirSync(this.paths.temporaryCompiledTemplatesDirectory);
+        if (!fs.existsSync(this.paths.temporaryCompiledTemplatesNodeModules)) {
+            fs.mkdirSync(this.paths.temporaryCompiledTemplatesNodeModules)
+            fs.mkdirSync(join(this.paths.temporaryCompiledTemplatesNodeModules, 'axios'))
+            fs.mkdirSync(join(this.paths.temporaryCompiledTemplatesNodeModules, 'puppeteer'))
+            fs.writeFileSync(join(this.paths.temporaryCompiledTemplatesNodeModules, 'axios', 'index.js'),"module.export={}");
+            fs.writeFileSync(join(this.paths.temporaryCompiledTemplatesNodeModules, 'puppeteer', 'index.js'),"module.export={}");
         }
 
         const result: LocalTemplateListItem[] = [];
         for (const templateFile of templatesList) {
-            const templatePath = `${templatesPath}${slash}${templateFile}`;
-            let compiledPath = `${compiledPathDir}${slash}${templateFile}.cjs`;
+            const templatePath = join(this.paths.templatesDirectory, templateFile);
+            let compiledPath = join(this.paths.temporaryCompiledTemplatesDirectory, `${templateFile}.cjs`);
 
             //combined Typescript contents of template and its parent controller
             const contentTS = fs.readFileSync(templatePath).toString() + templateParentContent;
@@ -185,13 +168,14 @@ class InternalAPI {
                 contentJS = this.tsCompile(contentTS);
                 fs.writeFileSync(compiledPath, contentJS);
 
-                //importing compiled module
+                //win32 has it's own importing trick
                 if (process.platform === 'win32') {
                     compiledPath = `file:///${compiledPath}`.replace('\\', '/');
                 }
 
-                //creating new template object and getting configuration
+                //importing compiled module
                 const { TemplateController } = await import(compiledPath);
+                //creating new template object and getting configuration
                 const templateObject = new TemplateController() as OpenSubmitterTemplateProtocol;
 
                 //extracting name and other data from template
@@ -259,22 +243,8 @@ class InternalAPI {
 
         const slash = process.platform === 'win32' ? "\\" : '/';
 
-        let templateParentPath = null;
-        if (this.isDevelopmentEnv()) {
-            templateParentPath = join(__dirname, `..${slash}..${slash}electron${slash}main${slash}templateController.ts`);
-        } else {
-            templateParentPath = join(process.resourcesPath, `src${slash}templateController.ts`)
-        }
-        
-        //reading parent template controller contents
-        const templateParentContent = fs.readFileSync(templateParentPath).toString().split("//cut")[1];
-
-
         //defining the path for compiled template
-        this.compiledTemplateFilePath = `${this.compiledTemplateDir}${slash}index${Math.random()}.cjs`
-
-        //set the path to puppetter Chrome browser depending on the platform
-        this.definePuppeteerExecutablePath();
+        this.compiledTemplateFilePath = join(this.paths.compiledTemplateDir, `index${Math.random()}.cjs`)
 
 
         let contentJS = null;
@@ -288,7 +258,7 @@ class InternalAPI {
         }
 
         //merging together template contents with parent controller
-        contentTS = contentTS + templateParentContent;
+        contentTS = contentTS + this.paths.templateControllerContent;
 
         try {
             //compiling them into JavaScript
@@ -299,7 +269,7 @@ class InternalAPI {
         }
 
         //setting puppeteer executable path in the parent template controller
-        contentJS = contentJS.replace('%PUPPETEER_EXECUTABLE_PATH%', this.puppeteerExecutablePath);
+        contentJS = contentJS.replace('%PUPPETEER_EXECUTABLE_PATH%', this.paths.puppeteerExecutablePath());
 
         try {
             //writing contents to Javascript module file
@@ -639,21 +609,9 @@ class InternalAPI {
      */
     async extractNodeModules(): Promise<void> {
 
-        const slash = process.platform === 'win32' ? "\\" : '/';
-
-        //directory for extracted contents of app.asar archive
-        this.asarExtractedDirectory = tmpdir() + `${slash}opensubmitter-asar`;
-
-        //directory for compiled templates
-        this.compiledTemplateDir = tmpdir() + `${slash}opsubcompiledcustom`;
-
-        if (!fs.existsSync(this.compiledTemplateDir)) fs.mkdirSync(this.compiledTemplateDir);
-
-        const targetModulesPath = join(this.compiledTemplateDir, `${slash}node_modules`);
-
         //checking if modules have the latest version already
-        if (fs.existsSync(targetModulesPath) && fs.existsSync(`${targetModulesPath}${slash}version.txt`)) {
-            const version = fs.readFileSync(`${targetModulesPath}${slash}version.txt`).toString();
+        if (fs.existsSync(this.paths.compiledTemplateNodeModules) && fs.existsSync(this.paths.compiledTemplateNodeModulesVersion)) {
+            const version = fs.readFileSync(this.paths.compiledTemplateNodeModulesVersion).toString();
             if (version === this.modulesVersion) {
                 console.log('node_modules version is matching, skipping new copying');
                 this.areModulesExtracted = true;
@@ -661,31 +619,21 @@ class InternalAPI {
             }
         }
 
-        let extractorPath = null;
-        if (this.isDevelopmentEnv()) {
-            extractorPath = join(__dirname, `..${slash}..${slash}electron${slash}main${slash}asarextractor.js`);
-        } else {
-            extractorPath = join(process.resourcesPath, `src${slash}asarextractor.js`)
-        }
-
         if (!this.isDevelopmentEnv()) {
 
-            const fullModulesPath = `${this.asarExtractedDirectory}${slash}dist${slash}bundled-node-modules${slash}modules`;
-
-
             //extracting app.asar if not extracted yet
-            if (!fs.existsSync(fullModulesPath)){
+            if (!fs.existsSync(this.paths.asarExtractedNodeModules)){
 
                 await new Promise((resolve, reject) => {
                     const child = utilityProcess
-                        .fork(extractorPath)
+                        .fork(this.paths.extractor)
                         .on("spawn", () => {
                             child.postMessage({
                                 'type': "prepare-production",
-                                "asarExtractedDirectory": this.asarExtractedDirectory,
+                                "asarExtractedDirectory": this.paths.asarExtractedDirectory,
                                 "appPath": app.getAppPath(),
-                                "fullModulesPath": fullModulesPath,
-                                "targetModulesPath": targetModulesPath
+                                "fullModulesPath": this.paths.asarExtractedNodeModules,
+                                "targetModulesPath": this.paths.compiledTemplateNodeModules
                             })
                         })
                         .on("exit", (code) => {
@@ -701,12 +649,12 @@ class InternalAPI {
 
             await new Promise((resolve, reject) => {
                 const child = utilityProcess
-                    .fork(extractorPath)
+                    .fork(this.paths.extractor)
                     .on("spawn", () => {
                         child.postMessage({
                             'type': "prepare-development",
-                            "sourceModulesPath": join(app.getAppPath()+`${slash}extra${slash}bundled-node-modules${slash}modules`),
-                            "targetModulesPath": targetModulesPath
+                            "sourceModulesPath": this.paths.developmentNodeModules,
+                            "targetModulesPath": this.paths.compiledTemplateNodeModules
                         })
                     })
                     .on("exit", (code) => {
@@ -715,7 +663,7 @@ class InternalAPI {
             })
 
         }
-        fs.writeFileSync(`${targetModulesPath}${slash}version.txt`, this.modulesVersion);
+        fs.writeFileSync(this.paths.compiledTemplateNodeModulesVersion, this.modulesVersion);
         this.areModulesExtracted = true;
         console.log('node_modules and browsers are prepared');
     }
@@ -751,62 +699,6 @@ class InternalAPI {
         return true;
     }
 
-    definePuppeteerExecutablePath(): void {
-        let executablePath = '';
-        const slash = process.platform === 'win32' ? "\\" : '/';
-        const version = '114.0.5735.133';
-
-        switch (process.platform) {
-            case 'darwin':
-                if (process.arch === 'arm64') {
-                    executablePath = `mac_arm-${version}/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
-                } else {
-                    executablePath = `mac-${version}/chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
-                }
-                break;
-
-            case 'linux':
-                executablePath = `linux-${version}/chrome-linux/chrome`;
-                break;
-
-            case 'win32':
-                if (process.arch === 'x64' || (os.arch() === 'arm64' && this.isWindows11(os.release()))) {
-                    executablePath = `win64-${version}\\chrome-win64\\chrome.exe`;
-                } else {
-                    executablePath = `win32-${version}\\chrome-win32\\chrome.exe`;
-                }
-                break;
-        }
-
-
-        if (!this.isDevelopmentEnv()) {
-            this.puppeteerExecutablePath = `${this.asarExtractedDirectory}${slash}dist${slash}puppeteer${slash}${executablePath}`;
-        } else {
-            this.puppeteerExecutablePath = join(app.getAppPath(), `${slash}extra${slash}puppeteer${slash}${executablePath}`);
-
-        }
-        if (process.platform === 'win32') {
-            //making double quotes, so it could work in the template variable %PUPPETEER_EXECUTABLE_PATH%
-            this.puppeteerExecutablePath = this.puppeteerExecutablePath.replace(/\\/g, "\\\\");
-        }
-
-    }
-
-    //got it from puppeteer/browser/src/detectPlatform.ts
-    isWindows11(version: string): boolean {
-        const parts = version.split('.');
-        if (parts.length > 2) {
-            const major = parseInt(parts[0] as string, 10);
-            const minor = parseInt(parts[1] as string, 10);
-            const patch = parseInt(parts[2] as string, 10);
-            return (
-                major > 10 ||
-                (major === 10 && minor > 0) ||
-                (major === 10 && minor === 0 && patch >= 22000)
-            );
-        }
-        return false;
-    }
 
     killThreads(): void {
         for (const thread of this.threads) {
@@ -818,10 +710,9 @@ class InternalAPI {
     saveTemplateSettings(): void {
         if (!this.currentTemplateObject.config || !this.currentTemplateObject.config.userSettings) return; //non-existing config
         let config = {};
-        const configPath = this.getSettingsFilePath();
-        if (fs.existsSync(configPath)) {
+        if (fs.existsSync(this.paths.settingsFile)) {
             try {
-                config = JSON.parse(fs.readFileSync(configPath).toString())
+                config = JSON.parse(fs.readFileSync(this.paths.settingsFile).toString())
             } catch (e) {
                 //default empty config
             }
@@ -841,15 +732,15 @@ class InternalAPI {
             name: '__taskThreadsAmount',
             value: this.taskThreadsAmount
         })
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 2)); //save with pretty-printing
+        fs.writeFileSync(this.paths.settingsFile, JSON.stringify(config, null, 2)); //save with pretty-printing
     }
 
     loadTemplateSettings(): void {
+        this.templateSettingsWereSaved = false;
         if (!this.currentTemplateObject.config || !this.currentTemplateObject.config.userSettings) return; //non-existing config
-        const configPath = this.getSettingsFilePath();
-        if (!fs.existsSync(configPath)) return;
+        if (!fs.existsSync(this.paths.settingsFile)) return;
         try {
-            const config = JSON.parse(fs.readFileSync(configPath).toString());
+            const config = JSON.parse(fs.readFileSync(this.paths.settingsFile).toString());
             if (typeof config[this.currentTemplateObject.config.name] === "undefined") return;
 
             //loop through saved settings
@@ -858,8 +749,16 @@ class InternalAPI {
                 for (const setting of this.currentTemplateObject.config.userSettings) {
                     //assign values if names are matching
                     if (existingSetting.name === setting.name) {
+
                         setting.fileName = existingSetting.fileName;
                         setting.value = existingSetting.value;
+
+                        if (existingSetting.fileName && existingSetting.fileName.length > 0) {
+                            this.templateSettingsWereSaved = true;
+                        }
+                        if (existingSetting.value && existingSetting.value.length > 0) {
+                            this.templateSettingsWereSaved = true;
+                        }
                     }
                 }
                 if (existingSetting.name === '__taskThreadsAmount') {
@@ -875,23 +774,16 @@ class InternalAPI {
         this.eventHook.reply('TaskManager', {
             type: 'set-template-config',
             config: this.currentTemplateObject.config,
-            taskThreadsAmount: this.taskThreadsAmount
+            taskThreadsAmount: this.taskThreadsAmount,
+            settingsWereSaved: this.templateSettingsWereSaved ? this.templateSettingsWereSaved : null
         })
     }
 
     async resetTemplateSettings(): Promise<void> {
         await this.selectTemplateFile();
         this.saveTemplateSettings();
+        this.templateSettingsWereSaved = false;
         this.sendTemplateSettings();
-    }
-
-    getSettingsFilePath(): string {
-        const slash = process.platform === 'win32' ? "\\" : '/';
-        if (this.isDevelopmentEnv()) {
-            return join(__dirname, `..${slash}..${slash}templates${slash}settings.json`);
-        } else {
-            return join(process.resourcesPath, `templates${slash}settings.json`)
-        }
     }
 
     rmDirRecursive(path) {
@@ -901,10 +793,9 @@ class InternalAPI {
     }
 
     readSettings() {
-        const configPath = this.getSettingsFilePath();
-        if (!fs.existsSync(configPath)) return;
+        if (!fs.existsSync(this.paths.settingsFile)) return;
         try {
-            const config = JSON.parse(fs.readFileSync(configPath).toString());
+            const config = JSON.parse(fs.readFileSync(this.paths.settingsFile).toString());
             if (typeof config["___settings"] === "undefined") return;
             this.savedSettings = config["___settings"];
             if (this.eventHook) {
@@ -939,16 +830,15 @@ class InternalAPI {
 
     saveSettingsFile() {
         let config = {};
-        const configPath = this.getSettingsFilePath();
-        if (fs.existsSync(configPath)) {
+        if (fs.existsSync(this.paths.settingsFile)) {
             try {
-                config = JSON.parse(fs.readFileSync(configPath).toString())
+                config = JSON.parse(fs.readFileSync(this.paths.settingsFile).toString())
             } catch (e) {
                 //default empty config
             }
         }
         config["___settings"] = this.savedSettings;
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 2)); //save with pretty-printing
+        fs.writeFileSync(this.paths.settingsFile, JSON.stringify(config, null, 2)); //save with pretty-printing
     }
 
 }
