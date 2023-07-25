@@ -10,12 +10,13 @@ import os, {tmpdir} from 'os';
 import ac from "@antiadmin/anticaptchaofficial"
 import axios from "axios";
 import {pathsConfig} from "./pathsconfig";
+import TemplatesManager from "./templates-manager";
 
 
 class InternalAPI {
 
     currentTemplateClass = null;
-    currentTemplateObject?: OpenSubmitterTemplateProtocol | null = null;
+    // templates.currentObject?: OpenSubmitterTemplateProtocol | null = null;
     templateSettingsWereSaved: bool = false;
     currentTasks: TemplateTask[] = [];
     threads: TemplateControllerChild[] = [];
@@ -30,24 +31,26 @@ class InternalAPI {
     protected savedSettings: AppSettings = {};
 
     protected paths = pathsConfig();
+    protected templates: TemplatesManager | null = new TemplatesManager();
 
     // A list to exclude templates from auto-scanning in production mode
-    excludeTemplatesFromProduction = [
-        'bad-template.ts', //should not even appear in the list
-        'test-puppeteer.ts',
-        'test-axios.ts'
-    ];
+    // excludeTemplatesFromProduction = [
+    //     'bad-template.ts', //should not even appear in the list
+    //     'test-puppeteer.ts',
+    //     'test-axios.ts'
+    // ];
 
     startListening(): void {
         this.readSettings();
         ipcMain.on('TM', async(e, data) => {
             if (!data.type) return;
             this.eventHook = e;
+            this.templates.setHook(e);
             switch (data.type) {
 
                 case 'select-existing-template':
                     this.selectedTemplateFilePath = data.fileName;
-                    await this.selectTemplateFile();
+                    await this.templates.selectFile();
                     this.loadTemplateSettings();
                     this.sendTemplateSettings();
                     break;
@@ -57,12 +60,12 @@ class InternalAPI {
                     break;
 
                 case 'run-opened-file':
-                    if (this.currentTemplateObject.config.multiThreadingEnabled) {
+                    if (this.templates.currentObject.config.multiThreadingEnabled) {
                         this.taskThreadsAmount = data.threadsNumber;
                     } else {
                         this.taskThreadsAmount = 1;
                     }
-                    await this.runOpenedTemplate(e);
+                    await this.runOpenedTemplate();
                     break;
 
                 case 'select-file-for-template-settings':
@@ -75,7 +78,7 @@ class InternalAPI {
                     break;
 
                 case 'read-local-templates':
-                    await this.readLocalTemplates();
+                    await this.templates.readLocal();
                     break;
 
                 case 'reset-template-settings':
@@ -116,7 +119,7 @@ class InternalAPI {
                 }
             )
             fs.writeFileSync(templatePath, result.data.contents);
-            await this.readLocalTemplates();
+            await this.templates.readLocal();
             await this.eventHook.reply('TaskManager', {
                 type: 'switch-to-loaded-template',
                 path: `${this.paths.slash}${id}.ts`
@@ -165,7 +168,7 @@ class InternalAPI {
             try {
 
                 //compiling TS into JS, saving into .cjs file
-                contentJS = this.tsCompile(contentTS);
+                contentJS = this.templates.tsCompile(contentTS);
                 fs.writeFileSync(compiledPath, contentJS);
 
                 //win32 has it's own importing trick
@@ -206,7 +209,7 @@ class InternalAPI {
             if (!files || files.canceled) {
                 return;
             } else {
-                this.currentTemplateObject.config.userSettings[data.index]["fileName"] = files.filePaths[0];
+                this.templates.currentObject.config.userSettings[data.index]["fileName"] = files.filePaths[0];
             }
         }
         if (data.dialogType === 'save') {
@@ -214,12 +217,12 @@ class InternalAPI {
             if (!files || files.canceled) {
                 return;
             } else {
-                this.currentTemplateObject.config.userSettings[data.index]["fileName"] = files.filePath;
+                this.templates.currentObject.config.userSettings[data.index]["fileName"] = files.filePath;
             }
         }
         e.reply('TaskManager', {
             type: 'set-template-config',
-            config: this.currentTemplateObject.config,
+            config: this.templates.currentObject.config,
             taskThreadsAmount: this.taskThreadsAmount
         })
     }
@@ -232,133 +235,131 @@ class InternalAPI {
         }
 
         this.selectedTemplateFilePath = files.filePaths[0];
-        await this.selectTemplateFile();
+        await this.templates.selectFile();
         this.loadTemplateSettings();
         this.sendTemplateSettings();
     }
 
-    async selectTemplateFile(): Promise<void> {
-
-        if (!this.selectedTemplateFilePath) return;
-
-        const slash = process.platform === 'win32' ? "\\" : '/';
-
-        //defining the path for compiled template
-        this.compiledTemplateFilePath = join(this.paths.compiledTemplateDir, `index${Math.random()}.cjs`)
-
-
-        let contentJS = null;
-        let contentTS = null;
-
-        try {
-            contentTS = fs.readFileSync(this.selectedTemplateFilePath).toString();
-        } catch (e) {
-            this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not open "+this.selectedTemplateFilePath})
-            return;
-        }
-
-        //merging together template contents with parent controller
-        contentTS = contentTS + this.paths.templateControllerContent;
-
-        try {
-            //compiling them into JavaScript
-            contentJS = this.tsCompile(contentTS);
-        } catch (e) {
-            this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not compile TypeScript to Javascript"})
-            return;
-        }
-
-        //setting puppeteer executable path in the parent template controller
-        contentJS = contentJS.replace('%PUPPETEER_EXECUTABLE_PATH%', this.paths.puppeteerExecutablePath());
-
-        try {
-            //writing contents to Javascript module file
-            fs.writeFileSync(this.compiledTemplateFilePath, contentJS);
-        } catch (e) {
-            this.eventHook.repnply('TaskManager', {type: 'set-template-name-error', error: "Could not write compiled code to file "+this.compiledTemplateFilePath})
-            return;
-        }
-
-
-        try {
-
-            //importing compiled module
-            let importPath = this.compiledTemplateFilePath
-            if (process.platform === 'win32') {
-                importPath = `file:///${this.compiledTemplateFilePath}`.replace('\\', '/');
-            }
-
-            const { TemplateController } = await import(importPath);
-
-            //creating new template controller which contains the template
-            this.currentTemplateObject = new TemplateController();
-
-        } catch (e) {
-            console.error(`could not open cjs file ${this.compiledTemplateFilePath}: `, e.toString());
-            this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: `Could not import script from template`})
-            return;
-        }
-
-        if (!this.validateTemplateObject()) return;
-
-        //responding to UI with file name and no errors status
-        this.eventHook.reply('TaskManager', { type: 'set-template-name', filename: this.selectedTemplateFilePath })
-        this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "" })
-
-        if (!this.currentTemplateObject.config) {
-            console.log('no config in the template')
-            return;
-        }
-    }
-
-    validateTemplateObject(): boolean {
-        const pleaseRefer = ". Please refer to our documentation at https://opensubmitter.com/documentation";
-        if (!this.currentTemplateObject.config) {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config property"+pleaseRefer })
-            return false;
-        }
-        if (!this.currentTemplateObject.config.name) {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.name property"+pleaseRefer })
-            return false;
-        }
-        if (typeof this.currentTemplateObject.config.name !== "string") {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.name is of incorrect type"+pleaseRefer })
-            return false;
-        }
-        if (!this.currentTemplateObject.config.description) {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.description property"+pleaseRefer })
-            return false;
-        }
-        if (typeof this.currentTemplateObject.config.description !== "string") {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.description is of incorrect type"+pleaseRefer })
-            return false;
-        }
-        if (typeof this.currentTemplateObject.config.multiThreadingEnabled === "undefined") {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.multiThreadingEnabled property"+pleaseRefer })
-            return false;
-        }
-        if (typeof this.currentTemplateObject.config.multiThreadingEnabled !== "boolean") {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.multiThreadingEnabled is of incorrect type"+pleaseRefer })
-            return false;
-        }
-        if (!this.currentTemplateObject.config.userSettings) {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.userSettings property"+pleaseRefer })
-            return false;
-        }
-        if (typeof this.currentTemplateObject.config.userSettings !== "object") {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.userSettings is of incorrect type"+pleaseRefer })
-            return false;
-        }
-        if (typeof this.currentTemplateObject.generateTasks !== "function") {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's generateTasks function is missing"+pleaseRefer })
-            return false;
-        }
-        if (typeof this.currentTemplateObject.runTask !== "function") {
-            this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's runTask function is missing"+pleaseRefer })
-            return false;
-        }
-        return true;
-    }
+    // async selectTemplateFile(): Promise<void> {
+    //
+    //     if (!this.selectedTemplateFilePath) return;
+    //
+    //     //defining the path for compiled template
+    //     this.compiledTemplateFilePath = join(this.paths.compiledTemplateDir, `index${Math.random()}.cjs`)
+    //
+    //
+    //     let contentJS = null;
+    //     let contentTS = null;
+    //
+    //     try {
+    //         contentTS = fs.readFileSync(this.selectedTemplateFilePath).toString();
+    //     } catch (e) {
+    //         this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not open "+this.selectedTemplateFilePath})
+    //         return;
+    //     }
+    //
+    //     //merging together template contents with parent controller
+    //     contentTS = contentTS + this.paths.templateControllerContent;
+    //
+    //     try {
+    //         //compiling them into JavaScript
+    //         contentJS = this.templates.tsCompile(contentTS);
+    //     } catch (e) {
+    //         this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not compile TypeScript to Javascript"})
+    //         return;
+    //     }
+    //
+    //     //setting puppeteer executable path in the parent template controller
+    //     contentJS = contentJS.replace('%PUPPETEER_EXECUTABLE_PATH%', this.paths.puppeteerExecutablePath());
+    //
+    //     try {
+    //         //writing contents to Javascript module file
+    //         fs.writeFileSync(this.compiledTemplateFilePath, contentJS);
+    //     } catch (e) {
+    //         this.eventHook.repnply('TaskManager', {type: 'set-template-name-error', error: "Could not write compiled code to file "+this.compiledTemplateFilePath})
+    //         return;
+    //     }
+    //
+    //
+    //     try {
+    //
+    //         //importing compiled module
+    //         let importPath = this.compiledTemplateFilePath
+    //         if (process.platform === 'win32') {
+    //             importPath = `file:///${this.compiledTemplateFilePath}`.replace('\\', '/');
+    //         }
+    //
+    //         const { TemplateController } = await import(importPath);
+    //
+    //         //creating new template controller which contains the template
+    //         this.templates.currentObject = new TemplateController();
+    //
+    //     } catch (e) {
+    //         console.error(`could not open cjs file ${this.compiledTemplateFilePath}: `, e.toString());
+    //         this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: `Could not import script from template`})
+    //         return;
+    //     }
+    //
+    //     if (!this.validateTemplateObject()) return;
+    //
+    //     //responding to UI with file name and no errors status
+    //     this.eventHook.reply('TaskManager', { type: 'set-template-name', filename: this.selectedTemplateFilePath })
+    //     this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "" })
+    //
+    //     if (!this.templates.currentObject.config) {
+    //         console.log('no config in the template')
+    //         return;
+    //     }
+    // }
+    //
+    // validateTemplateObject(): boolean {
+    //     const pleaseRefer = ". Please refer to our documentation at https://opensubmitter.com/documentation";
+    //     if (!this.templates.currentObject.config) {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config property"+pleaseRefer })
+    //         return false;
+    //     }
+    //     if (!this.templates.currentObject.config.name) {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.name property"+pleaseRefer })
+    //         return false;
+    //     }
+    //     if (typeof this.templates.currentObject.config.name !== "string") {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.name is of incorrect type"+pleaseRefer })
+    //         return false;
+    //     }
+    //     if (!this.templates.currentObject.config.description) {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.description property"+pleaseRefer })
+    //         return false;
+    //     }
+    //     if (typeof this.templates.currentObject.config.description !== "string") {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.description is of incorrect type"+pleaseRefer })
+    //         return false;
+    //     }
+    //     if (typeof this.templates.currentObject.config.multiThreadingEnabled === "undefined") {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.multiThreadingEnabled property"+pleaseRefer })
+    //         return false;
+    //     }
+    //     if (typeof this.templates.currentObject.config.multiThreadingEnabled !== "boolean") {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.multiThreadingEnabled is of incorrect type"+pleaseRefer })
+    //         return false;
+    //     }
+    //     if (!this.templates.currentObject.config.userSettings) {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template does not have config.userSettings property"+pleaseRefer })
+    //         return false;
+    //     }
+    //     if (typeof this.templates.currentObject.config.userSettings !== "object") {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's property config.userSettings is of incorrect type"+pleaseRefer })
+    //         return false;
+    //     }
+    //     if (typeof this.templates.currentObject.generateTasks !== "function") {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's generateTasks function is missing"+pleaseRefer })
+    //         return false;
+    //     }
+    //     if (typeof this.templates.currentObject.runTask !== "function") {
+    //         this.eventHook.reply('TaskManager', { type: 'set-template-name-error', error: "Template's runTask function is missing"+pleaseRefer })
+    //         return false;
+    //     }
+    //     return true;
+    // }
 
     async childMessageHandler(child: UtilityProcess, message: MessageWithType): Promise<void> {
         for (const thread of this.threads) {
@@ -415,9 +416,8 @@ class InternalAPI {
         })
     }
 
-    async runOpenedTemplate(event): Promise<void> {
+    async runOpenedTemplate(): Promise<void> {
 
-        this.eventHook = event;
         this.saveTemplateSettings();
         console.log("\n\n\n======NEW RUN======\n");
 
@@ -437,7 +437,7 @@ class InternalAPI {
         this.addToParentLog('Generating tasks..');
 
         try {
-            this.currentTasks = await this.currentTemplateObject.generateTasks();
+            this.currentTasks = await this.templates.currentObject.generateTasks();
         } catch (e) {
             this.addToParentLog('Template error: '+e.toString())
             event.reply('TaskManager', {
@@ -480,7 +480,7 @@ class InternalAPI {
                 continue;
             }
 
-            const task = this.getNextTask();
+            const task = this.currentTasks.length === 0 ? null : this.currentTasks.pop();
             if (!task) {
                 console.log('no more tasks left')
                 if (this.threads.length > 0) {
@@ -503,7 +503,7 @@ class InternalAPI {
                             'type': "start-task",
                             "pid": child.pid,
                             "task": task,
-                            "config": this.currentTemplateObject.config ? this.currentTemplateObject.config : null,
+                            "config": this.templates.currentObject.config ? this.templates.currentObject.config : null,
                             "antiCaptchaAPIKey": this.savedSettings.antiCaptchaAPIKey
                         } as TaskMessage)
                     })
@@ -576,11 +576,6 @@ class InternalAPI {
         })
 
         this.addToParentLog(`Done! Completed ${completedTasks} tasks`);
-    }
-
-    getNextTask(): TemplateTask | null {
-        if (this.currentTasks.length === 0) return null;
-        return this.currentTasks.pop();
     }
 
     tsCompile(source: string): string {
@@ -708,7 +703,7 @@ class InternalAPI {
     }
 
     saveTemplateSettings(): void {
-        if (!this.currentTemplateObject.config || !this.currentTemplateObject.config.userSettings) return; //non-existing config
+        if (!this.templates.currentObject.config || !this.templates.currentObject.config.userSettings) return; //non-existing config
         let config = {};
         if (fs.existsSync(this.paths.settingsFile)) {
             try {
@@ -717,18 +712,18 @@ class InternalAPI {
                 //default empty config
             }
         }
-        config[this.currentTemplateObject.config.name] = [];
+        config[this.templates.currentObject.config.name] = [];
         //loop through settings and extract field values
-        if (this.currentTemplateObject.config && this.currentTemplateObject.config.userSettings) {
-            for (const setting of this.currentTemplateObject.config.userSettings) {
-                config[this.currentTemplateObject.config.name].push({
+        if (this.templates.currentObject.config && this.templates.currentObject.config.userSettings) {
+            for (const setting of this.templates.currentObject.config.userSettings) {
+                config[this.templates.currentObject.config.name].push({
                     name: setting.name,
                     value: setting.value,
                     fileName: setting.fileName
                 });
             }
         }
-        config[this.currentTemplateObject.config.name].push({
+        config[this.templates.currentObject.config.name].push({
             name: '__taskThreadsAmount',
             value: this.taskThreadsAmount
         })
@@ -737,16 +732,16 @@ class InternalAPI {
 
     loadTemplateSettings(): void {
         this.templateSettingsWereSaved = false;
-        if (!this.currentTemplateObject.config || !this.currentTemplateObject.config.userSettings) return; //non-existing config
+        if (!this.templates.currentObject || !this.templates.currentObject.config || !this.templates.currentObject.config.userSettings) return; //non-existing config
         if (!fs.existsSync(this.paths.settingsFile)) return;
         try {
             const config = JSON.parse(fs.readFileSync(this.paths.settingsFile).toString());
-            if (typeof config[this.currentTemplateObject.config.name] === "undefined") return;
+            if (typeof config[this.templates.currentObject.config.name] === "undefined") return;
 
             //loop through saved settings
-            for (const existingSetting of config[this.currentTemplateObject.config.name]) {
+            for (const existingSetting of config[this.templates.currentObject.config.name]) {
                 //loop through template settings
-                for (const setting of this.currentTemplateObject.config.userSettings) {
+                for (const setting of this.templates.currentObject.config.userSettings) {
                     //assign values if names are matching
                     if (existingSetting.name === setting.name) {
 
@@ -771,16 +766,20 @@ class InternalAPI {
     }
 
     sendTemplateSettings() {
+        if (!this.templates.currentObject) {
+            console.log('sendTemplateSettings: this.templates.currentObject is null')
+            return;
+        }
         this.eventHook.reply('TaskManager', {
             type: 'set-template-config',
-            config: this.currentTemplateObject.config,
+            config: this.templates.currentObject.config,
             taskThreadsAmount: this.taskThreadsAmount,
             settingsWereSaved: this.templateSettingsWereSaved ? this.templateSettingsWereSaved : null
         })
     }
 
     async resetTemplateSettings(): Promise<void> {
-        await this.selectTemplateFile();
+        await this.templates.selectFile();
         this.saveTemplateSettings();
         this.templateSettingsWereSaved = false;
         this.sendTemplateSettings();
