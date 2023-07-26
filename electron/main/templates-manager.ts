@@ -40,7 +40,7 @@ export default class TemplatesManager {
         try {
             contentTS = fs.readFileSync(this.selectedTemplateFilePath).toString();
         } catch (e) {
-            this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not open "+selectedTemplateFilePath})
+            this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not open "+this.selectedTemplateFilePath})
             return;
         }
 
@@ -157,7 +157,7 @@ export default class TemplatesManager {
         const templatesList = fs.readdirSync(paths.templatesDirectory, {withFileTypes: true})
                                 .filter(item => {
                                     if (item.isDirectory()) return false;
-                                    if (!paths.isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) { console.log('excludingng', item); return false };
+                                    if (!paths.isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) { console.log('excluding', item); return false }
                                     let ext = item.name.substring(item.name.indexOf('.')+1);
                                     return ['ts','js'].indexOf(ext) !== -1;
                                 })
@@ -188,7 +188,7 @@ export default class TemplatesManager {
                 contentJS = this.tsCompile(contentTS);
                 fs.writeFileSync(compiledPath, contentJS);
 
-                //win32 has it's own importing trick
+                //win32 has its own importing trick
                 if (process.platform === 'win32') {
                     compiledPath = `file:///${compiledPath}`.replace('\\', '/');
                 }
