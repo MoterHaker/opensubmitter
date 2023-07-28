@@ -5,7 +5,7 @@
             {{ taskStatusData?.status }} {{ taskStatusData?.status == 'Running tasks' ? ' ('+taskStatusData?.pending + ' pending, '+taskStatusData?.active + ' active, ' + taskStatusData?.completed + ' completed)'  : ''}}
             <div class="progress-block">
                 <progress-bar :percents="progressComputed"/>
-                <btn label="Restart" @click="resetManager" v-if="!isJobRunning" class="btn-row"/>
+                <btn label="Restart" @click="restartJob" v-if="!isJobRunning" class="btn-row"/>
                 <btn label="Stop" @click="stopJobIPC" v-if="isJobRunning" class="btn-row"/>
             </div>
 
@@ -40,10 +40,9 @@
         <div v-if="interfaceMode == 'settings'">
             <div class="title">Open template from:</div>
             <div class="padding10_0px">
-                <input type="radio" value="existing" v-model="taskManagerStore.templateSource" id="existingSource">
-                    <label for="existingSource">Local template folder</label>
-                <input type="radio" value="file" v-model="taskManagerStore.templateSource" id="fileSource">
-                    <label for="fileSource">Select template file</label>
+
+                <switch-toggler left="Local templates collection" right="Open template file" :state="taskManagerStore.templateSource === 'file'" @update="switchSourceToggler" />
+
             </div>
             <div v-if="taskManagerStore.templateSource == 'existing'">
                 <div class="title mtop10">Template name</div>
@@ -107,8 +106,10 @@ import Textfield from "../components/Textfield.vue";
 import ProgressBar from "../components/ProgressBar.vue";
 import TextLog from "../components/TextLog.vue";
 import ThreadStatuses from "../components/ThreadStatuses.vue";
+import SwitchToggler from "../components/SwitchToggler.vue";
 import {useRouter} from "vue-router";
 import {useTaskManagerStore} from "../composables/task-manager";
+import {useTitleStore} from "../composables/titles";
 
 const taskManagerStore = useTaskManagerStore();
 const templatesList = ref<LocalTemplateListItem[]>([])
@@ -138,6 +139,23 @@ watch(() => taskManagerStore.templateSource, (newValue) => {
 onMounted(() => {
     ipcRenderer.send('TM', {type: 'read-local-templates'});
 })
+
+function switchSourceToggler(value) {
+    console.log('switchSourceToggler');
+    if (value) taskManagerStore.templateSource = 'file';
+    else taskManagerStore.templateSource = 'existing';
+    reloadSelectedTemplateSettings();
+}
+
+function reloadSelectedTemplateSettings() {
+    if (taskManagerStore.selectedTemplateFilename.length > 0) {
+        console.log('reloading settings');
+        ipcRenderer.send('TM', {type: 'select-existing-template', fileName: taskManagerStore.selectedTemplateFilename});
+    } else {
+        console.log('resetting settings')
+        resetTemplate()
+    }
+}
 
 function getResultCellPropertyClasses(property: ResultTableRow) {
     const res: any = {};
@@ -232,6 +250,7 @@ function runTemplateIPC() {
         console.log('running blocked');
         return;
     }
+    useTitleStore().subtitle = 'Running "'+(templateConfig.value as TemplateConfig).name+"\""
     ipcRenderer.send('TM', {
         type: 'run-opened-file',
         threadsNumber: parseInt(threadsNumber.value)
@@ -252,9 +271,11 @@ function selectFileForTemplateIPC(type : FileOpenDialogType, index: number) {
         index
     });
 }
-function resetManager() {
-    resetTemplate();
-    taskManagerStore.selectedTemplateFilename = '';
+function restartJob() {
+    interfaceMode.value = 'settings';
+    reloadSelectedTemplateSettings();
+    // resetTemplate();
+    // taskManagerStore.selectedTemplateFilename = '';
 }
 function resetTemplate() {
     taskManagerStore.fileName = '';
@@ -269,6 +290,7 @@ function resetTemplate() {
     resultsData.value = [];
 }
 function stopJobIPC() {
+    useTitleStore().subtitle = "Run templates"
     isJobRunning.value = false;
     ipcRenderer.send('TM', {type: 'stop-job'});
 }
@@ -309,6 +331,7 @@ ipcRenderer.on('TaskManager', (e, data) => {
             taskStatusData.value = data.statusData;
             if (data.statusData.status === 'Job complete' || data.statusData.status.indexOf('Template error') !== -1) {
                 isJobRunning.value = false;
+                useTitleStore().subtitle = "Run templates"
             } else {
                 isJobRunning.value = true;
             }
@@ -327,7 +350,6 @@ ipcRenderer.on('TaskManager', (e, data) => {
             break;
 
         case 'post-result-to-table':
-            console.log('post-result-to-table', data.result);
             resultsData.value.push(data.result as ResultTableRow[])
             break;
 
@@ -343,15 +365,6 @@ ipcRenderer.on('TaskManager', (e, data) => {
 
     }
 
-})
-
-
-
-ipcRenderer.on('TM-set-template-config', (e, data) => {
-
-});
-ipcRenderer.on('TM-set-template-name-error', (e, errorString: string) => {
-    templateError.value = errorString;
 })
 </script>
 
