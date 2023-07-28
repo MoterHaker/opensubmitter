@@ -6,6 +6,7 @@ import fs from "fs";
 import ts, {ScriptTarget} from "typescript"
 
 import {pathsConfig} from "./pathsconfig";
+import axios from "axios";
 
 const paths = pathsConfig();
 
@@ -15,6 +16,8 @@ export default class TemplatesManager {
     currentObject: OpenSubmitterTemplateProtocol | null = null;
     selectedTemplateFilePath : string|null = null;
     compiledTemplateFilePath : string|null = null;
+    taskThreadsAmount = 10;
+    templateSettingsWereSaved: boolean = false;
 
     private excludeTemplatesFromProduction = [
         'bad-template.ts', //should not even appear in the list
@@ -230,16 +233,115 @@ export default class TemplatesManager {
             }}).outputText;
     }
 
-    // return {
-    //     //variables
-    //     currentObject,
-    //     selectedTemplateFilePath,
-    //     compiledTemplateFilePath,
-    //
-    //     //methods
-    //     readLocal,
-    //     selectFile,
-    //     tsCompile
-    // }
+
+    saveSettings(): void {
+        if (!this.currentObject.config || !this.currentObject.config.userSettings) return; //non-existing config
+        let config = {};
+        if (fs.existsSync(paths.settingsFile)) {
+            try {
+                config = JSON.parse(fs.readFileSync(paths.settingsFile).toString())
+            } catch (e) {
+                //default empty config
+            }
+        }
+        config[this.currentObject.config.name] = [];
+        //loop through settings and extract field values
+        if (this.currentObject.config && this.currentObject.config.userSettings) {
+            for (const setting of this.currentObject.config.userSettings) {
+                config[this.currentObject.config.name].push({
+                    name: setting.name,
+                    value: setting.value,
+                    fileName: setting.fileName
+                });
+            }
+        }
+        config[this.currentObject.config.name].push({
+            name: '__taskThreadsAmount',
+            value: this.taskThreadsAmount
+        })
+        fs.writeFileSync(paths.settingsFile, JSON.stringify(config, null, 2)); //save with pretty-printing
+    }
+
+    loadSettings(): void {
+        this.templateSettingsWereSaved = false;
+        if (!this.currentObject || !this.currentObject.config || !this.currentObject.config.userSettings) return; //non-existing config
+        if (!fs.existsSync(paths.settingsFile)) return;
+        try {
+            const config = JSON.parse(fs.readFileSync(paths.settingsFile).toString());
+            if (typeof config[this.currentObject.config.name] === "undefined") return;
+
+            //loop through saved settings
+            for (const existingSetting of config[this.currentObject.config.name]) {
+                //loop through template settings
+                for (const setting of this.currentObject.config.userSettings) {
+                    //assign values if names are matching
+                    if (existingSetting.name === setting.name) {
+
+                        setting.fileName = existingSetting.fileName;
+                        setting.value = existingSetting.value;
+
+                        if (existingSetting.fileName && existingSetting.fileName.length > 0) {
+                            this.templateSettingsWereSaved = true;
+                        }
+                        if (existingSetting.value && existingSetting.value.length > 0) {
+                            this.templateSettingsWereSaved = true;
+                        }
+                    }
+                }
+                if (existingSetting.name === '__taskThreadsAmount') {
+                    this.taskThreadsAmount = existingSetting.value;
+                }
+            }
+        } catch (e) {
+            //do nothing
+        }
+    }
+
+    sendSettings() {
+        if (!this.currentObject) {
+            console.log('sendTemplateSettings: this.templates.currentObject is null')
+            return;
+        }
+        this.eventHook.reply('TaskManager', {
+            type: 'set-template-config',
+            config: this.currentObject.config,
+            taskThreadsAmount: this.taskThreadsAmount,
+            settingsWereSaved: this.templateSettingsWereSaved ? this.templateSettingsWereSaved : null
+        })
+    }
+
+    async resetSettings(): Promise<void> {
+        await this.selectFile();
+        this.saveSettings();
+        this.templateSettingsWereSaved = false;
+        this.sendSettings()
+    }
+
+
+    async download(id: number): Promise<void> {
+
+        const templatePath = join(paths.templatesDirectory, `${id}.ts`);
+        try {
+            const result = await axios.post('https://opensubmitter.com/api/template/download', {
+                    id,
+                    env: 'prod'
+                }, {
+                    headers: {
+                        Accept: 'Accept: application/json'
+                    }
+                }
+            )
+            fs.writeFileSync(templatePath, result.data.contents);
+            await this.readLocal();
+            await this.eventHook.reply('TaskManager', {
+                type: 'switch-to-loaded-template',
+                path: templatePath
+            })
+
+        } catch (e) {
+            console.error('Could not download template: '+e.toString());
+            return;
+        }
+    }
 
 }
