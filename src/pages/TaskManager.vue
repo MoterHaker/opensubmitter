@@ -1,33 +1,33 @@
 <template>
     <div>
-        <div v-if="interfaceMode == 'running'">
+        <div v-if="taskManagerStore.interfaceMode == 'running'">
 
-            {{ taskStatusData?.status }} {{ taskStatusData?.status == 'Running tasks' ? ' ('+taskStatusData?.pending + ' pending, '+taskStatusData?.active + ' active, ' + taskStatusData?.completed + ' completed)'  : ''}}
+            {{ taskManagerStore.taskStatusData?.status }} {{ taskManagerStore.taskStatusData?.status == 'Running tasks' ? ' ('+taskManagerStore.taskStatusData?.pending + ' pending, '+taskManagerStore.taskStatusData?.active + ' active, ' + taskManagerStore.taskStatusData?.completed + ' completed)'  : ''}}
             <div class="progress-block">
                 <progress-bar :percents="progressComputed"/>
-                <btn label="Restart" @click="restartJob" v-if="!isJobRunning" class="btn-row"/>
-                <btn label="Stop" @click="stopJobIPC" v-if="isJobRunning" class="btn-row"/>
+                <btn label="Restart" @click="taskManagerStore.restartJob" v-if="!taskManagerStore.isJobRunning" class="btn-row"/>
+                <btn label="Stop" @click="stopJobIPC" v-if="taskManagerStore.isJobRunning" class="btn-row"/>
             </div>
 
-            <div class="subtitle mtop20" height="200" v-if="threadStatuses.length > 0">Thread Statuses:</div>
-            <thread-statuses class="mtop10" :statuses="threadStatuses" v-if="threadStatuses.length > 0"/>
+            <div class="subtitle mtop20" height="200" v-if="taskManagerStore.threadStatuses.length > 0">Thread Statuses:</div>
+            <thread-statuses class="mtop10" :statuses="taskManagerStore.threadStatuses" v-if="taskManagerStore.threadStatuses.length > 0"/>
             <div class="subtitle mtop20" height="200">Job logs:</div>
-            <text-log v-model="textLogString" class="mtop10"/>
+            <text-log v-model="taskManagerStore.textLogString" class="mtop10"/>
 
-            <div v-if="resultTableHeader" class="subtitle mtop20 mbottom10" height="200">Job results:</div>
-            <table class="table-docs" v-if="resultTableHeader">
+            <div v-if="taskManagerStore.resultTableHeader" class="subtitle mtop20 mbottom10" height="200">Job results:</div>
+            <table class="table-docs" v-if="taskManagerStore.resultTableHeader">
                 <thead>
                 <tr>
-                    <td v-for="row in resultTableHeader">
+                    <td v-for="row in taskManagerStore.resultTableHeader">
                         {{row.title}}
                     </td>
                 </tr>
                 </thead>
-                <tbody v-if="resultsData.length == 0">
+                <tbody v-if="taskManagerStore.resultsData.length == 0">
                     <tr><td colspan="100" align="center">No results yet</td></tr>
                 </tbody>
-                <tbody v-if="resultsData.length > 0">
-                    <tr v-for="row in resultsData">
+                <tbody v-if="taskManagerStore.resultsData.length > 0">
+                    <tr v-for="row in taskManagerStore.resultsData">
                         <td v-for="property in row" :class="getResultCellPropertyClasses(property)">
                             <span v-if="!property.isResult">{{ property.value }}</span>
                             <span v-else>{{ property.value ? 'Success' : 'Failed' }}</span>
@@ -37,11 +37,11 @@
             </table>
         </div>
 
-        <div v-if="interfaceMode == 'settings'">
+        <div v-if="taskManagerStore.interfaceMode == 'settings'">
             <div class="title">Open template from:</div>
             <div class="padding10_0px">
 
-                <switch-toggler left="Local templates collection" right="Open template file" :state="taskManagerStore.templateSource === 'file'" @update="switchSourceToggler" />
+                <switch-toggler left="Local templates collection" right="Open template file" :state="taskManagerStore.templateSource === 'file'" @update="taskManagerStore.switchSourceToggler" />
 
             </div>
             <div v-if="taskManagerStore.templateSource == 'existing'">
@@ -52,45 +52,45 @@
                         <option v-for="template in taskManagerStore.localTemplatesList" :value="template.filePath">{{ template.name }}</option>
                     </select>
                 </div>
-                <div v-if="templateError.length > 0" class="error mtop10">{{ templateError }}</div>
+                <div v-if="taskManagerStore.templateError.length > 0" class="error mtop10">{{ taskManagerStore.templateError }}</div>
             </div>
             <div class="textfield-button" v-if="taskManagerStore.templateSource == 'file'">
                 <div>Template file path</div>
-                <Textfield v-model="taskManagerStore.fileName" style="width:100%" :errorMessage="templateError"/>
+                <Textfield v-model="taskManagerStore.fileName" style="width:100%" :errorMessage="taskManagerStore.templateError"/>
                 <btn label="Open Template" @click="openTemplateIPC"/>
             </div>
-            <div v-if="taskManagerStore.selectedTemplateFilename" class="mtop10 mbottom10">{{ templateConfig?.description }}</div>
-            <div v-if="userSettings.length > 0 && templateConfig" class="template-name-block">
-                <div class="hg2 padding20_0px">{{templateConfig?.name}}</div>
-                <btn icon="reset" label="Reset settings" @click="resetTemplateSettingsIPC" v-if="isTemplateSettingsResetAvailable"/>
+            <div v-if="taskManagerStore.selectedTemplateFilename" class="mtop10 mbottom10">{{ taskManagerStore.templateConfig?.description }}</div>
+            <div v-if="taskManagerStore.userSettings.length > 0 && taskManagerStore.templateConfig" class="template-name-block">
+                <div class="hg2 padding20_0px">{{taskManagerStore.templateConfig?.name}}</div>
+                <btn icon="reset" label="Reset settings" @click="resetTemplateSettingsIPC" v-if="taskManagerStore.isTemplateSettingsResetAvailable"/>
             </div>
-            <div v-for="(setting, index) in userSettings as UserSetting[]" :key="index" class="mtop10"
+            <div v-for="(setting, index) in taskManagerStore.userSettings as UserSetting[]" :key="index" class="mtop10"
                  :class="{
                         'w50' : (!setting.uiWidth || setting.uiWidth === 50),
                         'w100' : setting.uiWidth == 100
                     }">
                 <div v-if="['SourceFileTaskPerLine'].indexOf(setting.type) !== -1" class="textfield-button">
                     <div>{{setting.title}}</div>
-                    <Textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
+                    <Textfield v-model="setting.fileName" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
                     <btn label="Select File" @click="selectFileForTemplateIPC('open', index)"/>
                 </div>
                 <div v-if="['OutputFile'].indexOf(setting.type) !== -1" class="textfield-button">
                     <div>{{setting.title}}</div>
-                    <textfield v-model="setting.fileName" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
+                    <textfield v-model="setting.fileName" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
                     <btn label="Create File" @click="selectFileForTemplateIPC('save', index)"/>
                 </div>
                 <div v-if="['TextInput'].indexOf(setting.type) !== -1" class="textfield-simple">
                     <div>{{setting.title}}</div>
-                    <textfield v-model="setting.value" @update:modelValue="validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
+                    <textfield v-model="setting.value" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
                 </div>
             </div>
-            <div v-if="templateConfig" class="textfield-simple">
+            <div v-if="taskManagerStore.templateConfig" class="textfield-simple">
                 <div>Threads number</div>
-                <textfield v-if="templateConfig?.multiThreadingEnabled" v-model="threadsNumber" @update:modelValue="" :error-message="threadsError" style="width: 100px"/>
+                <textfield v-if="taskManagerStore.templateConfig?.multiThreadingEnabled" v-model="taskManagerStore.threadsNumber" @update:modelValue="" :error-message="taskManagerStore.threadsError" style="width: 100px"/>
                 <div v-else>Multithreading is disabled in this template</div>
             </div>
             <div class="run-btn">
-                <btn label="Run template" :disabled="isRunningBlocked" @click="runTemplateIPC"/>
+                <btn label="Run template" :disabled="taskManagerStore.isRunningBlocked" @click="runTemplateIPC"/>
             </div>
         </div>
     </div>
@@ -112,49 +112,18 @@ import {useTaskManagerStore} from "../composables/task-manager";
 import {useTitleStore} from "../composables/titles";
 
 const taskManagerStore = useTaskManagerStore();
-const isRunningBlocked = ref(true);
-const userSettings = ref([]);
-const templateConfig = ref<TemplateConfig | null>(null);
-const templateError = ref('');
-const interfaceMode = ref<TaskManagerInterfaceMode>('settings');
-const isJobRunning = ref(false);
-const taskStatusData = ref<TaskStatusUpdate | null>( null);
-const textLogString = ref('')
-const resultTableHeader = ref<ResultTableRow[] | null>(null);
-const resultsData = ref<ResultTableRow[][]>([]);
-const threadStatuses = ref<ThreadStatus[]>([])
-const threadsNumber = ref('10');
-const threadsError = ref('');
-const isTemplateSettingsResetAvailable = ref(false);
 const router = useRouter();
 
 
 
 watch(() => taskManagerStore.templateSource, (newValue) => {
     ipcRenderer.send('TM', {type: 'read-local-templates'});
-    resetTemplate();
+    taskManagerStore.resetTemplate();
 })
 
 onMounted(() => {
     ipcRenderer.send('TM', {type: 'read-local-templates'});
 })
-
-function switchSourceToggler(value) {
-    console.log('switchSourceToggler');
-    if (value) taskManagerStore.templateSource = 'file';
-    else taskManagerStore.templateSource = 'existing';
-    reloadSelectedTemplateSettings();
-}
-
-function reloadSelectedTemplateSettings() {
-    if (taskManagerStore.selectedTemplateFilename.length > 0) {
-        console.log('reloading settings');
-        ipcRenderer.send('TM', {type: 'select-existing-template', fileName: taskManagerStore.selectedTemplateFilename});
-    } else {
-        console.log('resetting settings')
-        resetTemplate()
-    }
-}
 
 function getResultCellPropertyClasses(property: ResultTableRow) {
     const res: any = {};
@@ -169,97 +138,29 @@ function getResultCellPropertyClasses(property: ResultTableRow) {
     return res;
 }
 
-function validateUserSettings(type?: UserSettingsInput, index?: number) {
-    let isEverythingChecked = true;
-    for (const userSettingIndex in userSettings.value) {
-        const userSetting : UserSetting = userSettings.value[userSettingIndex];
-        if (typeof type !== "undefined" && typeof index !== "undefined") {
-            //check exactly this input
-            if (parseInt(userSettingIndex) === index) {
-                if (userSetting.required && userSetting.required === true) {
-                    if (validateInput(userSetting)) {
-                        userSetting.errorString = null;
-                    } else {
-                        userSetting.errorString = "Required field";
-                    }
-                }
-                validateUserSettings(); //recheck everything silently
-            }
-        } else {
-            //check all fields silently
-            if (!validateInput(userSetting) || !validateThreads()) {
-                isEverythingChecked = false;
-            } else {
-                userSetting.errorString = null;
-            }
-        }
-    }
-
-    //results of silent mode
-    if (typeof type === "undefined" && typeof index === "undefined") {
-        isRunningBlocked.value = !isEverythingChecked;
-    }
-
-}
-function validateInput(setting: UserSetting) {
-    if (typeof setting.required === "undefined") {
-        return true;
-    }
-    if (typeof setting.required !== "undefined" && setting.required === false) {
-        return true;
-    }
-    switch (setting.type) {
-
-        case 'TextInput':
-            if (setting.value) {
-                return setting.value!.length > 0;
-            }
-            break;
-
-        case 'OutputFile':
-        case 'SourceFileTaskPerLine':
-            //TODO check in internal API that file exists
-            if (setting.fileName) {
-                return setting.fileName!.length > 0; // || typeof setting.required  && setting.required === false
-            }
-            break;
-    }
-}
-
-function validateThreads() {
-    if (parseInt(threadsNumber.value) === 0) {
-        threadsError.value = 'Invalid value';
-        return false;
-    } else {
-        threadsError.value = '';
-        return true;
-    }
-}
-
 const progressComputed: ComputedRef<number> = computed(() => {
-    if (typeof taskStatusData.value?.completed === "undefined" || typeof taskStatusData.value?.pending === "undefined") return 0;
-    const totalTasks = taskStatusData.value!.completed + taskStatusData.value!.pending;
+    if (typeof taskManagerStore.taskStatusData?.completed === "undefined" || typeof taskManagerStore.taskStatusData?.pending === "undefined") return 0;
+    const totalTasks = taskManagerStore.taskStatusData!.completed + taskManagerStore.taskStatusData!.pending;
     if (totalTasks === 0) return 0;
-    return 100 - Math.round(taskStatusData.value!.pending / totalTasks * 100);
+    return 100 - Math.round(taskManagerStore.taskStatusData!.pending / totalTasks * 100);
 })
 
-
 function runTemplateIPC() {
-    if (isRunningBlocked.value) {
+    if (taskManagerStore.isRunningBlocked) {
         console.log('running blocked');
         return;
     }
-    useTitleStore().subtitle = 'Running "'+(templateConfig.value as TemplateConfig).name+"\""
+    useTitleStore().subtitle = 'Running "'+(taskManagerStore.templateConfig as TemplateConfig).name+"\""
     ipcRenderer.send('TM', {
         type: 'run-opened-file',
-        threadsNumber: parseInt(threadsNumber.value)
+        threadsNumber: parseInt(taskManagerStore.threadsNumber)
     });
 }
 function openTemplateIPC() {
     ipcRenderer.send('TM', {type: 'select-template-dialog'})
 }
 function resetTemplateSettingsIPC() {
-    isTemplateSettingsResetAvailable.value = false;
+    taskManagerStore.isTemplateSettingsResetAvailable = false;
     ipcRenderer.send('TM', {type: 'reset-template-settings'})
 }
 
@@ -270,90 +171,13 @@ function selectFileForTemplateIPC(type : FileOpenDialogType, index: number) {
         index
     });
 }
-function restartJob() {
-    interfaceMode.value = 'settings';
-    reloadSelectedTemplateSettings();
-}
-function resetTemplate() {
-    taskManagerStore.fileName = '';
-    isRunningBlocked.value = true;
-    templateConfig.value = null;
-    userSettings.value = [];
-    taskStatusData.value = null;
-    textLogString.value = '';
-    interfaceMode.value = 'settings';
-    threadStatuses.value = [];
-    resultTableHeader.value = null;
-    resultsData.value = [];
-}
+
 function stopJobIPC() {
     useTitleStore().subtitle = "Run templates"
-    isJobRunning.value = false;
+    taskManagerStore.isJobRunning = false;
     ipcRenderer.send('TM', {type: 'stop-job'});
 }
 
-ipcRenderer.on('TaskManager', (e, data) => {
-    switch (data.type) {
-        case 'set-template-name':
-            resetTemplate()
-            taskManagerStore.fileName = data.filename;
-            validateUserSettings()
-            break;
-
-        case 'set-template-config':
-            if (templateError.value.length > 0) return;
-            templateConfig.value = data.config;
-            threadsNumber.value = data.taskThreadsAmount;
-            if (data.config.userSettings) {
-                userSettings.value = data.config.userSettings;
-                validateUserSettings()
-            }
-            if (data.config.resultTableHeader) {
-                resultTableHeader.value = data.config.resultTableHeader;
-            }
-            if (data.settingsWereSaved) {
-                isTemplateSettingsResetAvailable.value = true;
-            }
-            break;
-
-        case 'set-template-name-error':
-            if (data.error && data.error.length > 0) {
-                resetTemplate()
-            }
-            templateError.value = data.error;
-            break;
-
-        case 'set-running-status':
-            interfaceMode.value = 'running';
-            taskStatusData.value = data.statusData;
-            if (data.statusData.status === 'Job complete' || data.statusData.status.indexOf('Template error') !== -1) {
-                isJobRunning.value = false;
-                useTitleStore().subtitle = "Run templates"
-            } else {
-                isJobRunning.value = true;
-            }
-            break;
-
-        case 'add-log-message':
-            textLogString.value = textLogString.value + data.message + "\n";
-            break;
-
-        case 'set-thread-statuses':
-            threadStatuses.value = data.statuses;
-            break;
-
-        case 'post-result-to-table':
-            resultsData.value.push(data.result as ResultTableRow[])
-            break;
-
-        case 'switch-to-loaded-template':
-            router.push('/dashboard');
-            taskManagerStore.selectTemplateByPath(data.name);
-            break;
-
-    }
-
-})
 </script>
 
 <style lang="less">
