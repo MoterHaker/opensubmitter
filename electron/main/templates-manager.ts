@@ -1,4 +1,5 @@
 /// <reference path="../../src/type.d.ts" />
+/// <reference path="../../src/composables/type.d.ts" />
 import { app } from 'electron'
 import { join } from 'node:path'
 import os, {tmpdir} from 'os';
@@ -176,7 +177,7 @@ export default class TemplatesManager {
             fs.writeFileSync(join(paths.temporaryCompiledTemplatesNodeModules, 'puppeteer', 'index.js'),"module.export={}");
         }
 
-        const result: LocalTemplateListItem[] = [];
+        const result = [];
         for (const templateFile of templatesList) {
             const templatePath = join(paths.templatesDirectory, templateFile);
             let compiledPath = join(paths.temporaryCompiledTemplatesDirectory, `${templateFile}.cjs`);
@@ -216,9 +217,9 @@ export default class TemplatesManager {
 
         }
 
-        //sending to Vue
-        this.eventHook.reply('TaskManager', {
-            type: 'template-file-list',
+        //sending to global Vue
+        this.eventHook.reply('Global', {
+            type: 'set-template-file-list',
             list: result
         })
     }

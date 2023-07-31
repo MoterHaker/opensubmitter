@@ -49,7 +49,7 @@
                 <div class="select-wrap">
                     <select v-model="taskManagerStore.selectedTemplateFilename" class="template-select">
                         <option disabled value="" selected>Select one...</option>
-                        <option v-for="template in templatesList" :value="template.filePath">{{ template.name }}</option>
+                        <option v-for="template in taskManagerStore.localTemplatesList" :value="template.filePath">{{ template.name }}</option>
                     </select>
                 </div>
                 <div v-if="templateError.length > 0" class="error mtop10">{{ templateError }}</div>
@@ -112,7 +112,6 @@ import {useTaskManagerStore} from "../composables/task-manager";
 import {useTitleStore} from "../composables/titles";
 
 const taskManagerStore = useTaskManagerStore();
-const templatesList = ref<LocalTemplateListItem[]>([])
 const isRunningBlocked = ref(true);
 const userSettings = ref([]);
 const templateConfig = ref<TemplateConfig | null>(null);
@@ -274,8 +273,6 @@ function selectFileForTemplateIPC(type : FileOpenDialogType, index: number) {
 function restartJob() {
     interfaceMode.value = 'settings';
     reloadSelectedTemplateSettings();
-    // resetTemplate();
-    // taskManagerStore.selectedTemplateFilename = '';
 }
 function resetTemplate() {
     taskManagerStore.fileName = '';
@@ -345,22 +342,13 @@ ipcRenderer.on('TaskManager', (e, data) => {
             threadStatuses.value = data.statuses;
             break;
 
-        case 'template-file-list':
-            templatesList.value = data.list;
-            break;
-
         case 'post-result-to-table':
             resultsData.value.push(data.result as ResultTableRow[])
             break;
 
         case 'switch-to-loaded-template':
             router.push('/dashboard');
-            for (const templateRow of templatesList.value) {
-                if (templateRow.filePath.indexOf(data.path) !== -1) {
-                    taskManagerStore.selectedTemplateFilename = templateRow.filePath
-                    return;
-                }
-            }
+            taskManagerStore.selectTemplateByPath(data.name);
             break;
 
     }
