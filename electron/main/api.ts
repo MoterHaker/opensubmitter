@@ -82,6 +82,10 @@ class InternalAPI {
                     await this.saveAppSettings(data);
                     break;
 
+                case 'check-anti-captcha-balance':
+                    await this.checkAntiCaptchaBalance(data.key)
+                    break;
+
                 case 'get-settings':
                     this.readAppSettings();
                     break;
@@ -156,19 +160,25 @@ class InternalAPI {
     }
 
     async saveAppSettings(data) {
+        this.savedSettings["antiCaptchaAPIKey"] = data.antiCaptchaAPIKey;
+        this.saveSettingsFile();
+        await this.checkAntiCaptchaBalance(data.antiCaptchaAPIKey);
+    }
+
+    async checkAntiCaptchaBalance(key: string) {
         const ac = require("@antiadmin/anticaptchaofficial");
-        ac.setAPIKey(data.antiCaptchaAPIKey);
+        ac.setAPIKey(key);
         try {
             const balance = await ac.getBalance();
             this.eventHook.reply('Settings', {
                 type: 'set-balance-value',
                 balance
             })
-            this.savedSettings["antiCaptchaAPIKey"] = data.antiCaptchaAPIKey;
-            this.saveSettingsFile();
+
         } catch (e) {
             this.eventHook.reply('Settings', {
-                type: 'set-key-error'
+                type: 'set-key-error',
+                message: e.toString()
             })
             console.log("got error: ", e.toString());
         }
