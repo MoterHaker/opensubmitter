@@ -13,6 +13,8 @@
             </div>
         </div>
 
+        <div class="bigloader" v-if="isLoading"></div>
+
         <div class="page-msg" v-if="searchStore.searchString.length > 0 && searchStore.searchResults.length == 0 && searchStore.delayInt === null">
             <img src="../assets/images/no-result.svg" alt="">
             <div class="title">No results found</div>
@@ -38,6 +40,7 @@ import {useTaskManagerStore} from "../composables/task-manager";
 
 const searchStore = useSearchStore();
 const taskManagerStore = useTaskManagerStore();
+const isLoading = ref(true);
 
 const existingSearchResults = computed(() => {
     for (const result of searchStore.searchResults) {
@@ -62,6 +65,7 @@ onMounted(async() => {
         resolve();
     })
     await searchStore.doSearch()
+    isLoading.value = false;
 })
 
 const delay = (time: number) : Promise<void> => {
@@ -72,6 +76,7 @@ const delay = (time: number) : Promise<void> => {
 
 </script>
 <style lang="less" scoped>
+@import '../assets/css/global.less';
 .request-wrap {
     font-size: 24px;
 }

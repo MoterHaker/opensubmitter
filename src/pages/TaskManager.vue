@@ -15,26 +15,8 @@
             <text-log v-model="taskManagerStore.textLogString" class="mtop10"/>
 
             <div v-if="taskManagerStore.resultTableHeader" class="subtitle mtop20 mbottom10" height="200">Job results:</div>
-            <table class="table-docs" v-if="taskManagerStore.resultTableHeader">
-                <thead>
-                <tr>
-                    <td v-for="row in taskManagerStore.resultTableHeader">
-                        {{row.title}}
-                    </td>
-                </tr>
-                </thead>
-                <tbody v-if="taskManagerStore.resultsData.length == 0">
-                    <tr><td colspan="100" align="center">No results yet</td></tr>
-                </tbody>
-                <tbody v-if="taskManagerStore.resultsData.length > 0">
-                    <tr v-for="row in taskManagerStore.resultsData">
-                        <td v-for="property in row" :class="getResultCellPropertyClasses(property)">
-                            <span v-if="!property.isResult">{{ property.value }}</span>
-                            <span v-else>{{ property.value ? 'Success' : 'Failed' }}</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <results-table :results-data="taskManagerStore.resultsData" :result-table-header="taskManagerStore.resultTableHeader"/>
+
         </div>
 
         <div v-if="taskManagerStore.interfaceMode == 'settings'">
@@ -64,26 +46,10 @@
                 <div class="hg2 padding20_0px">{{taskManagerStore.templateConfig?.name}}</div>
                 <btn icon="reset" label="Reset settings" @click="resetTemplateSettingsIPC" v-if="taskManagerStore.isTemplateSettingsResetAvailable"/>
             </div>
-            <div v-for="(setting, index) in taskManagerStore.userSettings as UserSetting[]" :key="index" class="mtop10"
-                 :class="{
-                        'w50' : (!setting.uiWidth || setting.uiWidth === 50),
-                        'w100' : setting.uiWidth == 100
-                    }">
-                <div v-if="['SourceFileTaskPerLine'].indexOf(setting.type) !== -1" class="textfield-button">
-                    <div>{{setting.title}}</div>
-                    <Textfield v-model="setting.fileName" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
-                    <btn label="Select File" @click="selectFileForTemplateIPC('open', index)"/>
-                </div>
-                <div v-if="['OutputFile'].indexOf(setting.type) !== -1" class="textfield-button">
-                    <div>{{setting.title}}</div>
-                    <textfield v-model="setting.fileName" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
-                    <btn label="Create File" @click="selectFileForTemplateIPC('save', index)"/>
-                </div>
-                <div v-if="['TextInput'].indexOf(setting.type) !== -1" class="textfield-simple">
-                    <div>{{setting.title}}</div>
-                    <textfield v-model="setting.value" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
-                </div>
-            </div>
+            <template-setting
+                v-for="(setting, index) in taskManagerStore.userSettings"
+                :key="index"
+                :index="parseInt(index)" :setting="setting"/>
             <div v-if="taskManagerStore.templateConfig" class="textfield-simple">
                 <div>Threads number</div>
                 <textfield v-if="taskManagerStore.templateConfig?.multiThreadingEnabled" v-model="taskManagerStore.threadsNumber" @update:modelValue="" :error-message="taskManagerStore.threadsError" style="width: 100px"/>
@@ -107,6 +73,8 @@ import ProgressBar from "../components/ProgressBar.vue";
 import TextLog from "../components/TextLog.vue";
 import ThreadStatuses from "../components/ThreadStatuses.vue";
 import SwitchToggler from "../components/SwitchToggler.vue";
+import ResultsTable from "../components/ResultsTable.vue";
+import TemplateSetting from "../components/TemplateSetting.vue";
 import {useRouter} from "vue-router";
 import {useTaskManagerStore} from "../composables/task-manager";
 import {useTitleStore} from "../composables/titles";
@@ -124,19 +92,6 @@ watch(() => taskManagerStore.templateSource, (newValue) => {
 onMounted(() => {
     ipcRenderer.send('TM', {type: 'read-local-templates'});
 })
-
-function getResultCellPropertyClasses(property: ResultTableRow) {
-    const res: any = {};
-    if (typeof property.isResult === "boolean" && property.isResult) {
-        res[property.value ? 'success' : 'error'] = true;
-    }
-    if (typeof property.nowrap === "boolean" && property.nowrap) {
-        res['nowrap'] = true;
-    } else {
-        res['break-word'] = true;
-    }
-    return res;
-}
 
 const progressComputed: ComputedRef<number> = computed(() => {
     if (typeof taskManagerStore.taskStatusData?.completed === "undefined" || typeof taskManagerStore.taskStatusData?.pending === "undefined") return 0;
@@ -164,14 +119,6 @@ function resetTemplateSettingsIPC() {
     ipcRenderer.send('TM', {type: 'reset-template-settings'})
 }
 
-function selectFileForTemplateIPC(type : FileOpenDialogType, index: number) {
-    ipcRenderer.send('TM', {
-        type: 'select-file-for-template-settings',
-        dialogType: type,
-        index
-    });
-}
-
 function stopJobIPC() {
     useTitleStore().subtitle = "Run templates"
     taskManagerStore.isJobRunning = false;
@@ -182,13 +129,6 @@ function stopJobIPC() {
 
 <style lang="less">
 @import '../assets/css/vars.less';
-.break-word span {
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-.nowrap span {
-    text-wrap: none;
-}
 .success {
     color: #00CD6B;
 }

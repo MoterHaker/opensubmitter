@@ -15,9 +15,8 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
     const fileName = ref('')
     const localTemplatesList = ref<PublicTemplate[]>([])
     const isLocalTemplatesUpdated = ref(false);
-
     const isRunningBlocked = ref(true);
-    const userSettings = ref([]);
+    const userSettings = ref<UserSetting[]>([]);
     const templateConfig = ref<TemplateConfig | null>(null);
     const templateError = ref('');
     const interfaceMode = ref<TaskManagerInterfaceMode>('settings');

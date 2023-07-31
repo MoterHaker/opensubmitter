@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, Menu, shell, ipcMain } from 'electron'
 import { release } from 'node:os'
 import { join } from 'node:path'
 import InternalAPI from "./api";
@@ -75,6 +75,9 @@ async function createWindow() {
     if (url.startsWith('https:')) shell.openExternal(url)
     return { action: 'deny' }
   })
+
+  win.setMenu(null);
+
   // win.webContents.on('will-navigate', (event, url) => { }) #344
 }
 
@@ -85,6 +88,14 @@ app.on('window-all-closed', () => {
   win = null
   if (process.platform !== 'darwin') app.quit()
 })
+
+app.on('ready', () => {
+  Menu.setApplicationMenu(null);
+});
+
+app.on('browser-window-created', (event, win) => {
+  win.setMenu(null);
+});
 
 app.on('second-instance', () => {
   if (win) {
@@ -106,6 +117,7 @@ app.on('activate', () => {
 // New window example arg: new windows url
 ipcMain.handle('open-win', (_, arg) => {
   const childWindow = new BrowserWindow({
+    titleBarStyle: 'hidden',
     webPreferences: {
       preload,
       nodeIntegration: true,

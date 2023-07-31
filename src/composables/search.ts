@@ -35,7 +35,9 @@ export const useSearchStore = defineStore('search', () => {
         await doSearch();
     }
 
-    getTemplateCategories().then(list => categoriesList.value = list);
+    async function updateTemplateCategories() {
+        categoriesList.value = await getTemplateCategories();
+    }
 
     function downloadTemplateInMain(id: number) {
         ipcRenderer.send('TM', {type: 'download-template', id });
@@ -53,5 +55,6 @@ export const useSearchStore = defineStore('search', () => {
         //methods
         doSearch,
         selectCategory,
-        downloadTemplateInMain }
+        downloadTemplateInMain,
+        updateTemplateCategories }
 })

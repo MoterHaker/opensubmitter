@@ -2,11 +2,13 @@
 import {useRouter} from "vue-router";
 import {ipcRenderer} from "electron";
 import {useTaskManagerStore} from "./composables/task-manager";
+import {useSearchStore} from "./composables/search";
 
 const router = useRouter()
 router.push('/dashboard');
 
 const taskManagerStore = useTaskManagerStore();
+const searchStore = useSearchStore();
 
 //global IPC hook for global stores
 ipcRenderer.on('Global', (e, data) => {
@@ -16,6 +18,9 @@ ipcRenderer.on('Global', (e, data) => {
             break;
     }
 })
+
+//updating categories
+searchStore.updateTemplateCategories();
 
 </script>
 
