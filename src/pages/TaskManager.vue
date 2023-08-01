@@ -29,7 +29,7 @@
             <div v-if="taskManagerStore.templateSource == 'existing'">
                 <div class="title mtop10">Template name</div>
                 <div class="select-wrap">
-                    <select v-model="taskManagerStore.selectedTemplateFilename" class="template-select">
+                    <select v-model="taskManagerStore.selectedTemplateFilename" class="styled-select">
                         <option disabled value="" selected>Select one...</option>
                         <option v-for="template in taskManagerStore.localTemplatesList" :value="template.filePath">{{ template.name }}</option>
                     </select>
@@ -91,6 +91,9 @@ watch(() => taskManagerStore.templateSource, (newValue) => {
 
 onMounted(() => {
     ipcRenderer.send('TM', {type: 'read-local-templates'});
+
+    //TODO remove
+    taskManagerStore.selectedTemplateFilename = '/Users/flash/Documents/work/opensubmitter/templates/test-puppeteer.ts';
 })
 
 const progressComputed: ComputedRef<number> = computed(() => {
@@ -105,6 +108,11 @@ function runTemplateIPC() {
         console.log('running blocked');
         return;
     }
+    for (const setting of taskManagerStore.userSettings) {
+        console.log(Object.assign({}, setting));
+    }
+
+    return;
     useTitleStore().subtitle = 'Running "'+(taskManagerStore.templateConfig as TemplateConfig).name+"\""
     ipcRenderer.send('TM', {
         type: 'run-opened-file',
@@ -156,57 +164,57 @@ function stopJobIPC() {
     display: inline-block;
     width: 100%;
 }
-.select-wrap {
-    display: grid;
-    grid-template-areas: "select";
-    align-items: center;
-    position: relative;
-    margin-top: 10px;
-
-    select,
-    &::after {
-    grid-area: select;
-    }
-
-    border: 1px solid var(--select-border);
-    padding: 0 0.7em;
-
-    font-size: 1.25rem;
-    cursor: pointer;
-    line-height: 1.1;
-    background-color: #223333;
-    border-radius: 6px;
-    border: 1px solid #354F4F;
-
-    // Custom arrow
-    &:not(.select--multiple)::after {
-    content: "";
-    justify-self: end;
-    width: 0.8em;
-    height: 0.47em;
-    background: url('../assets/icons/caret.svg') no-repeat 50% 50%;
-    background-size: contain;
-    //background-color: #fff;
-    //clip-path: polygon(100% 0%, 0 0%, 50% 100%);
-  }
-}
-.template-select {
-    width: 100%;
-    height: 40px;
-    appearance: none;
-    background-color: transparent;
-    border: none;
-    padding: 0 1em 0 0;
-    margin: 0;
-    width: 100%;
-    font-family: inherit;
-    font-size: inherit;
-    cursor: inherit;
-    line-height: inherit;
-    z-index: 1;
-    outline: none;
-    color: #fff;
-}
+//.select-wrap {
+//    display: grid;
+//    grid-template-areas: "select";
+//    align-items: center;
+//    position: relative;
+//    margin-top: 10px;
+//
+//    select,
+//    &::after {
+//    grid-area: select;
+//    }
+//
+//    border: 1px solid var(--select-border);
+//    padding: 0 0.7em;
+//
+//    font-size: 1.25rem;
+//    cursor: pointer;
+//    line-height: 1.1;
+//    background-color: #223333;
+//    border-radius: 6px;
+//    border: 1px solid #354F4F;
+//
+//    // Custom arrow
+//    &:not(.select--multiple)::after {
+//    content: "";
+//    justify-self: end;
+//    width: 0.8em;
+//    height: 0.47em;
+//    background: url('../assets/icons/caret.svg') no-repeat 50% 50%;
+//    background-size: contain;
+//    //background-color: #fff;
+//    //clip-path: polygon(100% 0%, 0 0%, 50% 100%);
+//  }
+//}
+//.template-select {
+//    width: 100%;
+//    height: 40px;
+//    appearance: none;
+//    background-color: transparent;
+//    border: none;
+//    padding: 0 1em 0 0;
+//    margin: 0;
+//    width: 100%;
+//    font-family: inherit;
+//    font-size: inherit;
+//    cursor: inherit;
+//    line-height: inherit;
+//    z-index: 1;
+//    outline: none;
+//    color: #fff;
+//}
 
 
 </style>

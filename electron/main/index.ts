@@ -76,7 +76,9 @@ async function createWindow() {
     return { action: 'deny' }
   })
 
-  win.setMenu(null);
+  if (!isDevelopmentEnv()) {
+    win.setMenu(null);
+  }
 
   // win.webContents.on('will-navigate', (event, url) => { }) #344
 }
@@ -88,10 +90,6 @@ app.on('window-all-closed', () => {
   win = null
   if (process.platform !== 'darwin') app.quit()
 })
-
-app.on('ready', () => {
-  Menu.setApplicationMenu(null);
-});
 
 app.on('browser-window-created', (event, win) => {
   win.setMenu(null);
@@ -132,5 +130,17 @@ ipcMain.handle('open-win', (_, arg) => {
   }
 })
 
+const isDevelopmentEnv = (): boolean => {
+  return process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development";
+}
+
 const internalAPI = new InternalAPI();
 internalAPI.startListening();
+
+
+//remove menu for production
+if (!isDevelopmentEnv()) {
+  app.on('ready', () => {
+    Menu.setApplicationMenu(null);
+  });
+}
