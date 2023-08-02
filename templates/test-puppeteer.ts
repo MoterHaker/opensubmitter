@@ -14,7 +14,47 @@ class Template implements OpenSubmitterTemplateProtocol {
                 name: 'outputFile',
                 title: 'Where to write the output of the download',
                 fileName: "",
-                required: false
+                required: false,
+                uiWidth: 100
+            },{
+                type: 'Checkbox',
+                name: 'is_headless',
+                title: 'Use headless mode',
+                value: "true",
+                uiWidth: 50,
+            },{
+                type: 'Radio',
+                name: 'proxy_type',
+                title: 'Use a proxy',
+                selectableOptions: [
+                    {
+                        title: "No proxy, direct connection",
+                        value: "direct"
+                    },{
+                        title: "Use a proxy",
+                        value: "proxy",
+                        selected: true
+                    }
+                ],
+                uiWidth: 50
+            },{
+                type: 'Select',
+                name: 'user_agent',
+                title: 'Browser user-agent',
+                value: 'default',
+                selectableOptions: [
+                    {
+                        title: 'Default',
+                        value: 'default'
+                    },{
+                        title: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15',
+                        value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15'
+                    },{
+                        title: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36',
+                        value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
+                    }
+                ],
+                uiWidth: 100
             }
         ]
     };

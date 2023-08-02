@@ -29,7 +29,7 @@
                     <div class="col-left">
                         <div class="title">{{ titleStore.title != '' ? titleStore.title : route.meta.title }}</div>
                         <router-link to="/templates" class="btn btn-small subtitle" v-if="showBackBtn()"><SvgIcon name="arrow-back" /> Go back</router-link>
-                        <div class="subtitle" v-if="!showBackBtn()">{{ route.meta.subtitle }}</div>
+                        <div class="subtitle" v-if="!showBackBtn()">{{ titleStore.subtitle != '' ? titleStore.subtitle : route.meta.subtitle }}</div>
                     </div>
                     <div v-if="isActiveRoute('/templates')" class="col-right df gap16">
                         <router-link to="/request" class="btn ghost" v-if="!isActiveRoute('/request')"><SvgIcon name="request-template" /> Request a template</router-link>

@@ -100,7 +100,15 @@ a.btn {
   z-index: 1;
   color: rgba(255, 255, 255, 0);
 }
-.btn.loading::before {
+.bigloader {
+  margin: 0 auto;
+  min-height: 80px;
+  min-width: 80px;
+  position: relative;
+  font-weight: bold;
+  font-size: 30px;
+}
+.btn.loading::before, .bigloader::before {
   content: '';
   background-image: url('../images/loader.png');
   background-repeat: no-repeat;

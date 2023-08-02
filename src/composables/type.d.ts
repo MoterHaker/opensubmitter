@@ -14,4 +14,6 @@ interface PublicTemplate {
     downloads: number
     runs: number
     created: string
+    existsLocally?: boolean
+    filePath?: string
 }

@@ -33,14 +33,21 @@ interface TemplateConfig {
 }
 
 type TemplateCapabilities = ('axios' | 'puppeteer')
-type UserSettingsInput = ('OutputFile' | 'SourceFileTaskPerLine' | 'TextInput')
+type UserSettingsInput = ('OutputFile' | 'SourceFileTaskPerLine' | 'TextInput' | 'Checkbox' | 'Select' | 'Radio' | 'Textarea')
 type UIWidth = (50 | 100)
+
+interface SelectableOption {
+    title: string,
+    value: string,
+    selected?: boolean
+}
 
 interface UserSetting {
     type: UserSettingsInput,
     name: string,
     title: string,
-    value?: string | null,
+    value?: string | boolean | null,
+    selectableOptions?: SelectableOption[],
     fileName?: string | null,
     required?: boolean,
     errorString?: string | null,

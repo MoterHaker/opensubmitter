@@ -33,11 +33,7 @@ interface ThreadStatus {
     status: string
 }
 
-interface LocalTemplateListItem {
-    name: string,
-    description?: string,
-    filePath: string
-}
+
 interface AppSettings {
     antiCaptchaAPIKey?: string
 }

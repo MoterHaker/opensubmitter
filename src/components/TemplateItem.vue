@@ -23,7 +23,8 @@
             </div>
         </div>
         <div class="col-dn">
-            <btn icon="download" :loading="isLoading" @click="download(template.id)"/>
+            <btn v-if="!template.existsLocally" icon="download" :loading="isLoading" @click="download(template.id)"/>
+            <btn v-if="template.existsLocally" icon="play" @click="runTemplate(template.name)"/>
         </div>
     </div>
 </template>
@@ -32,15 +33,17 @@
 /// <reference path="../composables/type.d.ts" />
 import Btn from "../components/Btn.vue"
 import {useSearchStore} from "../composables/search";
-import {onMounted, ref} from "vue";
-import {useRoute, useRouter} from "vue-router";
+import {ref} from "vue";
+import {useRouter} from "vue-router";
+import {useTaskManagerStore} from "../composables/task-manager";
+
 const searchStore = useSearchStore();
 const router = useRouter()
 const props = defineProps<{
     template: PublicTemplate;
 }>();
 const isLoading = ref(false)
-
+const taskManagerStore = useTaskManagerStore();
 
 function viewTemplate() {
     router.push('/template');
@@ -49,6 +52,10 @@ function viewTemplate() {
 function download(id: number) {
     isLoading.value = true
     searchStore.downloadTemplateInMain(id)
+}
+function runTemplate(name: string) {
+    router.push('/dashboard');
+    taskManagerStore.selectTemplateByName(name)
 }
 
 </script>
