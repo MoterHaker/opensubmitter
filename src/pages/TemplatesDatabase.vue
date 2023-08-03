@@ -1,7 +1,8 @@
 <template>
     <div>
         <div class="block-search">
-            <div class="df gap16">
+            <div class="df gap16 search-wrap">
+                <Loader width="24" height="24" />
                 <Textfield icon="search" placeholder="Search" v-model="searchStore.searchString"/>
             </div>
             <div class="tags df gap8" v-if="searchStore.categoriesList.length > 0">
@@ -34,10 +35,8 @@ import Textfield from "../components/Textfield.vue"
 import TemplateItem from "../components/TemplateItem.vue"
 import { useSearchStore } from '../composables/search'
 
-import {computed, defineAsyncComponent, onMounted, ref, watch} from "vue";
-import {ipcRenderer} from "electron";
-import {useTaskManagerStore} from "../composables/task-manager";
-
+import {computed, onMounted, ref, watch} from "vue";
+import Loader from "../components/Loader.vue";
 const searchStore = useSearchStore();
 const taskManagerStore = useTaskManagerStore();
 const isLoading = ref(true);
@@ -76,7 +75,14 @@ const delay = (time: number) : Promise<void> => {
 
 </script>
 <style lang="less" scoped>
-@import '../assets/css/global.less';
+.search-wrap {
+    position: relative;
+    .cir-loader {
+        position: absolute;
+        right: 8px;
+        top: 7px;
+    }
+}
 .request-wrap {
     font-size: 24px;
 }
