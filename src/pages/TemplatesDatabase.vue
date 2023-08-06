@@ -2,7 +2,7 @@
     <div>
         <div class="block-search">
             <div class="df gap16 search-wrap">
-                <Loader width="24" height="24" />
+                <Loader width="24" height="24" v-if="searchStore.isRequestOngoing"/>
                 <Textfield icon="search" placeholder="Search" v-model="searchStore.searchString"/>
             </div>
             <div class="tags df gap8" v-if="searchStore.categoriesList.length > 0">
@@ -14,9 +14,9 @@
             </div>
         </div>
 
-        <div class="bigloader" v-if="isLoading"></div>
+        <div class="bigloader" v-if="isLoading && searchStore.searchResults.length == 0"></div>
 
-        <div class="page-msg" v-if="searchStore.searchString.length > 0 && searchStore.searchResults.length == 0 && searchStore.delayInt === null">
+        <div class="page-msg" v-if="searchStore.searchString.length > 0 && searchStore.searchResults.length == 0 && searchStore.delayInt === null && !isLoading">
             <img src="../assets/images/no-result.svg" alt="">
             <div class="title">No results found</div>
             <div class="request-wrap df dir-col alitc gap16">
@@ -34,9 +34,10 @@
 import Textfield from "../components/Textfield.vue"
 import TemplateItem from "../components/TemplateItem.vue"
 import { useSearchStore } from '../composables/search'
-
+import { ipcRenderer } from 'electron'
 import {computed, onMounted, ref, watch} from "vue";
 import Loader from "../components/Loader.vue";
+import {useTaskManagerStore} from "../composables/task-manager";
 const searchStore = useSearchStore();
 const taskManagerStore = useTaskManagerStore();
 const isLoading = ref(true);

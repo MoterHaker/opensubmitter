@@ -13,12 +13,14 @@ export const useSearchStore = defineStore('search', () => {
     const selectedCategory = ref('')
     const categoriesList = ref<string[]>([]);
     const selectedTemplate = ref<PublicTemplate | null>(null);
+    const isRequestOngoing = ref(false);
 
 
     watch(searchString, delaySearch)
 
     function delaySearch(newValue: any) {
         clearInterval(delayInt.value);
+        isRequestOngoing.value = true;
         delayInt.value = setTimeout(async() => {
             delayInt.value = null;
             await doSearch()
@@ -27,6 +29,7 @@ export const useSearchStore = defineStore('search', () => {
 
     async function doSearch() {
         searchResults.value = await searchTemplates(searchString.value, selectedCategory.value)
+        isRequestOngoing.value = false;
     }
 
     async function selectCategory(category: string) {
@@ -51,6 +54,7 @@ export const useSearchStore = defineStore('search', () => {
         searchString,
         categoriesList,
         selectedTemplate,
+        isRequestOngoing,
 
         //methods
         doSearch,

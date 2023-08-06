@@ -30,7 +30,7 @@ export const useAPI = () => {
         // const env = (process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development") ? "development" : "production";
         const env = 'production';
         try {
-            return await fetchData('template/download', { id, env });
+            return await fetchData('template/download', { id, env, 'skipcount': true });
         } catch (e) {
             errorFallback('template/download')
         }

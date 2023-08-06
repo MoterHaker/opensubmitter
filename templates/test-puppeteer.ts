@@ -25,7 +25,7 @@ class Template implements OpenSubmitterTemplateProtocol {
             },{
                 type: 'Radio',
                 name: 'proxy_type',
-                title: 'Use a proxy',
+                title: 'Connection type',
                 selectableOptions: [
                     {
                         title: "No proxy, direct connection",
