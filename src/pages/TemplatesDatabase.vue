@@ -60,9 +60,9 @@ onMounted(async() => {
         ipcRenderer.send('TM', {type: 'read-local-templates'});
         for (let wait=0; wait<10; wait++) {
             await delay(500);
-            if (taskManagerStore.isLocalTemplatesUpdated === true) resolve();
+            if (taskManagerStore.isLocalTemplatesUpdated === true) resolve(true);
         }
-        resolve();
+        resolve(true);
     })
     await searchStore.doSearch()
     isLoading.value = false;

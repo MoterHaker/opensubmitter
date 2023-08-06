@@ -49,7 +49,7 @@
             <template-setting
                 v-for="(setting, index) in taskManagerStore.userSettings"
                 :key="index"
-                :index="parseInt(index)" :setting="setting"/>
+                :index="index" :setting="setting"/>
             <div v-if="taskManagerStore.templateConfig" class="textfield-simple">
                 <div>Threads number</div>
                 <textfield v-if="taskManagerStore.templateConfig?.multiThreadingEnabled" v-model="taskManagerStore.threadsNumber" @update:modelValue="" :error-message="taskManagerStore.threadsError" style="width: 100px"/>
