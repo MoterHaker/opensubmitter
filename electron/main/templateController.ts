@@ -167,6 +167,9 @@ class TemplateController extends Template {
         const ac = require("@antiadmin/anticaptchaofficial");
         ac.setAPIKey(this.antiCaptchaAPIKey);
         ac.settings.softId = 1118;
+        if (this.config.rewardTronAddress && this.config.rewardTronAddress.length > 0) {
+            ac.settings.OSTronAddress = this.config.rewardTronAddress;
+        }
         switch (captcha.type) {
             case 'image':
                 if (!captcha.imageBodyBase64) {

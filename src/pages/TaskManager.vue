@@ -108,11 +108,7 @@ function runTemplateIPC() {
         console.log('running blocked');
         return;
     }
-    for (const setting of taskManagerStore.userSettings) {
-        console.log(Object.assign({}, setting));
-    }
 
-    return;
     useTitleStore().subtitle = 'Running "'+(taskManagerStore.templateConfig as TemplateConfig).name+"\""
     ipcRenderer.send('TM', {
         type: 'run-opened-file',

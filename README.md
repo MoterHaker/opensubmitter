@@ -6,12 +6,11 @@ The goal: a template-based open source web automation engine with Chrome browser
 ### Todo list:
 
 - ✅ UI kit
-- ⏳ Templates engine
+- ✅ Templates engine
 - ✅ Multithreading
-- ❌ Templates gallery backend at opensubmiiter.com
-- ❌ Scripts for automatic builds
-- ❌ Revenue sharing system
-- ❌ Official website
+- ✅ Templates gallery backend at opensubmiiter.com
+- ✅ Revenue sharing system
+- ⏳ Official website
 - ❌ Templates documentation
 
 ### Cloning the project
