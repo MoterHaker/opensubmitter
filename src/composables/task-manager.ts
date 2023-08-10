@@ -137,7 +137,6 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
 
             case 'OutputFile':
             case 'SourceFileTaskPerLine':
-                //TODO check in internal API that file exists
                 if (setting.fileName) {
                     return setting.fileName!.length > 0; // || typeof setting.required  && setting.required === false
                 }

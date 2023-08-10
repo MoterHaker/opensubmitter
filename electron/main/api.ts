@@ -53,6 +53,7 @@ class InternalAPI {
                     break;
 
                 case 'run-opened-file':
+                    this.setTemplateUserSettings(data.settings);
                     if (this.templates.currentObject.config.multiThreadingEnabled) {
                         this.templates.taskThreadsAmount = data.threadsNumber;
                     } else {
@@ -125,6 +126,10 @@ class InternalAPI {
             config: this.templates.currentObject.config,
             taskThreadsAmount: this.templates.taskThreadsAmount
         })
+    }
+
+    setTemplateUserSettings(data) {
+        this.templates.currentObject.config.userSettings = data;
     }
 
     async openTemplateDialog() {

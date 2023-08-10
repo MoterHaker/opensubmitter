@@ -16,45 +16,6 @@ class Template implements OpenSubmitterTemplateProtocol {
                 fileName: "",
                 required: false,
                 uiWidth: 100
-            },{
-                type: 'Checkbox',
-                name: 'is_headless',
-                title: 'Use headless mode',
-                value: "true",
-                uiWidth: 50,
-            },{
-                type: 'Radio',
-                name: 'proxy_type',
-                title: 'Connection type',
-                selectableOptions: [
-                    {
-                        title: "No proxy, direct connection",
-                        value: "direct"
-                    },{
-                        title: "Use a proxy",
-                        value: "proxy",
-                        selected: true
-                    }
-                ],
-                uiWidth: 50
-            },{
-                type: 'Select',
-                name: 'user_agent',
-                title: 'Browser user-agent',
-                value: 'default',
-                selectableOptions: [
-                    {
-                        title: 'Default',
-                        value: 'default'
-                    },{
-                        title: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15',
-                        value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15'
-                    },{
-                        title: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36',
-                        value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36'
-                    }
-                ],
-                uiWidth: 100
             }
         ]
     };
@@ -74,6 +35,13 @@ class Template implements OpenSubmitterTemplateProtocol {
 
 
     async runTask(task: TemplateTask) {
+
+        //this is how you set proxy authorization:
+        await this.page.authenticate({
+            username: "login",
+            password: "password",
+        });
+
         try {
             this.log('navigating...');
             await this.page.goto('https://antigate.com/iptest.php', {
@@ -99,6 +67,41 @@ class Template implements OpenSubmitterTemplateProtocol {
         }
 
         return result;
+    }
+
+    getPuppeteerArguments(): string[] {
+        return [
+            // `--proxy-server=1.2.3.4:8080`, //this is how you set a proxy
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--allow-running-insecure-content',
+            '--disable-blink-features=AutomationControlled',
+            '--no-sandbox',
+            '--mute-audio',
+            '--no-zygote',
+            '--no-xshm',
+            '--window-size=1920,1080',
+            '--no-first-run',
+            '--no-default-browser-check',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--enable-webgl',
+            '--ignore-certificate-errors',
+            '--lang=en-US,en;q=0.9',
+            '--password-store=basic',
+            '--disable-gpu-sandbox',
+            '--disable-software-rasterizer',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-infobars',
+            '--disable-breakpad',
+            '--disable-canvas-aa',
+            '--disable-2d-canvas-clip-aa',
+            '--disable-gl-drawing-for-tests',
+            '--enable-low-end-device-mode',
+            '--no-sandbox'
+        ]
     }
 
     log(msg: string) {

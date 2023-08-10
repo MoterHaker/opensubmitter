@@ -1,5 +1,5 @@
 <template>
-    <div class="mtop10 setting-box"
+    <div class="mtop20 setting-box"
          :class="{
                         'w50' : (!setting.uiWidth || setting.uiWidth === 50),
                         'w100' : setting.uiWidth == 100
@@ -17,6 +17,10 @@
         <div v-if="setting.type == 'TextInput'" class="textfield-simple">
             <div>{{setting.title}}</div>
             <textfield v-model="setting.value" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
+        </div>
+        <div v-if="setting.type == 'Textarea'" class="textfield-simple">
+            <div>{{setting.title}}</div>
+            <text-area v-model="setting.value" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
         </div>
         <div v-if="setting.type == 'Checkbox'">
             <div class="check-wrap" :class="{ 'check-error' : (setting.errorString && setting.errorString.length > 0) }">
@@ -64,6 +68,7 @@
 /// <reference path="../../templates/type.d.ts" />
 import Btn from "./Btn.vue";
 import Textfield from "./Textfield.vue";
+import TextArea from "./TextArea.vue";
 import {ipcRenderer} from "electron";
 import {useTaskManagerStore} from "../composables/task-manager";
 import {onMounted, ref, watch} from "vue";
@@ -91,18 +96,19 @@ watch(() => radioValue.value, () => {
 onMounted(() => {
     switch (props.setting.type) {
         case 'Checkbox':
-            if (props.setting.value && props.setting.value === "true") {
+            if (typeof props.setting.value !== "undefined" && props.setting.value === true) {
                 checkboxValue.value = true;
             }
             break;
 
         case 'Radio':
             if (!props.setting.selectableOptions) return;
-            for (const option of props.setting.selectableOptions) {
-                if (option.selected) {
-                    radioValue.value = option.value;
-                }
-            }
+            radioValue.value = props.setting.value.toString();
+            // for (const option of props.setting.selectableOptions) {
+            //     if (option.selected) {
+            //         radioValue.value = option.value;
+            //     }
+            // }
             break;
     }
 })

@@ -3,9 +3,9 @@ interface OpenSubmitterTemplateProtocol {
     config?: TemplateConfig,
     generateTasks: TemplateTaskGenerator,
     runTask: TemplateTaskRunner,
+    getPuppeteerArguments?: () => string[]
     log?: Function
 }
-
 type FileOpenDialogType = ('open' | 'save')
 type TemplateTaskRunner = (task: TemplateTask) => Promise<any>;
 type TemplateTaskGenerator = (...args: any) => Promise<TemplateTask[]>;

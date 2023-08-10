@@ -23,7 +23,8 @@ export default class TemplatesManager {
     private excludeTemplatesFromProduction = [
         'bad-template.ts', //should not even appear in the list
         'test-puppeteer.ts',
-        'test-axios.ts'
+        'test-axios.ts',
+        'settings-example.ts'
     ];
 
     setHook(eventHook) {
@@ -307,13 +308,28 @@ export default class TemplatesManager {
             type: 'set-template-config',
             config: this.currentObject.config,
             taskThreadsAmount: this.taskThreadsAmount,
-            settingsWereSaved: this.templateSettingsWereSaved ? this.templateSettingsWereSaved : null
+            settingsWereSaved: this.templateSettingsWereSaved ? this.templateSettingsWereSaved : false
         })
     }
 
     async resetSettings(): Promise<void> {
         await this.selectFile();
-        this.saveSettings();
+        // this.saveSettings();
+
+        if (!this.currentObject.config || !this.currentObject.config.name) return; //non-existing config
+        let config = {};
+        if (fs.existsSync(paths.settingsFile)) {
+            try {
+                config = JSON.parse(fs.readFileSync(paths.settingsFile).toString())
+            } catch (e) {
+                //default empty config
+            }
+        }
+        if (config[this.currentObject.config.name]) {
+            delete config[this.currentObject.config.name];
+        }
+        fs.writeFileSync(paths.settingsFile, JSON.stringify(config, null, 2)); //save with pretty-printing
+
         this.templateSettingsWereSaved = false;
         this.sendSettings()
     }

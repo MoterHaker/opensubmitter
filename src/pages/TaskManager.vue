@@ -50,7 +50,7 @@
                 v-for="(setting, index) in taskManagerStore.userSettings"
                 :key="index"
                 :index="index" :setting="setting"/>
-            <div v-if="taskManagerStore.templateConfig" class="textfield-simple">
+            <div v-if="taskManagerStore.templateConfig" class="textfield-simple mtop20">
                 <div>Threads number</div>
                 <textfield v-if="taskManagerStore.templateConfig?.multiThreadingEnabled" v-model="taskManagerStore.threadsNumber" @update:modelValue="" :error-message="taskManagerStore.threadsError" style="width: 100px"/>
                 <div v-else>Multithreading is disabled in this template</div>
@@ -91,9 +91,6 @@ watch(() => taskManagerStore.templateSource, (newValue) => {
 
 onMounted(() => {
     ipcRenderer.send('TM', {type: 'read-local-templates'});
-
-    //TODO remove
-    taskManagerStore.selectedTemplateFilename = '/Users/flash/Documents/work/opensubmitter/templates/test-puppeteer.ts';
 })
 
 const progressComputed: ComputedRef<number> = computed(() => {
@@ -109,10 +106,13 @@ function runTemplateIPC() {
         return;
     }
 
+    const settings = deepCopy(taskManagerStore.userSettings);
+
     useTitleStore().subtitle = 'Running "'+(taskManagerStore.templateConfig as TemplateConfig).name+"\""
     ipcRenderer.send('TM', {
         type: 'run-opened-file',
-        threadsNumber: parseInt(taskManagerStore.threadsNumber)
+        threadsNumber: parseInt(taskManagerStore.threadsNumber),
+        settings
     });
 }
 function openTemplateIPC() {
@@ -127,6 +127,29 @@ function stopJobIPC() {
     useTitleStore().subtitle = "Run templates"
     taskManagerStore.isJobRunning = false;
     ipcRenderer.send('TM', {type: 'stop-job'});
+}
+function deepCopy(obj, seen = new WeakMap()) {
+    if (obj === null || typeof obj !== 'object') {
+        return obj;
+    }
+
+    // Handle circular references
+    if (seen.has(obj)) {
+        return seen.get(obj);
+    }
+
+    let copy = Array.isArray(obj) ? [] : {};
+
+    // Store the copy in the seen map to handle circular references
+    seen.set(obj, copy);
+
+    for (let key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            copy[key] = deepCopy(obj[key], seen);
+        }
+    }
+
+    return copy;
 }
 
 </script>
