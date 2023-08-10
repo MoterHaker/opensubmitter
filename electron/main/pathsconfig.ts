@@ -57,8 +57,8 @@ export const pathsConfig = () => {
         }
 
         let result = isDevelopmentEnv() ?
-            join(asarExtractedDirectory, 'dist', 'puppeteer', executablePath) :
-            join(app.getAppPath(), 'extra', 'puppeteer', executablePath);
+            join(app.getAppPath(), 'extra', 'puppeteer', executablePath) :
+            join(asarExtractedDirectory, 'dist', 'puppeteer', executablePath);
 
         if (process.platform === 'win32') {
             //making double quotes, so it could work in the template variable %PUPPETEER_EXECUTABLE_PATH%

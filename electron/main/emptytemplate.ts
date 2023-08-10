@@ -17,6 +17,10 @@ export default class Template implements OpenSubmitterTemplateProtocol {
 
     }
 
+    getPuppeteerArguments(): string[] {
+        return []
+    }
+
     log(message) {
 
     }
