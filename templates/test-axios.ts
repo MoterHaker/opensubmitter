@@ -62,7 +62,7 @@ class Template implements OpenSubmitterTemplateProtocol {
     }
 
     log(msg: string) {
-        console.log('bro says: '+msg);
+        console.log(msg);
     }
 
 }
