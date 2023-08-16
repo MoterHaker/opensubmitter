@@ -4,7 +4,7 @@
                         'w50' : (!setting.uiWidth || setting.uiWidth === 50),
                         'w100' : setting.uiWidth == 100
                     }">
-        <div v-if="setting.type == 'SourceFileTaskPerLine'" class="textfield-button">
+        <div v-if="setting.type == 'SourceFile'" class="textfield-button">
             <div>{{setting.title}}</div>
             <Textfield v-model="setting.fileName" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
             <btn label="Select File" @click="selectFileForTemplateIPC('open', index)"/>

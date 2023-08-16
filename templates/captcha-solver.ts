@@ -8,7 +8,9 @@ class Template implements OpenSubmitterTemplateProtocol {
         name: 'Captcha solving example from MotaHaker',
         description: 'A template demonstrating captcha solving capabilities of Open Submitter. ' +
                      'It simply solves several captchas of different in multi-threaded mode using Anti-Captcha API service. API key must be provided in the settings.',
+
         multiThreadingEnabled: true,
+
         rewardTronAddress: 'TGVF1UKmU2iJToW3Lv3pJ3VqrdT2Bq7yvq',
         userSettings: [],
         resultTableHeader: [
@@ -24,8 +26,6 @@ class Template implements OpenSubmitterTemplateProtocol {
             }
         ]
     };
-
-
 
     async generateTasks(...args: any): Promise<TemplateTask[]> {
 

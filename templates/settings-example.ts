@@ -9,7 +9,7 @@ class Template implements OpenSubmitterTemplateProtocol {
         userSettings: [
             {
                 // see function generateTasks for examples of using these settings
-                type: 'SourceFileTaskPerLine',
+                type: 'SourceFile',
                 name: 'aSource1',
                 title: 'Existing file selection dialog, path is saved to "fileName" property. Required option ("required" is true).',
                 fileName: "",

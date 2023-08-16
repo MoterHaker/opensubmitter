@@ -26,20 +26,19 @@ interface TemplateConfig {
     description: string,
     capabilities?: TemplateCapabilities[],
     multiThreadingEnabled: boolean,
-    userSettings: Array<UserSetting>,
+    userSettings: UserSetting[],
     email?: string,
     rewardTronAddress?: string,
     resultTableHeader?: ResultTableRow[]
 }
 
 type TemplateCapabilities = ('axios' | 'puppeteer')
-type UserSettingsInput = ('OutputFile' | 'SourceFileTaskPerLine' | 'TextInput' | 'Checkbox' | 'Select' | 'Radio' | 'Textarea')
+type UserSettingsInput = ('OutputFile' | 'SourceFile' | 'TextInput' | 'Checkbox' | 'Select' | 'Radio' | 'Textarea')
 type UIWidth = (50 | 100)
 
 interface SelectableOption {
     title: string,
-    value: string,
-    selected?: boolean
+    value: string
 }
 
 interface UserSetting {

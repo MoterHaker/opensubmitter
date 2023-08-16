@@ -15,7 +15,7 @@ class Template implements OpenSubmitterTemplateProtocol {
         capabilities: ['axios'],
         userSettings: [
             {
-                type: 'SourceFileTaskPerLine',
+                type: 'SourceFile',
                 name: 'proxyList',
                 title: 'Proxy List',
                 fileName: "",

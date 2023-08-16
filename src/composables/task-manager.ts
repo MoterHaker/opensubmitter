@@ -136,7 +136,7 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
                 break;
 
             case 'OutputFile':
-            case 'SourceFileTaskPerLine':
+            case 'SourceFile':
                 if (setting.fileName) {
                     return setting.fileName!.length > 0; // || typeof setting.required  && setting.required === false
                 }

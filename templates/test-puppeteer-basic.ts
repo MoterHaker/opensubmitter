@@ -32,6 +32,15 @@ class Template implements OpenSubmitterTemplateProtocol {
                 title: 'Websites list, one per line',
                 value: 'https://www.google.com/\nhttps://www.github.com/\nhttps://www.bing.com/'
             }
+        ],
+
+        resultTableHeader: [
+            {
+                title: 'URL'
+            },{
+                title: 'Job result',
+                isResult: true
+            }
         ]
     };
 
@@ -77,10 +86,18 @@ class Template implements OpenSubmitterTemplateProtocol {
             this.log(`navigating to ${task.data.url}...`);
             await this.page.goto(task.data.url, {
                 waitUntil: "networkidle0",
-                timeout: 20000
+                timeout: 5000
             });
+            this.postResultToTable({
+                'URL': task.data.url,
+                'Job result': true
+            })
         } catch (e) {
             this.log('err while loading the page: ' + e);
+            this.postResultToTable({
+                'URL': task.data.url,
+                'Job result': false
+            })
         }
         const result = await this.page.content();
 

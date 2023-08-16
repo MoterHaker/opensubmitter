@@ -22,7 +22,7 @@ export default class TemplatesManager {
 
     private excludeTemplatesFromProduction = [
         'bad-template.ts', //should not even appear in the list
-        'test-puppeteer.ts',
+        'test-puppeteer-basic.ts',
         'test-axios.ts',
         'settings-example.ts'
     ];
