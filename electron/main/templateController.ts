@@ -363,6 +363,48 @@ class TemplateController extends Template {
         return true;
     }
 
+    async getIMAPMessages(config): Promise<any[]> {
+        const imapsimple = require('imap-simple');
+
+        console.log('opening a connection');
+        let connection
+        try {
+            connection = await imapsimple.connect(config);
+        } catch (e) {
+            console.log('could not open connection '+(e as String).toString());
+            return null;
+        }
+
+        console.log('opening INBOX')
+        await connection.openBox('INBOX');
+
+        console.log('getting list of messages from INBOX')
+        const messages = await connection.search(['ALL'], { bodies: ['HEADER', 'TEXT'], struct: true });
+
+        return messages;
+        // console.log("iterating through messages")
+        // for (const item of messages) {
+        //
+        //     const subject = item.parts[1].body.subject[0];
+        //     const body = item.parts[0].body;
+        //
+        //     console.log(item);
+        //
+        //     // const bodyDecoded: string = atob(body).toString();
+        //
+        //     console.log(`found message with subject "${subject}"`)
+        //     // if (subject === 'Confirmation code') {
+        //     //
+        //     //     const bodyDecoded: string = atob(body).toString();
+        //     //     //const parts: string[] | null = bodyDecoded.match("code: (.*)\n");
+        //     //
+        //     //     //await connection.deleteMessage(item.attributes.uid);
+        //     // }
+        // }
+        // console.log('closing IMAP connection');
+        // await connection.imap.closeBox(true, function(){});
+    }
+
     // getPuppeteerArguments(): string[] {
     //     return super.getPuppeteerArguments();
     // }
