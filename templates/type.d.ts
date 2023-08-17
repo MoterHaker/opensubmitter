@@ -82,3 +82,9 @@ interface ExtraCaptchaParameters {
     geetestChallenge?: string           //  challenge token for Geetest
     geetest4InitParameters?: any        //  initialization parameters for Geetest4
 }
+
+interface IMAPModule {
+    openBox: Function,
+    search: Function,
+    deleteMessage: Function
+}

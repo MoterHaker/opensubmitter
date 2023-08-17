@@ -15,6 +15,7 @@ class TemplateController extends Template {
     task = null;
     puppeteerExecutablePath = '%PUPPETEER_EXECUTABLE_PATH%';
     protected antiCaptchaAPIKey: string = null;
+    protected IMAPConnection: IMAPModule | null;
 
     async startMessaging() {
         if (!process || typeof process.parentPort === "undefined") {
@@ -364,50 +365,59 @@ class TemplateController extends Template {
     }
 
     async getIMAPMessages(config): Promise<any[]> {
+        const simpleParser = require('mailparser').simpleParser;
         const imapsimple = require('imap-simple');
 
-        console.log('opening a connection');
-        let connection
+        this.log('opening an IMAP connection');
+        this.IMAPConnection = null;
         try {
-            connection = await imapsimple.connect(config);
+            this.IMAPConnection = await imapsimple.connect(config);
         } catch (e) {
-            console.log('could not open connection '+(e as String).toString());
+            this.log('could not open connection '+(e as String).toString());
             return null;
         }
 
-        console.log('opening INBOX')
-        await connection.openBox('INBOX');
+        this.log('opening mail INBOX')
+        await this.IMAPConnection.openBox('INBOX');
 
-        console.log('getting list of messages from INBOX')
-        const messages = await connection.search(['ALL'], { bodies: ['HEADER', 'TEXT'], struct: true });
+        this.log('getting list of messages from INBOX')
+        const messages = await this.IMAPConnection.search(['ALL'], { bodies: [''], struct: true });
 
-        return messages;
-        // console.log("iterating through messages")
-        // for (const item of messages) {
-        //
-        //     const subject = item.parts[1].body.subject[0];
-        //     const body = item.parts[0].body;
-        //
-        //     console.log(item);
-        //
-        //     // const bodyDecoded: string = atob(body).toString();
-        //
-        //     console.log(`found message with subject "${subject}"`)
-        //     // if (subject === 'Confirmation code') {
-        //     //
-        //     //     const bodyDecoded: string = atob(body).toString();
-        //     //     //const parts: string[] | null = bodyDecoded.match("code: (.*)\n");
-        //     //
-        //     //     //await connection.deleteMessage(item.attributes.uid);
-        //     // }
-        // }
-        // console.log('closing IMAP connection');
-        // await connection.imap.closeBox(true, function(){});
+        const result = [];
+
+        for (const message of messages) {
+
+            const allParts = message.parts.find(part => part.which === "");
+
+            const mail = await simpleParser(allParts.body);
+            mail["UID"] = message.attributes.uid;
+            if (mail.from) {
+                mail["fromFull"] = mail.from;
+                mail["from"] = mail.from.text;
+            }
+            if (mail.to) {
+                mail["toFull"] = mail.to;
+                mail["to"] = mail.to.text;
+            }
+
+            if (mail.html) mail["body"] = mail.textAsHtml;
+            else mail["body"] = mail.text;
+            result.push(mail);
+
+        }
+
+        this.log(`downloaded ${result.length} IMAP messages`)
+
+        return result;
     }
 
-    // getPuppeteerArguments(): string[] {
-    //     return super.getPuppeteerArguments();
-    // }
+    async deleteIMAPMessage(uid: number): Promise<void> {
+        await this.IMAPConnection.deleteMessage([uid])
+    }
+
+    getPuppeteerArguments(): string[] {
+        return super.getPuppeteerArguments();
+    }
 
 }
 
