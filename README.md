@@ -1,19 +1,24 @@
 Open Submitter
 ====
 
-The goal: a template-based open source web automation engine with Chrome browser emulation support. Users may build their own templates in Javascript using puppeteer, run them in multithreading mode, publish templates in templates gallery and earn money from other customers when they spend funds on captcha services.
+OpenSubmitter is an app which provides end-users to run custom web automation scripts (templates) in multi-threaded NodeJS environment. 
+It is written in Typescript, built on Electron + Vue 3 + Vite bundle.
+Templates (written in Typescript too) may utilize the following capabilities:
 
-### Todo list:
+- Headless (or window-less) Chromium navigation and manipulation with Puppeteer.
+- Axios network library.
+- Captcha solving with Anti-Captcha + template authors revenue sharing.
+- Provide various custom settings to a user in UI: select a files to read/write, text inputs, checkboxes, radio buttons, etc.
+- Output log entries in UI.
+- Generate table with job results in UI.
+- Interact with IMAP servers.
+- Use other built-in NodeJS libraries.
 
-- ✅ UI kit
-- ✅ Templates engine
-- ✅ Multithreading
-- ✅ Templates gallery backend at opensubmiiter.com
-- ✅ Revenue sharing system
-- ⏳ Official website
-- ❌ Templates documentation
+### Documentation:
+[Templates Documentation](https://opensubmitter.com/documentation/introduction)
 
-### Cloning the project
+
+### Cloning & running the project
 
 ```
 git clone --recursive https://github.com/MoterHaker/opensubmitter.git
