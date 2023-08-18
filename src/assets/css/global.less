@@ -284,6 +284,97 @@ button.btn {
   outline: none;
   color: #fff;
 }
+.check-wrap {
+  display: inline-block;
+}
+.check-wrap input {
+  visibility: hidden;
+  position: absolute;
+  z-index: -1;
+}
+.check-wrap input[type="radio"]:checked + .radio .faked-control .cir {
+  transform: scale(1);
+}
+.check-wrap input[type="checkbox"]:checked + .checkbox .faked-control .checkmark::before {
+  transform: rotate(45deg) scale(1);
+}
+.check-wrap input[type="checkbox"]:checked + .checkbox .faked-control .checkmark::after {
+  transform: rotate(-45deg) scale(1);
+}
+.check-wrap label {
+  display: -webkit-flex;
+  display: -ms-flex;
+  display: flex;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: pointer;
+}
+.check-wrap label .faked-control {
+  margin-right: 0.25rem;
+  width: 20px;
+  height: 20px;
+  position: relative;
+  z-index: 1;
+  background-color: #101919;
+  color: #249496;
+  border: 2px solid #0B1111;
+}
+.check-wrap label.checkbox .faked-control .checkmark::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 2px;
+  background-color: #249496;
+  transform: rotate(45deg) scale(0);
+  top: 8px;
+  left: 2px;
+  transition: transform 0.2s;
+}
+.check-wrap label.checkbox .faked-control .checkmark::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 2px;
+  transform: rotate(-45deg) scale(0);
+  background-color: #249496;
+  top: 7px;
+  left: 5px;
+  transition: transform 0.2s;
+}
+.check-wrap label.radio .faked-control {
+  border-radius: 50%;
+}
+.check-wrap label.radio .faked-control .cir {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  background-color: currentColor;
+  transform: scale(0);
+  transition: transform 0.2s;
+}
+.check-wrap.check-error {
+  color: #cd4a5a;
+}
+.check-wrap.check-error .faked-control {
+  color: #cd4a5a;
+}
+.check-wrap.check-correct {
+  color: #268429;
+}
+.check-wrap.check-correct .faked-control {
+  color: #268429;
+}
+.check-wrap .check-comment {
+  font-size: 12px;
+  padding-left: 24px;
+}
 //.select {
 //    font-family: 'Montserrat', sans-serif;
 //    appearance: none;

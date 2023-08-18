@@ -26,14 +26,21 @@ interface TaskMessage {
     pid: number,
     task: TemplateTask,
     config: TemplateConfig | null,
-    antiCaptchaAPIKey: string
+    antiCaptchaAPIKey: string,
+    puppeteerHeadOn: boolean
 }
 interface ThreadStatus {
     thread: number,
     status: string
 }
 
-
 interface AppSettings {
     antiCaptchaAPIKey?: string
+}
+
+interface RunTemplateParameters {
+    type: ('run-opened-file'),
+    threadsNumber: number,
+    puppeteerHeadOn: boolean,
+    settings: any
 }

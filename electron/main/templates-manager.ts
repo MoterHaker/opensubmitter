@@ -7,6 +7,7 @@ import fs from "fs";
 import ts, {ScriptTarget} from "typescript"
 
 import {pathsConfig} from "./pathsconfig";
+import { isDevelopmentEnv } from "./functions"
 import axios from "axios";
 
 const paths = pathsConfig();
@@ -24,7 +25,9 @@ export default class TemplatesManager {
         'bad-template.ts', //should not even appear in the list
         'test-puppeteer-basic.ts',
         'test-axios.ts',
-        'settings-example.ts'
+        'settings-example.ts',
+        'imap-example.ts',
+        'captcha-solver.ts'
     ];
 
     setHook(eventHook) {
@@ -162,7 +165,7 @@ export default class TemplatesManager {
         const templatesList = fs.readdirSync(paths.templatesDirectory, {withFileTypes: true})
                                 .filter(item => {
                                     if (item.isDirectory()) return false;
-                                    if (!paths.isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) { console.log('excluding', item); return false }
+                                    if (!isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) { console.log('excluding', item); return false }
                                     let ext = item.name.substring(item.name.indexOf('.')+1);
                                     return ['ts','js'].indexOf(ext) !== -1;
                                 })
@@ -308,7 +311,8 @@ export default class TemplatesManager {
             type: 'set-template-config',
             config: this.currentObject.config,
             taskThreadsAmount: this.taskThreadsAmount,
-            settingsWereSaved: this.templateSettingsWereSaved ? this.templateSettingsWereSaved : false
+            settingsWereSaved: this.templateSettingsWereSaved ? this.templateSettingsWereSaved : false,
+            isDevelopmentEnv: isDevelopmentEnv()
         })
     }
 

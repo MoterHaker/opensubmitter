@@ -2,7 +2,7 @@ import {pathsConfig} from "./pathsconfig";
 import {app} from 'electron'
 import { utilityProcess } from "electron";
 import fs from "fs"
-import { delay } from "./functions"
+import { delay, isDevelopmentEnv } from "./functions"
 
 export default class ModulesManager {
 
@@ -31,7 +31,7 @@ export default class ModulesManager {
             }
         }
 
-        if (!this.paths.isDevelopmentEnv()) {
+        if (!isDevelopmentEnv()) {
 
             //extracting app.asar if not extracted yet
             if (!fs.existsSync(this.paths.asarExtractedNodeModules)){

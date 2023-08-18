@@ -53,12 +53,14 @@ class InternalAPI {
                     break;
 
                 case 'run-opened-file':
-                    this.setTemplateUserSettings(data.settings);
+                    const parameters: RunTemplateParameters = data;
+                    this.setTemplateUserSettings(parameters.settings);
                     if (this.templates.currentObject.config.multiThreadingEnabled) {
-                        this.templates.taskThreadsAmount = data.threadsNumber;
+                        this.templates.taskThreadsAmount = parameters.threadsNumber;
                     } else {
                         this.templates.taskThreadsAmount = 1;
                     }
+                    this.executer.puppeteerHeadOn = parameters.puppeteerHeadOn;
                     await this.executer.runOpenedTemplate();
                     break;
 

@@ -16,6 +16,7 @@ export default class ExecuteManager {
     threads: TemplateControllerChild[] = [];
     isRunningAllowed = true;
     freedThreadNumbers: number[] = [];
+    puppeteerHeadOn = false;
     protected savedSettings: AppSettings = {};
 
     setHook(eventHook): void {
@@ -170,14 +171,16 @@ export default class ExecuteManager {
                 const child = utilityProcess
                     .fork(this.templates.compiledTemplateFilePath)
                     .on("spawn", () => {
-                        // console.log("spawned new utilityProcess " + child.pid)
-                        child.postMessage({
+
+                        const taskMessage: TaskMessage = {
                             'type': "start-task",
                             "pid": child.pid,
                             "task": task,
                             "config": this.templates.currentObject.config ? this.templates.currentObject.config : null,
-                            "antiCaptchaAPIKey": this.savedSettings.antiCaptchaAPIKey
-                        } as TaskMessage)
+                            "antiCaptchaAPIKey": this.savedSettings.antiCaptchaAPIKey,
+                            "puppeteerHeadOn": this.puppeteerHeadOn
+                        }
+                        child.postMessage(taskMessage)
                     })
                     .on('message', async (data) => {
                         await this.childProcessMessageHandler(child, data)

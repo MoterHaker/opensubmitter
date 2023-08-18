@@ -2,14 +2,11 @@ import { app } from 'electron'
 import { join } from 'node:path'
 import os, {tmpdir} from 'os';
 import fs from "fs";
+import { isDevelopmentEnv } from "./functions"
 
 const puppeteerVersion = '114.0.5735.133';
 
 export const pathsConfig = () => {
-
-    const isDevelopmentEnv = (): boolean => {
-        return process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development";
-    }
 
     //got it from puppeteer/browser/src/detectPlatform.ts
     const isWindows11 = (version: string): boolean => {

@@ -143,6 +143,11 @@ class Template implements OpenSubmitterTemplateProtocol {
         ]
     }
 
+    // will be overridden by Template Controller
+    postResultToTable(result: object) {
+
+    }
+
     log(msg: string) {
         console.log(msg);
     }

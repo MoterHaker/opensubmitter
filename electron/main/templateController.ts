@@ -60,7 +60,7 @@ class TemplateController extends Template {
                             return;
                         }
                         this.log('launching puppeteer browser');
-                        this.browser = await this.puppeteer.launch(this.getPuppeteerOptions());
+                        this.browser = await this.puppeteer.launch(this.getPuppeteerOptions(message.puppeteerHeadOn));
                         this.page = await this.browser.newPage();
                         break;
                 }
@@ -112,7 +112,7 @@ class TemplateController extends Template {
         });
     }
 
-    private getPuppeteerOptions() {
+    private getPuppeteerOptions(puppeteerHeadOn: boolean) {
 
         let puppeteerArguments = [
             '--disable-web-security',
@@ -154,7 +154,7 @@ class TemplateController extends Template {
         }
 
         return {
-            headless: 'new',
+            headless: puppeteerHeadOn ? false : 'new',
             executablePath: this.puppeteerExecutablePath,
             ignoreDefaultArgs: ["--disable-extensions", "--enable-automation"],
             devtools: false,

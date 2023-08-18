@@ -11,3 +11,8 @@ export const rmDirRecursive = (path: string): Promise<boolean> => {
         fs.rm(path, {recursive: true}, () => { resolve(true); })
     })
 }
+
+
+export const isDevelopmentEnv = (): boolean => {
+    return process.env && process.env.NODE_ENV && process.env.NODE_ENV === "development";
+}

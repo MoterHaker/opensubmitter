@@ -29,6 +29,9 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
     const threadsNumber = ref('10');
     const threadsError = ref('');
     const isTemplateSettingsResetAvailable = ref(false);
+    const isDevelopmentEnv = ref(false)
+    const hasPuppeteerInCapabilities = ref(false);
+    const puppeteerHeadOnMode = ref(false)
 
     watch(() => selectedTemplateFilename.value, () => {
         fileName.value = selectedTemplateFilename.value;
@@ -177,6 +180,12 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
                 if (data.settingsWereSaved) {
                     isTemplateSettingsResetAvailable.value = true;
                 }
+                isDevelopmentEnv.value = data.isDevelopmentEnv;
+                if (data.config.capabilities && data.config.capabilities.indexOf('puppeteer') !== -1) {
+                    hasPuppeteerInCapabilities.value = true;
+                } else {
+                    hasPuppeteerInCapabilities.value = false;
+                }
                 break;
 
             case 'set-template-name-error':
@@ -240,6 +249,9 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
         threadsNumber,
         threadsError,
         isTemplateSettingsResetAvailable,
+        isDevelopmentEnv,
+        hasPuppeteerInCapabilities,
+        puppeteerHeadOnMode,
 
         // methods:
         selectTemplateByName,

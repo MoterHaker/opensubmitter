@@ -55,6 +55,19 @@
                 <textfield v-if="taskManagerStore.templateConfig?.multiThreadingEnabled" v-model="taskManagerStore.threadsNumber" @update:modelValue="" :error-message="taskManagerStore.threadsError" style="width: 100px"/>
                 <div v-else>Multithreading is disabled in this template</div>
             </div>
+            <div v-if="taskManagerStore.hasPuppeteerInCapabilities && taskManagerStore.isDevelopmentEnv">
+                <div class="mt24">
+                    <div style="font-size: 12px">Deleveper Settings</div>
+                </div>
+                <div class="check-wrap mt8">
+                    <input type="checkbox"
+                           v-model="taskManagerStore.puppeteerHeadOnMode"
+                           id="puppeteerHeadOn"><label for="puppeteerHeadOn" class="checkbox">
+                        <span class="faked-control"><div class="checkmark"></div></span>
+                        <span class="label-text">Use Puppeteer head-on mode</span>
+                    </label>
+                </div>
+            </div>
             <div class="run-btn">
                 <btn label="Run template" :disabled="taskManagerStore.isRunningBlocked" @click="runTemplateIPC"/>
             </div>
@@ -109,11 +122,13 @@ function runTemplateIPC() {
     const settings = deepCopy(taskManagerStore.userSettings);
 
     useTitleStore().subtitle = 'Running "'+(taskManagerStore.templateConfig as TemplateConfig).name+"\""
-    ipcRenderer.send('TM', {
+    const runParameters: RunTemplateParameters = {
         type: 'run-opened-file',
         threadsNumber: parseInt(taskManagerStore.threadsNumber),
+        puppeteerHeadOn: taskManagerStore.puppeteerHeadOnMode,
         settings
-    });
+    }
+    ipcRenderer.send('TM', runParameters);
 }
 function openTemplateIPC() {
     ipcRenderer.send('TM', {type: 'select-template-dialog'})
@@ -128,7 +143,7 @@ function stopJobIPC() {
     taskManagerStore.isJobRunning = false;
     ipcRenderer.send('TM', {type: 'stop-job'});
 }
-function deepCopy(obj, seen = new WeakMap()) {
+function deepCopy(obj: any, seen = new WeakMap()) {
     if (obj === null || typeof obj !== 'object') {
         return obj;
     }
@@ -138,7 +153,7 @@ function deepCopy(obj, seen = new WeakMap()) {
         return seen.get(obj);
     }
 
-    let copy = Array.isArray(obj) ? [] : {};
+    let copy: any = Array.isArray(obj) ? [] : {};
 
     // Store the copy in the seen map to handle circular references
     seen.set(obj, copy);
@@ -183,57 +198,5 @@ function deepCopy(obj, seen = new WeakMap()) {
     display: inline-block;
     width: 100%;
 }
-//.select-wrap {
-//    display: grid;
-//    grid-template-areas: "select";
-//    align-items: center;
-//    position: relative;
-//    margin-top: 10px;
-//
-//    select,
-//    &::after {
-//    grid-area: select;
-//    }
-//
-//    border: 1px solid var(--select-border);
-//    padding: 0 0.7em;
-//
-//    font-size: 1.25rem;
-//    cursor: pointer;
-//    line-height: 1.1;
-//    background-color: #223333;
-//    border-radius: 6px;
-//    border: 1px solid #354F4F;
-//
-//    // Custom arrow
-//    &:not(.select--multiple)::after {
-//    content: "";
-//    justify-self: end;
-//    width: 0.8em;
-//    height: 0.47em;
-//    background: url('../assets/icons/caret.svg') no-repeat 50% 50%;
-//    background-size: contain;
-//    //background-color: #fff;
-//    //clip-path: polygon(100% 0%, 0 0%, 50% 100%);
-//  }
-//}
-//.template-select {
-//    width: 100%;
-//    height: 40px;
-//    appearance: none;
-//    background-color: transparent;
-//    border: none;
-//    padding: 0 1em 0 0;
-//    margin: 0;
-//    width: 100%;
-//    font-family: inherit;
-//    font-size: inherit;
-//    cursor: inherit;
-//    line-height: inherit;
-//    z-index: 1;
-//    outline: none;
-//    color: #fff;
-//}
-
 
 </style>
