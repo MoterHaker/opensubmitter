@@ -1,23 +1,35 @@
 #!/bin/bash
-mkdir -p ./release
+
+function failedbuild {
+  echo ""
+  echo -e "\033[31mFAILED BUILD FOR $1\033[0m"
+  exit 1
+}
+
 rm -rf ./release/*
+mkdir -p ./release/ready
+rm -rf ./templates/settings.json
 
-npx electron-packager ./ --out=release/macos-arm64 --platform=mas --arch=arm64 --icon=./src/assets/opensubmitter.icns
-mv release/macos-arm64/opensubmitter-mas-arm64/* release/macos-arm64/
-rm -rf release/macos-arm64/opensubmitter-mas-arm64
+DEBUG=electron-builder
+VERSION=$(grep '"version"' package.json | awk -F'"' '{print $4}')
 
-npx electron-packager ./ --out=release/macos-x64 --platform=mas --arch=x64 --icon=./src/assets/opensubmitter.icns
-mv release/macos-x64/opensubmitter-mas-x64/* release/macos-x64/
-rm -rf release/macos-x64/opensubmitter-mas-x64
+echo "building version $VERSION"
 
-npx electron-packager ./ --out=release/windows --platform=win32 --arch=x64 --icon=./src/assets/opensubmitter.ico
-mv release/windows/opensubmitter-win32-x64/* release/windows_x64/
-rm -rf release/windows/opensubmitter-win32-x64
+npm run buildmacarm || failedbuild "mac-arm"
+mv ./release/opensubmitter_$VERSION.dmg ./release/ready/opensubmitter_mac_arm64.dmg
 
-npx electron-packager ./ --out=release/windows --platform=win32 --arch=arm64 --icon=./src/assets/opensubmitter.ico
-mv release/windows/opensubmitter-win32-arm64/* release/windows_arm64/
-rm -rf release/windows/opensubmitter-win32-arm64
+npm run buildmacx64 || failedbuild "mac-x64"
+mv ./release/opensubmitter_$VERSION.dmg ./release/ready/opensubmitter_mac_amd64.dmg
 
-npx electron-packager ./ --out=release/linux --platform=linux --arch=x64 --icon=./src/assets/logo.png
-mv release/linux/opensubmitter-linux-x64/* release/linux/
-rm -rf release/linux/opensubmitter-linux-x64
+npm run buildwinx64 || failedbuild "win64"
+mv ./release/opensubmitter_$VERSION.exe ./release/ready/opensubmitter_windows_amd64.exe
+
+npm run buildwinarm || failedbuild "win-arm"
+mv ./release/opensubmitter_$VERSION.exe ./release/ready/opensubmitter_windows_arm64.exe
+
+npm run buildlinuxamd64 || failedbuild "linux-amd64"
+mv ./release/linux-unpacked ./release/opensubmitter_linux
+cd ./release/ && zip -r opensubmitter_linux_amd64.zip opensubmitter_linux
+mv ./opensubmitter_linux_amd64.zip ./ready/opensubmitter_linux_amd64.zip
+cd .. && rm -rf ./release/opensubmitter_linux
+

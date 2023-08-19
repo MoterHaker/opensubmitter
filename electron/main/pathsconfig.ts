@@ -41,7 +41,7 @@ export const pathsConfig = () => {
                 break;
 
             case 'linux':
-                executablePath = `linux-${puppeteerVersion}/chrome-linux/chrome`;
+                executablePath = `linux-${puppeteerVersion}/chrome-linux64/chrome`;
                 break;
 
             case 'win32':

@@ -12,7 +12,6 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
 
     const templateSource = ref('existing')
     const selectedTemplateFilename = ref('')
-    const fileName = ref('')
     const localTemplatesList = ref<PublicTemplate[]>([])
     const isLocalTemplatesUpdated = ref(false);
     const isRunningBlocked = ref(true);
@@ -34,8 +33,9 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
     const puppeteerHeadOnMode = ref(false)
 
     watch(() => selectedTemplateFilename.value, () => {
-        fileName.value = selectedTemplateFilename.value;
-        ipcRenderer.send('TM', {type: 'select-existing-template', fileName: fileName.value });
+        if (selectedTemplateFilename.value.length > 0) {
+            ipcRenderer.send('TM', {type: 'select-existing-template', fileName: selectedTemplateFilename.value});
+        }
     })
 
     const selectTemplateByName = (templateName: string): void => {
@@ -57,7 +57,7 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
     }
 
     const resetTemplate = () : void => {
-        fileName.value = '';
+        selectedTemplateFilename.value = '';
         isRunningBlocked.value = true;
         templateConfig.value = null;
         userSettings.value = [];
@@ -67,6 +67,7 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
         threadStatuses.value = [];
         resultTableHeader.value = null;
         resultsData.value = [];
+        hasPuppeteerInCapabilities.value = false;
     }
 
     const restartJob = () : void => {
@@ -84,8 +85,22 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
 
     function switchSourceToggler(value: string) {
         if (value) templateSource.value = 'file';
-        else templateSource.value = 'existing';
+        else {
+            templateSource.value = 'existing';
+
+            // Clear user settings UI, so nothing is left
+            // from custom template file
+            if (!isSelectedTemplateExistsInTheList()) {
+                selectedTemplateFilename.value = '';
+                resetTemplate();
+            }
+        }
         reloadSelectedTemplateSettings();
+    }
+
+    function isSelectedTemplateExistsInTheList(): boolean {
+        const found = localTemplatesList.value.find(el => el.filePath == selectedTemplateFilename.value);
+        return typeof found !== "undefined";
     }
 
 
@@ -162,7 +177,7 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
         switch (data.type) {
             case 'set-template-name':
                 resetTemplate()
-                fileName.value = data.filename;
+                selectedTemplateFilename.value = data.filename;
                 validateUserSettings()
                 break;
 
@@ -231,7 +246,6 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
         // refs:
         templateSource,
         selectedTemplateFilename,
-        fileName,
         localTemplatesList,
         isLocalTemplatesUpdated,
 

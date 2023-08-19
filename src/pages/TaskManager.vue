@@ -38,7 +38,7 @@
             </div>
             <div class="textfield-button" v-if="taskManagerStore.templateSource == 'file'">
                 <div>Template file path</div>
-                <Textfield v-model="taskManagerStore.fileName" style="width:100%" :errorMessage="taskManagerStore.templateError"/>
+                <Textfield v-model="taskManagerStore.selectedTemplateFilename" style="width:100%" :errorMessage="taskManagerStore.templateError"/>
                 <btn label="Open Template" @click="openTemplateIPC"/>
             </div>
             <div v-if="taskManagerStore.selectedTemplateFilename" class="mtop10 mbottom10">{{ taskManagerStore.templateConfig?.description }}</div>

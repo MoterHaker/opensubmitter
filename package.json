@@ -21,8 +21,12 @@
   "scripts": {
     "dev": "vite",
     "buildold": "vue-tsc --noEmit && vite build && electron-builder",
-    "build": "vue-tsc --noEmit && ./extra/prepare-build.sh mac_arm && vite build && electron-builder && ./extra/teardown-build.sh",
-    "buildwin": "vue-tsc --noEmit && vite build && electron-builder -w --x64",
+    "buildmacarm": "vue-tsc --noEmit && ./extra/prepare-build.sh mac_arm && vite build && electron-builder -m --arm64 && ./extra/teardown-build.sh",
+    "buildmacx64": "vue-tsc --noEmit && ./extra/prepare-build.sh mac && vite build && electron-builder -m --x64 && ./extra/teardown-build.sh",
+    "buildwinx64": "vue-tsc --noEmit && ./extra/prepare-build.sh win64 && vite build && electron-builder -w --x64 && ./extra/teardown-build.sh",
+    "buildwinarm": "vue-tsc --noEmit && ./extra/prepare-build.sh win64 && vite build && electron-builder -w --arm64 && ./extra/teardown-build.sh",
+    "buildlinuxamd64": "vue-tsc --noEmit && ./extra/prepare-build.sh linux && vite build && electron-builder -l --x64 && ./extra/teardown-build.sh",
+    "buildlinuxarm64": "vue-tsc --noEmit && ./extra/prepare-build.sh linux && vite build && electron-builder -l --arm64 && ./extra/teardown-build.sh",
     "preview": "vite preview"
   },
   "devDependencies": {

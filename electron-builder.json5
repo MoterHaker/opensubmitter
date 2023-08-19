@@ -24,7 +24,7 @@
   "appId": "Open Submitter",
   "asar": true,
   "directories": {
-    "output": "release/${version}"
+    "output": "release"
   },
   "files": [
     "dist-electron",
@@ -54,6 +54,16 @@
       }
     ],
     "artifactName": "${productName}_${version}.${ext}"
+  },
+  "linux": {
+    "icon": "build/icon.icns",
+    "target": "dir",
+    "desktop": {
+      "name": "Open Submitter",
+      "Comment": "Open Source Web Automation",
+      "Exec": "opensubmitter",
+      "Icon": "build/256x256.png"
+    }
   },
   "nsis": {
     "oneClick": false,
