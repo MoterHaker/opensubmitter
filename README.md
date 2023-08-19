@@ -14,6 +14,9 @@ Templates (written in Typescript too) may utilize the following capabilities:
 - Interact with IMAP servers.
 - Use other built-in NodeJS libraries.
 
+### Download
+See [releases](https://github.com/MoterHaker/opensubmitter/releases) page.
+
 ### Documentation:
 [Templates Documentation](https://opensubmitter.com/documentation/introduction)
 
