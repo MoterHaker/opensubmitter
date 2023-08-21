@@ -46,6 +46,7 @@ interface UserSetting {
     name: string,
     title: string,
     value?: string | boolean | null,
+    placeholder?: string,
     selectableOptions?: SelectableOption[],
     fileName?: string | null,
     required?: boolean,

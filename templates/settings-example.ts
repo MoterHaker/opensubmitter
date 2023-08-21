@@ -18,6 +18,7 @@ class Template implements OpenSubmitterTemplateProtocol {
             },{
                 type: 'OutputFile',
                 name: 'anOutput1',
+                placeholder: '/path/to/file/example_of_placeholder',
                 title: 'A file saving dialog width 100% UI width',
                 fileName: "",
                 required: false,
@@ -44,6 +45,7 @@ class Template implements OpenSubmitterTemplateProtocol {
                 type: 'Select',
                 name: 'select_list',
                 title: 'A drop-down with 100% width',
+                placeholder: 'Select something.. placeholder example',
                 value: 'default',
                 selectableOptions: [
                     {
@@ -79,12 +81,14 @@ class Template implements OpenSubmitterTemplateProtocol {
             },{
                 type: 'TextInput',
                 name: 'textvalue2',
+                placeholder: 'Enter something here, placeholder example',
                 title: 'Another text input',
                 value: "Another example",
                 uiWidth: 50,
             },{
                 type: 'Textarea',
                 name: 'largetextvalue1',
+                placeholder: 'Enter something here in several lines',
                 title: 'Large textarea input',
                 value: "Default text",
                 uiWidth: 100,

@@ -6,21 +6,37 @@
                     }">
         <div v-if="setting.type == 'SourceFile'" class="textfield-button">
             <div>{{setting.title}}</div>
-            <Textfield v-model="setting.fileName" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
+            <Textfield v-model="setting.fileName"
+                       @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)"
+                       :placeholder="setting.placeholder"
+                       :error-message="setting.errorString"
+                       style="width:100%"/>
             <btn label="Select File" @click="selectFileForTemplateIPC('open', index)"/>
         </div>
         <div v-if="setting.type == 'OutputFile'" class="textfield-button">
             <div>{{setting.title}}</div>
-            <textfield v-model="setting.fileName" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
+            <textfield v-model="setting.fileName"
+                       @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)"
+                       :placeholder="setting.placeholder"
+                       :error-message="setting.errorString"
+                       style="width:100%"/>
             <btn label="Create File" @click="selectFileForTemplateIPC('save', index)"/>
         </div>
         <div v-if="setting.type == 'TextInput'" class="textfield-simple">
             <div>{{setting.title}}</div>
-            <textfield v-model="setting.value" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
+            <textfield v-model="setting.value"
+                       @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)"
+                       :placeholder="setting.placeholder"
+                       :error-message="setting.errorString"
+                       style="width:100%"/>
         </div>
         <div v-if="setting.type == 'Textarea'" class="textfield-simple">
             <div>{{setting.title}}</div>
-            <text-area v-model="setting.value" @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)" :error-message="setting.errorString" style="width:100%"/>
+            <text-area v-model="setting.value"
+                       @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)"
+                       :placeholder="setting.placeholder"
+                       :error-message="setting.errorString"
+                       style="width:100%"/>
         </div>
         <div v-if="setting.type == 'Checkbox'">
             <div class="check-wrap" :class="{ 'check-error' : (setting.errorString && setting.errorString.length > 0) }">
@@ -53,7 +69,7 @@
             <div style="font-size: 12px">{{setting.title}}</div>
             <div class="select-wrap mbottom20">
                 <select class="styled-select" v-model="setting.value">
-                    <option disabled value="" selected>Select one...</option>
+                    <option disabled value="" selected>{{ setting.placeholder && setting.placeholder !== '' ? setting.placeholder : 'Select one...' }}</option>
                     <option v-for="(option, index) in setting.selectableOptions"
                             :key="index"
                             :value="(option as SelectableOption).value"
