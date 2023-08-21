@@ -1,14 +1,19 @@
 
 interface OpenSubmitterTemplateProtocol {
     config?: TemplateConfig,
-    generateTasks: TemplateTaskGenerator,
-    runTask: TemplateTaskRunner,
-    getPuppeteerArguments?: () => string[]
+    generateTasks: (...args: any) => Promise<TemplateTask[]>,
+    runTask: (task: TemplateTask) => Promise<any>,
+    getPuppeteerArguments?: () => string[],
+    solveCaptcha?: (captcha: Captcha) => Promise<string | object>,
+    getIMAPMessages?: (config: object) => Promise<any[]>,
+    deleteIMAPMessage?: (uid: number) => Promise<void>,
+    postResultToTable?: (result: object) => void,
+    getRandomName?: (requirements: GeneratedPersonRequirements) => GeneratedPerson,
+    generatePassword?: (withSpecial: boolean, withNumbers: boolean) => string,
     log?: Function
+
+    electronAssetsDirectory?: string
 }
-type FileOpenDialogType = ('open' | 'save')
-type TemplateTaskRunner = (task: TemplateTask) => Promise<any>;
-type TemplateTaskGenerator = (...args: any) => Promise<TemplateTask[]>;
 
 interface TemplateTask {
     data: any
@@ -88,4 +93,18 @@ interface IMAPModule {
     openBox: Function,
     search: Function,
     deleteMessage: Function
+}
+
+interface GeneratedPersonRequirements {
+    randomGender?: boolean,
+    isMale?: boolean,
+    minimumUsernameLength?: number,
+    usernameWithANumber?: boolean
+}
+
+interface GeneratedPerson {
+    name: string,
+    surname: string,
+    username: string,
+    password: string
 }

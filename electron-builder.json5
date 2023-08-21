@@ -16,6 +16,9 @@
       "from": "electron/main/extractor/nodemodules",
       "to": "src/node_modules"
     },{
+      "from": "electron/main/assets",
+      "to": "src/assets"
+    },{
       "from": "templates",
       "to": "templates"
     }

@@ -102,6 +102,10 @@ export const pathsConfig = () => {
 
     const developmentNodeModules = join(app.getAppPath(), 'extra', 'bundled-node-modules', 'modules')
 
+    const electronAssets = isDevelopmentEnv() ?
+        join(__dirname, '..', '..', 'electron', 'main', 'assets') :
+        join(process.resourcesPath, 'src', 'assets')
+
     return {
         // constants:
         templatesDirectory,                     //path we we store templates
@@ -117,6 +121,7 @@ export const pathsConfig = () => {
         extractor,                              //module which extracts data from app.asar
         settingsFile,                           //app settings storage file path
         developmentNodeModules,                 //location of extracted/node_modules for development mode
+        electronAssets,                         //location of extra files for template APIs
 
         // methods:
         isDevelopmentEnv,
