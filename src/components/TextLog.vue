@@ -44,6 +44,20 @@ watch(() => props.modelValue, (newValue) => {
     max-width: 100%;
     white-space: pre-wrap;
     word-break: break-word;
+    /* Foreground, Background */
+    scrollbar-color: #999 #333;
+}
+.joblog::-webkit-scrollbar {
+    width: 16px;
+}
+.joblog::-webkit-scrollbar-thumb {
+    background: #334343;
+    border: 3px solid #1B2525;
+    border-radius: 100px;
+}
+.joblog::-webkit-scrollbar-track {
+    background: #1B2525;
+    border-radius: 0 6px 6px 0;
 }
 
 </style>

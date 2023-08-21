@@ -48,6 +48,18 @@ const props = defineProps({
     max-height: 300px;
     overflow: auto;
     tr {margin-top: -1px;}
+    &::-webkit-scrollbar {
+      width: 16px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #334343;
+        border: 3px solid #0A1010;
+        border-radius: 100px;
+    }
+    &::-webkit-scrollbar-track {
+        background: #0A1010;
+        border-radius: 0 6px 6px 0;
+    }
   }
 }
 </style>
