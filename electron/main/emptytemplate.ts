@@ -21,6 +21,15 @@ export default class Template implements OpenSubmitterTemplateProtocol {
         return []
     }
 
+    getRandomName(requirements: GeneratedPersonRequirements): GeneratedPerson {
+        return {
+            name: '',
+            surname: '',
+            username: '',
+            password: ''
+        }
+    }
+
     log(message) {
 
     }

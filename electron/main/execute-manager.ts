@@ -178,7 +178,8 @@ export default class ExecuteManager {
                             "task": task,
                             "config": this.templates.currentObject.config ? this.templates.currentObject.config : null,
                             "antiCaptchaAPIKey": this.savedSettings.antiCaptchaAPIKey,
-                            "puppeteerHeadOn": this.puppeteerHeadOn
+                            "puppeteerHeadOn": this.puppeteerHeadOn,
+                            "electronAssetsDirectory": this.modulesManager.paths.electronAssets
                         }
                         child.postMessage(taskMessage)
                     })

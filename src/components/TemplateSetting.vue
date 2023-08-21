@@ -127,7 +127,7 @@ onMounted(() => {
 })
 
 
-function selectFileForTemplateIPC(type : FileOpenDialogType, index: number) {
+function selectFileForTemplateIPC(type : ('open' | 'save'), index: number) {
     ipcRenderer.send('TM', {
         type: 'select-file-for-template-settings',
         dialogType: type,

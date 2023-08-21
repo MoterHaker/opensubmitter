@@ -87,6 +87,7 @@ export default class TemplatesManager {
 
             //creating new template controller which contains the template
             this.currentObject = new TemplateController();
+            this.currentObject.electronAssetsDirectory = paths.electronAssets;
 
         } catch (e) {
             console.error(`could not open cjs file ${this.compiledTemplateFilePath}: `, e.toString());
