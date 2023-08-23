@@ -7,6 +7,7 @@ interface OpenSubmitterTemplateProtocol {
     solveCaptcha?: (captcha: Captcha) => Promise<string | object>,
     getIMAPMessages?: (config: object) => Promise<any[]>,
     deleteIMAPMessage?: (uid: number) => Promise<void>,
+    closeIMAPConnection?: () => Promise<void>,
     postResultToTable?: (result: object) => void,
     getRandomName?: (requirements: GeneratedPersonRequirements) => GeneratedPerson,
     generatePassword?: (withSpecial: boolean, withNumbers: boolean) => string,
@@ -92,7 +93,8 @@ interface ExtraCaptchaParameters {
 interface IMAPModule {
     openBox: Function,
     search: Function,
-    deleteMessage: Function
+    deleteMessage: Function,
+    closeBox: Function
 }
 
 interface GeneratedPersonRequirements {
@@ -107,4 +109,22 @@ interface GeneratedPerson {
     surname: string,
     username: string,
     password: string
+}
+
+// Reference: https://github.com/mscdex/node-imap#connection-instance-methods
+interface IMAPConfig {
+    host: string,
+    port: number,
+    user: string,
+    password: string,
+    tls?: boolean,
+    tlsOptions?: object,
+    xoauth?: string,
+    xoauth2?: string,
+    autotls?: ('always' | 'required' | 'never'),
+    connTimeout?: number,
+    authTimeout?: number,
+    socketTimeout?: number,
+    keepalive?: any,
+    debug?: Function
 }

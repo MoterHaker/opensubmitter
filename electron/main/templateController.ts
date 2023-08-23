@@ -373,14 +373,14 @@ class TemplateController extends Template {
         return true;
     }
 
-    async getIMAPMessages(config): Promise<any[]> {
+    async getIMAPMessages(config: IMAPConfig): Promise<any[]> {
         const simpleParser = require('mailparser').simpleParser;
         const imapsimple = require('imap-simple');
 
         this.log('opening an IMAP connection');
         this.IMAPConnection = null;
         try {
-            this.IMAPConnection = await imapsimple.connect(config);
+            this.IMAPConnection = await imapsimple.connect({ imap: config });
         } catch (e) {
             this.log('could not open connection '+(e as String).toString());
             return null;
@@ -417,11 +417,18 @@ class TemplateController extends Template {
 
         this.log(`downloaded ${result.length} IMAP messages`)
 
+
         return result;
     }
 
     async deleteIMAPMessage(uid: number): Promise<void> {
         await this.IMAPConnection.deleteMessage([uid])
+    }
+
+    async closeIMAPConnection(): Promise<void> {
+        await new Promise(resolve => {
+            this.IMAPConnection.closeBox(true, resolve);
+        });
     }
 
     getPuppeteerArguments(): string[] {

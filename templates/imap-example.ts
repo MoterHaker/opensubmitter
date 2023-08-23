@@ -59,16 +59,14 @@ class Template implements OpenSubmitterTemplateProtocol {
         return [{
             data: {
                 // The config is taken from https://www.npmjs.com/package/imap-simple
-                imap: {
-                    user: this.config.userSettings.find(setting => setting.name === 'login').value,
-                    password: this.config.userSettings.find(setting => setting.name === 'password').value,
-                    host: this.config.userSettings.find(setting => setting.name === 'host').value,
-                    port: this.config.userSettings.find(setting => setting.name === 'port').value,
-                    tls: true,
-                    tlsOptions: { rejectUnauthorized: false },
-                    authTimeout: 10000
-                }
-            }
+                user: this.config.userSettings.find(setting => setting.name === 'login').value,
+                password: this.config.userSettings.find(setting => setting.name === 'password').value,
+                host: this.config.userSettings.find(setting => setting.name === 'host').value,
+                port: parseInt(this.config.userSettings.find(setting => setting.name === 'port').value.toString()),
+                tls: true,
+                tlsOptions: { rejectUnauthorized: false },
+                authTimeout: 10000
+            } as IMAPConfig
         }]
 
     }
@@ -105,7 +103,7 @@ class Template implements OpenSubmitterTemplateProtocol {
     }
 
     // will be overridden by Template Controller
-    async getIMAPMessages(config): Promise<any[]> {
+    async getIMAPMessages(config: IMAPConfig): Promise<any[]> {
         return []
     }
 
