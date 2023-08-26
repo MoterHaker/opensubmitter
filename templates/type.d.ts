@@ -34,6 +34,7 @@ interface TemplateConfig {
     multiThreadingEnabled: boolean,
     userSettings: UserSetting[],
     email?: string,
+    icon?: string,
     rewardTronAddress?: string,
     resultTableHeader?: ResultTableRow[]
 }
