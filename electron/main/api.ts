@@ -54,13 +54,14 @@ class InternalAPI {
 
                 case 'run-opened-file':
                     const parameters: RunTemplateParameters = data;
-                    this.setTemplateUserSettings(parameters.settings);
+                    this.templates.currentObject.config.userSettings = parameters.settings;
                     if (this.templates.currentObject.config.multiThreadingEnabled) {
                         this.templates.taskThreadsAmount = parameters.threadsNumber;
                     } else {
                         this.templates.taskThreadsAmount = 1;
                     }
                     this.executer.puppeteerHeadOn = parameters.puppeteerHeadOn;
+                    this.executer.userSettings = parameters.settings;
                     await this.executer.runOpenedTemplate();
                     break;
 
@@ -97,6 +98,20 @@ class InternalAPI {
                     await this.templates.download(data.id)
                     break;
 
+                case 'export-result-to-another-file':
+                    const files: Electron.SaveDialogReturnValue = await dialog.showSaveDialog({properties: ['showOverwriteConfirmation']});
+                    if (!files || files.canceled) {
+                        return;
+                    }
+                    const exportedRows = this.executer.exportManager.export(
+                        data.format,
+                        files.filePath);
+                    this.eventHook.reply('TaskManager', {
+                        type: 'notify-export-completed',
+                        exportedRows
+                    })
+                    break;
+
 
 
             }
@@ -128,10 +143,6 @@ class InternalAPI {
             config: this.templates.currentObject.config,
             taskThreadsAmount: this.templates.taskThreadsAmount
         })
-    }
-
-    setTemplateUserSettings(data) {
-        this.templates.currentObject.config.userSettings = data;
     }
 
     async openTemplateDialog() {

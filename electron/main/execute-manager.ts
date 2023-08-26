@@ -4,6 +4,7 @@ import { utilityProcess } from "electron";
 import fs from "fs"
 import TemplatesManager from "./templates-manager";
 import ModulesManager from "./modules-manager";
+import ExportManager from "./export-manager";
 
 const paths = pathsConfig();
 
@@ -12,11 +13,13 @@ export default class ExecuteManager {
     eventHook = null;
     templates : TemplatesManager | null = null;
     modulesManager: ModulesManager | null = null;
+    exportManager: ExportManager
     currentTasks: TemplateTask[] = [];
     threads: TemplateControllerChild[] = [];
     isRunningAllowed = true;
     freedThreadNumbers: number[] = [];
     puppeteerHeadOn = false;
+    userSettings: UserSetting[] = []
     protected savedSettings: AppSettings = {};
 
     setHook(eventHook): void {
@@ -60,6 +63,10 @@ export default class ExecuteManager {
                             result: message.data
                         })
                         break;
+
+                    case 'save-results-to-storage':
+                        this.exportManager.store(message.data)
+                        break;
                 }
 
                 return;
@@ -97,6 +104,7 @@ export default class ExecuteManager {
         if (!await this.modulesManager.checkIfModulesAreExtracted()) {
             return;
         }
+        this.exportManager = new ExportManager();
 
         this.isRunningAllowed = true;
         this.eventHook.reply('TaskManager', {
@@ -241,6 +249,10 @@ export default class ExecuteManager {
 
         }
 
+        //export data if there are export settings
+        this.exportData()
+
+
         this.eventHook.reply('TaskManager', {
             type: 'set-running-status',
             statusData: {
@@ -254,7 +266,15 @@ export default class ExecuteManager {
         this.addToParentLog(`Done! Completed ${completedTasks} tasks`);
     }
 
-
+    exportData() {
+        const exportSetting = this.userSettings.find(setting => setting.type === 'ExportFile');
+        if (!exportSetting) return;
+        const exportCount = this.exportManager.export(exportSetting.value as ExportFormat, exportSetting.fileName)
+        this.eventHook.reply('TaskManager', {
+            type: 'notify-export-completed',
+            exportedRows: exportCount
+        })
+    }
 
     killThreads(): void {
         for (const thread of this.threads) {

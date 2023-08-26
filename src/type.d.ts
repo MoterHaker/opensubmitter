@@ -45,3 +45,5 @@ interface RunTemplateParameters {
     puppeteerHeadOn: boolean,
     settings: any
 }
+
+type ExportFormat = ( 'CSV' | 'SQL' | 'JSON' | 'MongoDB' )

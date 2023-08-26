@@ -527,6 +527,10 @@ class TemplateController extends Template {
         return array;
     }
 
+    postResultToStorage(result: TemplateResult) {
+        this.messageToParent('save-results-to-storage', result);
+    }
+
 }
 
 (async() => {

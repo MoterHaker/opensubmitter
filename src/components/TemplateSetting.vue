@@ -22,6 +22,23 @@
                        style="width:100%"/>
             <btn label="Create File" @click="selectFileForTemplateIPC('save', index)"/>
         </div>
+        <div v-if="setting.type == 'ExportFile'" class="export-file">
+            <div>{{setting.title}}</div>
+            <div class="select-wrap mbottom20">
+                <select class="styled-select" v-model="setting.value" @change="exportFormatChanged">
+                    <option>CSV</option>
+                    <option>JSON</option>
+                    <option>SQL</option>
+                    <option>MongoDB</option>
+                </select>
+            </div>
+            <textfield v-model="setting.fileName"
+                       @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)"
+                       :placeholder="setting.placeholder"
+                       :error-message="setting.errorString"
+                       style="width:100%"/>
+            <btn label="Create File" @click="selectFileForTemplateIPC('save', index)"/>
+        </div>
         <div v-if="setting.type == 'TextInput'" class="textfield-simple">
             <div>{{setting.title}}</div>
             <textfield v-model="setting.value"
@@ -126,6 +143,9 @@ onMounted(() => {
     }
 })
 
+function exportFormatChanged() {
+
+}
 
 function selectFileForTemplateIPC(type : ('open' | 'save'), index: number) {
     ipcRenderer.send('TM', {
@@ -150,6 +170,25 @@ function selectFileForTemplateIPC(type : ('open' | 'save'), index: number) {
 .radio-db {
     display: block !important;
     margin-top: 10px;
+}
+.export-file {
+    display: table;
+    :first-child {
+        display: table-row;
+    }
+    :nth-child(2) {
+        display: inline-block;
+        width: 150px;
+        margin-right: 10px;
+    }
+    :nth-child(3) {
+        display: table-cell;
+    }
+    :nth-child(4) {
+        display: table-cell;
+        width: 200px;
+        margin-left: 10px;
+    }
 }
 </style>
 
