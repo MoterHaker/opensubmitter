@@ -31,6 +31,10 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
     const isDevelopmentEnv = ref(false)
     const hasPuppeteerInCapabilities = ref(false);
     const puppeteerHeadOnMode = ref(false)
+    const hasExportUserSetting = ref(false);
+    const exportFormat = ref<ExportFormat>('CSV');
+    const isExporting = ref(false);
+    const exportedCount = ref(0);
 
     watch(() => selectedTemplateFilename.value, () => {
         if (selectedTemplateFilename.value.length > 0) {
@@ -155,8 +159,16 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
 
             case 'OutputFile':
             case 'SourceFile':
+            case 'ExportFile':
                 if (setting.fileName) {
-                    return setting.fileName!.length > 0; // || typeof setting.required  && setting.required === false
+                    if (setting.fileName!.length > 0) {
+                        exportFormat.value = setting.value as ExportFormat;
+                        hasExportUserSetting.value = true;
+                        return true;
+                    } else {
+                        hasExportUserSetting.value = false;
+                        return false;
+                    }
                 }
                 break;
         }
@@ -238,6 +250,11 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
                 selectTemplateByName(data.name);
                 break;
 
+            case 'notify-export-completed':
+                isExporting.value = false;
+                exportedCount.value = parseInt(data.exportedRows);
+                break;
+
         }
 
     })
@@ -265,7 +282,11 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
         isTemplateSettingsResetAvailable,
         isDevelopmentEnv,
         hasPuppeteerInCapabilities,
+        hasExportUserSetting,
+        exportFormat,
         puppeteerHeadOnMode,
+        isExporting,
+        exportedCount,
 
         // methods:
         selectTemplateByName,

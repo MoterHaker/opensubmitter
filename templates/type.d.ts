@@ -40,7 +40,7 @@ interface TemplateConfig {
 }
 
 type TemplateCapabilities = ('axios' | 'puppeteer')
-type UserSettingsInput = ('OutputFile' | 'SourceFile' | 'TextInput' | 'Checkbox' | 'Select' | 'Radio' | 'Textarea')
+type UserSettingsInput = ('OutputFile' | 'ExportFile' | 'SourceFile' | 'TextInput' | 'Checkbox' | 'Select' | 'Radio' | 'Textarea')
 type UIWidth = (50 | 100)
 
 interface SelectableOption {
@@ -91,25 +91,16 @@ interface ExtraCaptchaParameters {
     geetest4InitParameters?: any        //  initialization parameters for Geetest4
 }
 
+interface TemplateResult {
+    fields: string[],
+    values: object
+}
+
 interface IMAPModule {
     openBox: Function,
     search: Function,
     deleteMessage: Function,
     closeBox: Function
-}
-
-interface GeneratedPersonRequirements {
-    randomGender?: boolean,
-    isMale?: boolean,
-    minimumUsernameLength?: number,
-    usernameWithANumber?: boolean
-}
-
-interface GeneratedPerson {
-    name: string,
-    surname: string,
-    username: string,
-    password: string
 }
 
 // Reference: https://github.com/mscdex/node-imap#connection-instance-methods
@@ -128,4 +119,18 @@ interface IMAPConfig {
     socketTimeout?: number,
     keepalive?: any,
     debug?: Function
+}
+
+interface GeneratedPersonRequirements {
+    randomGender?: boolean,
+    isMale?: boolean,
+    minimumUsernameLength?: number,
+    usernameWithANumber?: boolean
+}
+
+interface GeneratedPerson {
+    name: string,
+    surname: string,
+    username: string,
+    password: string
 }

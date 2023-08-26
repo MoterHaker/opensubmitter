@@ -14,6 +14,12 @@
             <div class="subtitle mtop20" height="200">Job logs:</div>
             <text-log v-model="taskManagerStore.textLogString" class="mtop10"/>
 
+            <div v-if="taskManagerStore.hasExportUserSetting && !taskManagerStore.isJobRunning" class="mtop20">
+                <div>Data exported ({{ taskManagerStore.exportedCount }} records)</div>
+                <div class="mtop10"><btn label="Export to another file" @click="exportResultsIPC" :loading="taskManagerStore.isExporting"/></div>
+            </div>
+
+
             <div v-if="taskManagerStore.resultTableHeader" class="subtitle mtop20 mbottom10" height="200">Job results:</div>
             <results-table :results-data="taskManagerStore.resultsData" :result-table-header="taskManagerStore.resultTableHeader"/>
 
@@ -133,11 +139,14 @@ function runTemplateIPC() {
 function openTemplateIPC() {
     ipcRenderer.send('TM', {type: 'select-template-dialog'})
 }
+function exportResultsIPC() {
+    taskManagerStore.exportedCount = 0;
+    ipcRenderer.send('TM', {type: 'export-result-to-another-file', format: taskManagerStore.exportFormat })
+}
 function resetTemplateSettingsIPC() {
     taskManagerStore.isTemplateSettingsResetAvailable = false;
     ipcRenderer.send('TM', {type: 'reset-template-settings'})
 }
-
 function stopJobIPC() {
     useTitleStore().subtitle = "Run templates"
     taskManagerStore.isJobRunning = false;
