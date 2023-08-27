@@ -151,6 +151,7 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
         }
         switch (setting.type) {
 
+            case 'Textarea':
             case 'TextInput':
                 if (setting.value) {
                     return (setting.value as String).length > 0;

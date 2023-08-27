@@ -36,7 +36,7 @@ class Template implements OpenSubmitterTemplateProtocol {
                     'imap.gmail.com:993:mymail@gmail.com:mymail14@gmail.com:password12314\n' +
                     'imap.gmail.com:993:mymail@gmail.com:mymail15@gmail.com:password12315\n' +
                     'imap.gmail.com:993:mymail@gmail.com:mymail16@gmail.com:password12316',
-                required: false,
+                required: true,
                 uiWidth: 100
             }, {
                 type: 'ExportFile',
