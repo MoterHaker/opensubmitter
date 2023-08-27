@@ -21,6 +21,7 @@ export default class ExecuteManager {
     puppeteerHeadOn = false;
     userSettings: UserSetting[] = []
     protected savedSettings: AppSettings = {};
+    latestSharedData: any = null;
 
     setHook(eventHook): void {
         this.eventHook = eventHook;
@@ -67,6 +68,11 @@ export default class ExecuteManager {
                     case 'save-results-to-storage':
                         this.exportManager.store(message.data)
                         break;
+
+                    case 'broadcast-message-to-threads':
+                        this.latestSharedData = message.data;
+                        this.broadcastMessageToThreads(message.data);
+                        break;
                 }
 
                 return;
@@ -98,6 +104,7 @@ export default class ExecuteManager {
 
     async runOpenedTemplate(): Promise<void> {
 
+        this.latestSharedData = null;
         this.templates.saveSettings();
         console.log("\n\n\n======NEW RUN======\n");
 
@@ -187,7 +194,8 @@ export default class ExecuteManager {
                             "config": this.templates.currentObject.config ? this.templates.currentObject.config : null,
                             "antiCaptchaAPIKey": this.savedSettings.antiCaptchaAPIKey,
                             "puppeteerHeadOn": this.puppeteerHeadOn,
-                            "electronAssetsDirectory": this.modulesManager.paths.electronAssets
+                            "electronAssetsDirectory": this.modulesManager.paths.electronAssets,
+                            "latestSharedData": this.latestSharedData
                         }
                         child.postMessage(taskMessage)
                     })
@@ -264,6 +272,15 @@ export default class ExecuteManager {
         })
 
         this.addToParentLog(`Done! Completed ${completedTasks} tasks`);
+    }
+
+    broadcastMessageToThreads(data: any) {
+        for (const thread of this.threads) {
+            thread.child.postMessage({
+                type: 'receive-broadcast-data',
+                data
+            })
+        }
     }
 
     exportData() {

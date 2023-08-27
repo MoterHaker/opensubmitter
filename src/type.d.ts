@@ -28,7 +28,8 @@ interface TaskMessage {
     config: TemplateConfig | null,
     antiCaptchaAPIKey: string,
     puppeteerHeadOn: boolean,
-    electronAssetsDirectory: string
+    electronAssetsDirectory: string,
+    latestSharedData: any
 }
 interface ThreadStatus {
     thread: number,

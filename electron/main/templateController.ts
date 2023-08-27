@@ -38,8 +38,15 @@ class TemplateController extends Template {
             //messages from parent (main) process
             switch (message.type) {
                 case 'start-task':
+                    const taskMessage: TaskMessage = message;
+                    if (taskMessage.latestSharedData) {
+                        this.receiveBroadcastMessage(taskMessage.latestSharedData);
+                    }
+                    await this.startTask(taskMessage);
+                    break;
 
-                    await this.startTask(message);
+                case 'receive-broadcast-data':
+                    this.receiveBroadcastMessage(message.data);
                     break;
             }
         })
@@ -79,6 +86,9 @@ class TemplateController extends Template {
 
         try {
             await this.runTask(this.task);
+
+            //adding small delay to allow all messages to be posted
+            await this.delay(100);
         } catch (e) {
             this.log('Template execution error: '+e.toString());
         }
@@ -111,14 +121,24 @@ class TemplateController extends Template {
         });
 
         this.messageToParent('post-result-to-table', postResult)
+
     }
 
-    private messageToParent(type: string, data: object) {
-        this.parentPort.postMessage({
-            type,
-            data,
-            pid: this.myPID
-        });
+    private messageToParent(type: string, data: object, delay: boolean = true) {
+
+        // small delay to prevent message overdose at the main process
+        let delayTime = 0;
+        if (delay) {
+            delayTime = 50 + Math.floor(Math.random()*50)
+        }
+
+        setTimeout(() => {
+            this.parentPort.postMessage({
+                type,
+                data,
+                pid: this.myPID
+            })
+        }, delayTime);
     }
 
     private getPuppeteerOptions(puppeteerHeadOn: boolean) {
@@ -529,6 +549,15 @@ class TemplateController extends Template {
 
     postResultToStorage(result: TemplateResult) {
         this.messageToParent('save-results-to-storage', result);
+    }
+
+    broadcastMessageToThreads(data: any) {
+        this.messageToParent('broadcast-message-to-threads', data, false);
+    }
+
+    receiveBroadcastMessage(data: any) {
+        if (typeof super.receiveBroadcastMessage !== "function") return;
+        super.receiveBroadcastMessage(data);
     }
 
 }

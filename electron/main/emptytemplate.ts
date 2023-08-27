@@ -30,6 +30,10 @@ export default class Template implements OpenSubmitterTemplateProtocol {
         }
     }
 
+    receiveBroadcastMessage(data: any) {
+
+    }
+
     log(message) {
 
     }

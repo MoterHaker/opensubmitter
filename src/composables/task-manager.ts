@@ -110,9 +110,13 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
 
     function validateUserSettings(type?: UserSettingsInput, index?: number) {
         let isEverythingChecked = true;
+        const isSilentChecking = typeof type === "undefined" && typeof index === "undefined"
+        if (isSilentChecking) {
+            hasExportUserSetting.value = false;
+        }
         for (const userSettingIndex in userSettings.value) {
             const userSetting : UserSetting = userSettings.value[userSettingIndex];
-            if (typeof type !== "undefined" && typeof index !== "undefined") {
+            if (!isSilentChecking) {
                 //check exactly this input
                 if (parseInt(userSettingIndex) === index) {
                     if (userSetting.required && userSetting.required === true) {
@@ -131,7 +135,12 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
                 } else {
                     userSetting.errorString = null;
                 }
+                if (userSetting.type === 'ExportFile') {
+                    hasExportUserSetting.value = true;
+                    exportFormat.value = userSetting.value as ExportFormat;
+                }
             }
+
         }
 
         //results of silent mode
@@ -163,11 +172,8 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
             case 'ExportFile':
                 if (setting.fileName) {
                     if (setting.fileName!.length > 0) {
-                        exportFormat.value = setting.value as ExportFormat;
-                        hasExportUserSetting.value = true;
                         return true;
                     } else {
-                        hasExportUserSetting.value = false;
                         return false;
                     }
                 }

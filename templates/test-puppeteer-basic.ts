@@ -86,7 +86,7 @@ class Template implements OpenSubmitterTemplateProtocol {
             this.log(`navigating to ${task.data.url}...`);
             await this.page.goto(task.data.url, {
                 waitUntil: "networkidle0",
-                timeout: 5000
+                timeout: 15000
             });
             this.postResultToTable({
                 'URL': task.data.url,

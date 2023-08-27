@@ -46,7 +46,7 @@ class Template implements OpenSubmitterTemplateProtocol {
                 fileName: "",
                 required: true,
                 uiWidth: 100
-            },
+            }
         ]
     };
 
