@@ -27,7 +27,9 @@ export default class TemplatesManager {
         'test-axios.ts',
         'settings-example.ts',
         'imap-example.ts',
-        'captcha-solver.ts'
+        'captcha-solver.ts',
+        'manage-results-example.ts',
+        'threads-comminication-example.ts'
     ];
 
     setHook(eventHook) {
