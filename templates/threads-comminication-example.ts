@@ -20,7 +20,7 @@ class Template implements OpenSubmitterTemplateProtocol {
             {
                 type: 'ExportFile',
                 name: 'outputFile',
-                title: 'Where to export random numbers',
+                title: 'Where to export the data',
                 value: 'CSV',
                 fileName: "",
                 required: false,
@@ -96,7 +96,7 @@ class Template implements OpenSubmitterTemplateProtocol {
     receiveBroadcastMessage(data: any) {
         this.log('received shared data, size: '+data.length);
 
-        //checking for doubles
+        //checking for duplicates
         for (const number of data) {
             if (this.sharedData.indexOf(number) === -1) {
                 this.sharedData.push(number);

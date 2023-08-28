@@ -22,22 +22,23 @@
                        style="width:100%"/>
             <btn label="Create File" @click="selectFileForTemplateIPC('save', index)"/>
         </div>
-        <div v-if="setting.type == 'ExportFile'" class="export-file">
+        <div v-if="setting.type == 'ExportFile'">
             <div>{{setting.title}}</div>
-            <div class="select-wrap mbottom20">
-                <select class="styled-select" v-model="setting.value" @change="exportFormatChanged">
-                    <option>CSV</option>
-                    <option>JSON</option>
-                    <option>SQL</option>
-                    <option>MongoDB</option>
-                </select>
+            <div class="export-file">
+                <div class="select-wrap mbottom20">
+                    <select class="styled-select" v-model="setting.value" @change="exportFormatChanged">
+                        <option>CSV</option>
+                        <option>JSON</option>
+                        <option>SQL</option>
+                        <option>MongoDB</option>
+                    </select>
+                </div>
+                <textfield v-model="setting.fileName"
+                           @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)"
+                           :placeholder="setting.placeholder"
+                           :error-message="setting.errorString"/>
+                <btn label="Create File" @click="selectFileForTemplateIPC('save', index)"/>
             </div>
-            <textfield v-model="setting.fileName"
-                       @update:modelValue="taskManagerStore.validateUserSettings(setting.type, index)"
-                       :placeholder="setting.placeholder"
-                       :error-message="setting.errorString"
-                       style="width:100%"/>
-            <btn label="Create File" @click="selectFileForTemplateIPC('save', index)"/>
         </div>
         <div v-if="setting.type == 'TextInput'" class="textfield-simple">
             <div>{{setting.title}}</div>
@@ -173,18 +174,19 @@ function selectFileForTemplateIPC(type : ('open' | 'save'), index: number) {
 }
 .export-file {
     display: table;
-    :first-child {
-        display: table-row;
-    }
-    :nth-child(2) {
+    :nth-child(1) {
         display: inline-block;
         width: 150px;
         margin-right: 10px;
     }
-    :nth-child(3) {
+    :nth-child(2) {
         display: table-cell;
+        width: 100%;
+        :first-child {
+            width: 100% !important;
+        }
     }
-    :nth-child(4) {
+    :nth-child(3) {
         display: table-cell;
         width: 200px;
         margin-left: 10px;
