@@ -133,6 +133,7 @@ class TemplateController extends Template {
         }
 
         setTimeout(() => {
+            if (!this.parentPort) return;
             this.parentPort.postMessage({
                 type,
                 data,
