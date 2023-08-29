@@ -122,10 +122,10 @@ interface IMAPConfig {
 }
 
 interface GeneratedPersonRequirements {
-    randomGender?: boolean,
-    isMale?: boolean,
-    minimumUsernameLength?: number,
-    usernameWithANumber?: boolean
+    randomGender?: boolean,                 // Generate gender randomly
+    isMale?: boolean,                       // or set specific gender
+    minimumUsernameLength?: number,         // Length of a username
+    usernameWithANumber?: boolean           // Add random numbers to a username
 }
 
 interface GeneratedPerson {

@@ -6,7 +6,7 @@
             <div class="progress-block">
                 <progress-bar :percents="progressComputed"/>
                 <btn label="Restart" @click="taskManagerStore.restartJob" v-if="!taskManagerStore.isJobRunning" class="btn-row"/>
-                <btn label="Stop" @click="stopJobIPC" v-if="taskManagerStore.isJobRunning" class="btn-row"/>
+                <btn label="Stop" @click="taskManagerStore.stopJobIPC" v-if="taskManagerStore.isJobRunning" class="btn-row"/>
             </div>
 
             <div class="subtitle mtop20" height="200" v-if="taskManagerStore.threadStatuses.length > 0">Thread Statuses:</div>
@@ -16,7 +16,7 @@
 
             <div v-if="taskManagerStore.hasExportUserSetting && !taskManagerStore.isJobRunning" class="mtop20">
                 <div>Data exported ({{ taskManagerStore.exportedCount }} records)</div>
-                <div class="mtop10"><btn label="Export to another file" @click="exportResultsIPC" :loading="taskManagerStore.isExporting"/></div>
+                <div class="mtop10"><btn label="Export to another file" @click="taskManagerStore.exportResultsIPC" :loading="taskManagerStore.isExporting"/></div>
             </div>
 
 
@@ -45,12 +45,12 @@
             <div class="textfield-button" v-if="taskManagerStore.templateSource == 'file'">
                 <div>Template file path</div>
                 <Textfield v-model="taskManagerStore.selectedTemplateFilename" style="width:100%" :errorMessage="taskManagerStore.templateError"/>
-                <btn label="Open Template" @click="openTemplateIPC"/>
+                <btn label="Open Template" @click="taskManagerStore.openTemplateIPC"/>
             </div>
             <div v-if="taskManagerStore.selectedTemplateFilename" class="mtop10 mbottom10">{{ taskManagerStore.templateConfig?.description }}</div>
             <div v-if="taskManagerStore.userSettings.length > 0 && taskManagerStore.templateConfig" class="template-name-block">
                 <div class="hg2 padding20_0px">{{taskManagerStore.templateConfig?.name}}</div>
-                <btn icon="reset" label="Reset settings" @click="resetTemplateSettingsIPC" v-if="taskManagerStore.isTemplateSettingsResetAvailable"/>
+                <btn icon="reset" label="Reset settings" @click="taskManagerStore.resetTemplateSettingsIPC" v-if="taskManagerStore.isTemplateSettingsResetAvailable"/>
             </div>
             <template-setting
                 v-for="(setting, index) in taskManagerStore.userSettings"
@@ -75,7 +75,7 @@
                 </div>
             </div>
             <div class="run-btn">
-                <btn label="Run template" :disabled="taskManagerStore.isRunningBlocked" @click="runTemplateIPC"/>
+                <btn label="Run template" :disabled="taskManagerStore.isRunningBlocked" @click="taskManagerStore.runTemplateIPC"/>
             </div>
         </div>
     </div>
@@ -119,62 +119,8 @@ const progressComputed: ComputedRef<number> = computed(() => {
     return 100 - Math.round(taskManagerStore.taskStatusData!.pending / totalTasks * 100);
 })
 
-function runTemplateIPC() {
-    if (taskManagerStore.isRunningBlocked) {
-        console.log('running blocked');
-        return;
-    }
 
-    const settings = deepCopy(taskManagerStore.userSettings);
 
-    useTitleStore().subtitle = 'Running "'+(taskManagerStore.templateConfig as TemplateConfig).name+"\""
-    const runParameters: RunTemplateParameters = {
-        type: 'run-opened-file',
-        threadsNumber: parseInt(taskManagerStore.threadsNumber),
-        puppeteerHeadOn: taskManagerStore.puppeteerHeadOnMode,
-        settings
-    }
-    ipcRenderer.send('TM', runParameters);
-}
-function openTemplateIPC() {
-    ipcRenderer.send('TM', {type: 'select-template-dialog'})
-}
-function exportResultsIPC() {
-    taskManagerStore.exportedCount = 0;
-    ipcRenderer.send('TM', {type: 'export-result-to-another-file', format: taskManagerStore.exportFormat })
-}
-function resetTemplateSettingsIPC() {
-    taskManagerStore.isTemplateSettingsResetAvailable = false;
-    ipcRenderer.send('TM', {type: 'reset-template-settings'})
-}
-function stopJobIPC() {
-    useTitleStore().subtitle = "Run templates"
-    taskManagerStore.isJobRunning = false;
-    ipcRenderer.send('TM', {type: 'stop-job'});
-}
-function deepCopy(obj: any, seen = new WeakMap()) {
-    if (obj === null || typeof obj !== 'object') {
-        return obj;
-    }
-
-    // Handle circular references
-    if (seen.has(obj)) {
-        return seen.get(obj);
-    }
-
-    let copy: any = Array.isArray(obj) ? [] : {};
-
-    // Store the copy in the seen map to handle circular references
-    seen.set(obj, copy);
-
-    for (let key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            copy[key] = deepCopy(obj[key], seen);
-        }
-    }
-
-    return copy;
-}
 
 </script>
 

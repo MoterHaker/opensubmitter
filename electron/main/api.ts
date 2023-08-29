@@ -65,6 +65,10 @@ class InternalAPI {
                     await this.executer.runOpenedTemplate();
                     break;
 
+                case 'update-template-user-settings':
+                    this.templates.currentObject.config.userSettings = data.settings;
+                    break;
+
                 case 'select-file-for-template-settings':
                     await this.selectFileForTemplateSettings(data);
                     break;

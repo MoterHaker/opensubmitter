@@ -144,8 +144,15 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
         }
 
         //results of silent mode
-        if (typeof type === "undefined" && typeof index === "undefined") {
+        if (isSilentChecking) {
             isRunningBlocked.value = !isEverythingChecked;
+
+            // update user settings at background
+            ipcRenderer.send('TM', {
+                type: 'update-template-user-settings',
+                settings: deepCopy(userSettings.value)
+            })
+
         }
 
     }
@@ -190,6 +197,65 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
             threadsError.value = '';
             return true;
         }
+    }
+
+    function runTemplateIPC() {
+        if (isRunningBlocked.value) {
+            console.log('running blocked');
+            return;
+        }
+
+        const settings = deepCopy(userSettings.value);
+
+        useTitleStore().subtitle = 'Running "'+(templateConfig.value as TemplateConfig).name+"\""
+        const runParameters: RunTemplateParameters = {
+            type: 'run-opened-file',
+            threadsNumber: parseInt(threadsNumber.value),
+            puppeteerHeadOn: puppeteerHeadOnMode.value,
+            settings
+        }
+        ipcRenderer.send('TM', runParameters);
+    }
+
+    function deepCopy(obj: any, seen = new WeakMap()) {
+        if (obj === null || typeof obj !== 'object') {
+            return obj;
+        }
+
+        // Handle circular references
+        if (seen.has(obj)) {
+            return seen.get(obj);
+        }
+
+        let copy: any = Array.isArray(obj) ? [] : {};
+
+        // Store the copy in the seen map to handle circular references
+        seen.set(obj, copy);
+
+        for (let key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                copy[key] = deepCopy(obj[key], seen);
+            }
+        }
+
+        return copy;
+    }
+
+    function openTemplateIPC() {
+        ipcRenderer.send('TM', {type: 'select-template-dialog'})
+    }
+    function exportResultsIPC() {
+       exportedCount.value = 0;
+        ipcRenderer.send('TM', {type: 'export-result-to-another-file', format: exportFormat.value })
+    }
+    function resetTemplateSettingsIPC() {
+        isTemplateSettingsResetAvailable.value = false;
+        ipcRenderer.send('TM', {type: 'reset-template-settings'})
+    }
+    function stopJobIPC() {
+        useTitleStore().subtitle = "Run templates"
+        isJobRunning.value = false;
+        ipcRenderer.send('TM', {type: 'stop-job'});
     }
 
     ipcRenderer.on('TaskManager', (e, data) => {
@@ -301,6 +367,13 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
         resetTemplate,
         restartJob,
         switchSourceToggler,
-        validateUserSettings
+        validateUserSettings,
+
+        //IPC
+        runTemplateIPC,
+        openTemplateIPC,
+        exportResultsIPC,
+        resetTemplateSettingsIPC,
+        stopJobIPC
     }
 })

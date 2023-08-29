@@ -197,7 +197,10 @@ export default class ExecuteManager {
                             "electronAssetsDirectory": this.modulesManager.paths.electronAssets,
                             "latestSharedData": this.latestSharedData
                         }
-                        child.postMessage(taskMessage)
+                        if (typeof child.postMessage === "function") {
+                            // sometimes fires "undefined" postMessage alert
+                            child.postMessage(taskMessage)
+                        }
                     })
                     .on('message', async (data) => {
                         await this.childProcessMessageHandler(child, data)
@@ -276,10 +279,13 @@ export default class ExecuteManager {
 
     broadcastMessageToThreads(data: any) {
         for (const thread of this.threads) {
-            thread.child.postMessage({
-                type: 'receive-broadcast-data',
-                data
-            })
+            if (typeof thread.child.postMessage === "function") {
+                // sometimes fires "undefined" postMessage alert
+                thread.child.postMessage({
+                    type: 'receive-broadcast-data',
+                    data
+                })
+            }
         }
     }
 
