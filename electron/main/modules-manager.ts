@@ -9,7 +9,7 @@ export default class ModulesManager {
     eventHook = null;
     paths = pathsConfig();
     areModulesExtracted = false;
-    modulesVersion = '0005';
+    modulesVersion = '0007';
 
     setHook(eventHook): void {
         this.eventHook = eventHook;

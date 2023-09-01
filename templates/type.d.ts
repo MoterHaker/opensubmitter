@@ -61,7 +61,7 @@ interface UserSetting {
     uiWidth?: UIWidth
 }
 
-type CaptchaType = ('image' | 'RecaptchaV2' | 'RecaptchaV3' | 'HCaptcha' | 'FunCaptcha' | 'Geetest3' | 'Geetest4' | 'Turnstile')
+type CaptchaType = ('image' | 'RecaptchaV2' | 'RecaptchaV3' | 'HCaptcha' | 'FunCaptcha' | 'Geetest3' | 'Geetest4' | 'Turnstile' | 'ImageToCoordinates')
 interface Captcha {
     type: CaptchaType,
     imageBodyBase64?: string,   //  for image captcha
@@ -79,9 +79,9 @@ interface Captcha {
 }
 
 interface ExtraCaptchaParameters {
-    userAgent: string,                  //  custom user-agent, required for proxy-on tasks
+    userAgent?: string,                 //  custom user-agent, required for proxy-on tasks
     v3score?: (0.3 | 0.7 | 0.9)         //  for Recaptcha V3
-    pageAction: string | null           //  page action for Recaptcha V3 and Turnstile
+    pageAction?: string | null          //  page action for Recaptcha V3 and Turnstile
     isInvisible?: boolean               //  for Recaptcha V2 and HCaptcha
     recaptchaDataSValue?: string        //  "data-s" value for Recaptcha V2 (google.com domains captcha)
     enterprisePayload?: any             //  custom enterprise payload data for HCaptcha or FunCaptcha
@@ -89,6 +89,8 @@ interface ExtraCaptchaParameters {
     funcaptchaDataBlob?: string         //  extra token for FunCaptcha
     geetestChallenge?: string           //  challenge token for Geetest
     geetest4InitParameters?: any        //  initialization parameters for Geetest4
+    coordinatesMode?: ('points' | 'rectangles')    // solving mode for ImageToCoordinates
+    comment?: string                    //  used for simple images and ImageToCoordinates
 }
 
 interface TemplateResult {

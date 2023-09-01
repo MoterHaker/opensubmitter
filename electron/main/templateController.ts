@@ -96,7 +96,9 @@ class TemplateController extends Template {
     }
 
     override log(message: string) {
-        super.log(message);
+        if (typeof super.log === "function") {
+            super.log(message);
+        }
         this.messageToParent('log-update', { message })
     }
 
@@ -382,6 +384,15 @@ class TemplateController extends Template {
                     captcha.websiteKey,
                     captcha.extraParameters?.pageAction);
                 break;
+
+            case 'ImageToCoordinates':
+                if (!captcha.imageBodyBase64) {
+                    throw new Error("Captcha body not set");
+                }
+                if (!captcha.extraParameters.comment) {
+                    throw new Error("No captcha comment specified");
+                }
+                return await ac.solveImageToCoordinates(captcha.imageBodyBase64, captcha.extraParameters.comment, captcha.extraParameters?.coordinatesMode)
 
         }
         throw new Error("Unsupported captcha type")

@@ -219,7 +219,7 @@ export default class TemplatesManager {
                 }
 
             } catch (e) {
-                console.log('could not compile: '+e.toString())
+                console.log(`could not compile ${templateFile}: `+e.toString())
             }
 
         }
