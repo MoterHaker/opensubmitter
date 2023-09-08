@@ -167,6 +167,13 @@ class Template implements OpenSubmitterTemplateProtocol {
 
         async function defaultNavigation(): Promise<void> {
             try {
+                await this.page.setExtraHTTPHeaders({
+                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+                    'upgrade-insecure-requests': '1',
+                    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'accept-encoding': 'gzip, deflate, br',
+                    'accept-language': 'en-US,en;q=0.9,en;q=0.8'
+                });
                 await this.page.waitForTimeout((Math.floor(Math.random() * 12) + 5) * 1000);
                 // Setting proxy authorization if credentials are provided
                 if (task.data.proxyLogin && task.data.proxyPassword) {
@@ -201,18 +208,13 @@ class Template implements OpenSubmitterTemplateProtocol {
 
         async function fillInputAndStartSignup() {
             try {
-                const [button] = await this.page.$x("//button[contains(., 'Accept')]")
-                await button?.click();
+                await this.page.goto("https://www.linkedin.com/signup")
 
-                await this.delay(2000)
-                await this.page.goto("https://www.linkedin.com/authwall?trk=qf&original_referer=&sessionRedirect=https%3A%2F%2Fwww.linkedin.com%2F")
-
-                await this.delay(2000)
-                await this.page.waitForSelector("#email-or-phone");
+                await this.page.waitForSelector("#email-address");
                 const join_button = await this.page.$("#join-form-submit");
 
                 this.log("filling email")
-                await this.page.type('input[id="email-or-phone"]', task.data.email, { delay: Math.random() * 500 + 200 });
+                await this.page.type('input[id="email-address"]', task.data.email, { delay: Math.random() * 500 + 200 });
                 this.log("filling password")
                 await this.page.type('input[id="password"]', task.data.password, { delay: Math.random() * 500 + 200 });
                 await join_button.click();
@@ -289,7 +291,7 @@ class Template implements OpenSubmitterTemplateProtocol {
                         await iframe.type('input[id="register-verification-phone-number"]', phone_number, { delay: Math.random() * 500 + 200 });
                         await submitBtn.click();
                         await this.delay(2000);
-                        await this.page.waitForSelector("#input__phone_verification_pin", { timeout: 5000 });
+                        await iframe.waitForSelector("#input__phone_verification_pin", { timeout: 5000 });
                     } catch (err) {
                         console.log(err);
                         continue;
@@ -420,6 +422,7 @@ class Template implements OpenSubmitterTemplateProtocol {
             '--disable-2d-canvas-clip-aa',
             '--disable-gl-drawing-for-tests',
             '--enable-low-end-device-mode',
+            '--blink-settings=imagesEnabled=true',
         ]
     }
 
