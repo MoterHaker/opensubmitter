@@ -28,7 +28,7 @@ export default class ExportManager {
             case 'SQL':
                 if (this.fields.length === 0) throw new Error('Fields and tableName are required for SQL format.');
                 this.storage.forEach(obj => {
-                    let values = this.fields.map(field => `'${obj[field]}'`).join(',');
+                    let values = this.fields.map(field => `'${this.escapeSqlInput(obj[field])}'`).join(',');
                     output += `INSERT INTO data_table (${this.fields.join(', ')}) VALUES (${values});\n`;
                 });
                 break;
@@ -44,5 +44,34 @@ export default class ExportManager {
         fs.writeFileSync(fileName, output);
 
         return this.storage.length;
+    }
+
+    escapeSqlInput(value) {
+        if (typeof value !== 'string') {
+            return value;
+        }
+        return value.replace(/[\0\x08\x09\x1a\n\r"'\\\%]/g, function (char) {
+            switch (char) {
+                case "\0":
+                    return "\\0";
+                case "\x08":
+                    return "\\b";
+                case "\x09":
+                    return "\\t";
+                case "\x1a":
+                    return "\\z";
+                case "\n":
+                    return "\\n";
+                case "\r":
+                    return "\\r";
+                case "\"":
+                case "'":
+                case "\\":
+                case "%":
+                    return "\\" + char; // prepends a backslash to quotes, backslash, and percent
+                default:
+                    return char;
+            }
+        });
     }
 }
