@@ -3,6 +3,7 @@
 import {app, ipcMain} from 'electron'
 import { join } from 'node:path'
 const { dialog } = require('electron')
+
 import ts, {ScriptTarget} from "typescript"
 import { utilityProcess } from "electron";
 import fs from "fs"
@@ -30,7 +31,7 @@ class InternalAPI {
 
 
     startListening(): void {
-        this.readAppSettings();
+
         this.executer.setTemplateManager(this.templates);
         this.executer.setModulesManager(this.modulesManager);
         ipcMain.on('TM', async(e, data) => {
@@ -39,6 +40,7 @@ class InternalAPI {
             this.templates.setHook(e);
             this.modulesManager.setHook(e);
             this.executer.setHook(e);
+            this.readAppSettings();
             switch (data.type) {
 
                 case 'select-existing-template':
@@ -164,6 +166,14 @@ class InternalAPI {
 
 
     readAppSettings() {
+
+        if (this.eventHook) {
+            this.eventHook.reply('NetworkAPI', {
+                type: 'set-version',
+                version: app.getVersion()
+            })
+        }
+
         if (!fs.existsSync(this.paths.settingsFile)) return;
         try {
             const config = JSON.parse(fs.readFileSync(this.paths.settingsFile).toString());

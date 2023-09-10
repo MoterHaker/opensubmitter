@@ -1,11 +1,18 @@
 /// <reference path="./type.d.ts" />
 import axios from "axios";
 import {ref} from "vue"
+import {ipcRenderer} from "electron";
+import os from "os";
 
 export const useAPI = () => {
 
     const apiErrorCode = ref('');
     const apiErrorTranslated = ref('');
+    const appVersion = ref('');
+    const isUpdateAvailable = ref(false)
+    const updateLink = ref('');
+    const newVersion = ref('');
+    let versionUpdateInterval: any = null;
 
     const getTemplateCategories = async(): Promise<string[]> => {
         try {
@@ -47,9 +54,9 @@ export const useAPI = () => {
         return false;
     }
 
-    const reportTemplateRun = async(id: number): Promise<boolean> => {
+    const reportTemplateRun = async(name: string): Promise<boolean> => {
         try {
-            await fetchData('template/report_run', { id });
+            await fetchData('template/report_run', { name });
             return true;
         } catch (e) {
             errorFallback('template/report_run')
@@ -65,6 +72,66 @@ export const useAPI = () => {
         }
         return [];
     }
+
+    const getUpdates = (): void => {
+
+        versionUpdateInterval = setInterval(async() => {
+            if (!appVersion.value || appVersion.value === '') {
+                console.log('version is empty');
+                return;
+            }
+
+            let platform = '';
+            switch (process.platform) {
+                case 'darwin':
+                    if (process.arch === 'arm64') {
+                        platform = 'mac_arm'
+                    } else {
+                        platform = 'mac'
+                    }
+                    break;
+
+                case 'linux':
+                    platform = 'linux'
+                    break;
+
+                case 'win32':
+                    if (process.arch === 'x64') {
+                        platform = 'windows'
+                    }
+                    if (os.arch() === 'arm64') {
+                        platform = 'windows_arm';
+                    }
+                    break;
+            }
+
+            if (platform === '') {
+                console.error('could not detect the platform')
+                clearInterval(versionUpdateInterval)
+            }
+
+            try {
+                const remoteVersion = (await fetchData('app/get_updates', { platform })).version;
+                if (remoteVersion.version !== appVersion.value) {
+                    updateLink.value = remoteVersion.download_url;
+                    newVersion.value = remoteVersion.version;
+                    isUpdateAvailable.value = true;
+                }
+                clearInterval(versionUpdateInterval)
+            } catch (e) {
+                errorFallback('app/get_updates')
+            }
+        }, 5000);
+    }
+
+    ipcRenderer.on('NetworkAPI', (e, data) => {
+        switch (data.type) {
+
+            case 'set-version':
+                appVersion.value = data.version;
+                break;
+        }
+    });
 
     const fetchData = async (path: string, postData: any): Promise<any> => {
 
@@ -144,13 +211,20 @@ export const useAPI = () => {
                 apiErrorTranslated.value = "Got remote error: "+code;
                 break;
         }
+
+
     }
 
     return {
         // refs:
         apiErrorTranslated,
+        appVersion,
+        isUpdateAvailable,
+        updateLink,
+        newVersion,
 
         // methods:
+        getUpdates,
         searchTemplates,
         reportTemplateView,
         reportTemplateRun,

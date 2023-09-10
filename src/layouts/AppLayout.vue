@@ -19,10 +19,10 @@
                     UI kit
                 </router-link>
 
-<!--                <div class="update-available">-->
-<!--                    <div class="title">v. 1.2.3 is available</div>-->
-<!--                    <Btn label="Update now" />-->
-<!--                </div>-->
+                <div class="update-available" v-if="api.isUpdateAvailable.value">
+                    <div class="title">v. {{api.newVersion.value}} is available</div>
+                    <a class="btn" :href="api.updateLink.value" target="_blank">Download</a>
+                </div>
             </div>
             <div class="col-main">
                 <div class="col-header">
@@ -33,7 +33,7 @@
                     </div>
                     <div v-if="isActiveRoute('/templates')" class="col-right df gap16">
                         <router-link to="/request" class="btn ghost" v-if="!isActiveRoute('/request')"><SvgIcon name="request-template" /> Request a template</router-link>
-                        <a href="https://opensubmitter.com/request-template" target="_blank" class="btn ghost" v-if="!isActiveRoute('/request')"><SvgIcon name="add-file" /> Submit a template</a>
+                        <a href="https://opensubmitter.com/submit-template" target="_blank" class="btn ghost" v-if="!isActiveRoute('/request')"><SvgIcon name="add-file" /> Submit a template</a>
                     </div>
                 </div>
                 <div class="col-content">
@@ -48,12 +48,12 @@
 <script setup lang="ts">
 import {useRoute} from "vue-router";
 import SvgIcon from "../components/SvgIcon.vue"
-import Btn from "../components/Btn.vue"
-import {onUpdated} from "vue";
-import {useSearchStore} from "../composables/search";
+import {onMounted, onUpdated, ref} from "vue";
 import {useTitleStore} from "../composables/titles";
+import {useAPI} from "../composables/api";
 const titleStore = useTitleStore();
 const route = useRoute()
+const api = useAPI()
 
 const isActiveRoute = (routePath: string): boolean => {
     return route.path === routePath;
@@ -66,6 +66,10 @@ const showBackBtn = (): boolean => {
 function isDevelopmentEnv(): boolean {
     return typeof process.env !== "undefined" && typeof process.env.NODE_ENV !== "undefined" && process.env.NODE_ENV === "development";
 }
+
+onMounted(() => {
+    api.getUpdates();
+})
 
 </script>
 
