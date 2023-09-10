@@ -75,7 +75,7 @@
                 </div>
             </div>
             <div class="run-btn">
-                <btn label="Run template" :disabled="taskManagerStore.isRunningBlocked" @click="taskManagerStore.runTemplateIPC"/>
+                <btn label="Run template" :disabled="taskManagerStore.isRunningBlocked" @click="runTemplate"/>
             </div>
         </div>
     </div>
@@ -96,12 +96,16 @@ import ResultsTable from "../components/ResultsTable.vue";
 import TemplateSetting from "../components/TemplateSetting.vue";
 import {useRouter} from "vue-router";
 import {useTaskManagerStore} from "../composables/task-manager";
-import {useTitleStore} from "../composables/titles";
+import {useAPI} from "../composables/api";
 
 const taskManagerStore = useTaskManagerStore();
 const router = useRouter();
+const api = useAPI();
 
-
+function runTemplate() {
+    api.reportTemplateRun((taskManagerStore.templateConfig as TemplateConfig).name);
+    taskManagerStore.runTemplateIPC();
+}
 
 watch(() => taskManagerStore.templateSource, (newValue) => {
     ipcRenderer.send('TM', {type: 'read-local-templates'});

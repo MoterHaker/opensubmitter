@@ -99,7 +99,7 @@ class TemplateController extends Template {
         if (typeof super.log === "function") {
             super.log(message);
         }
-        this.messageToParent('log-update', { message })
+        this.messageToParent('log-update', { message }, false)
     }
 
     override postResultToTable(result: object) {
