@@ -10,6 +10,9 @@
       "from": "electron/main/templateController.ts",
       "to": "src/templateController.ts"
     },{
+      "from": "electron/main/template-submodules",
+      "to": "src/template-submodules"
+    },{
       "from": "electron/main/asarextractor.js",
       "to": "src/asarextractor.js"
     },{

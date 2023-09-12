@@ -118,9 +118,9 @@ onMounted(() => {
 
 const progressComputed: ComputedRef<number> = computed(() => {
     if (typeof taskManagerStore.taskStatusData?.completed === "undefined" || typeof taskManagerStore.taskStatusData?.pending === "undefined") return 0;
-    const totalTasks = taskManagerStore.taskStatusData!.completed + taskManagerStore.taskStatusData!.pending;
+    const totalTasks = taskManagerStore.taskStatusData!.completed + taskManagerStore.taskStatusData!.pending + taskManagerStore.taskStatusData!.active;
     if (totalTasks === 0) return 0;
-    return 100 - Math.round(taskManagerStore.taskStatusData!.pending / totalTasks * 100);
+    return Math.round(taskManagerStore.taskStatusData!.completed / totalTasks * 100);
 })
 
 

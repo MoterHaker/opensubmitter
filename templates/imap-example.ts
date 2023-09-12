@@ -100,6 +100,8 @@ class Template implements OpenSubmitterTemplateProtocol {
 
             await this.delay(100); //small pause to let IPC process the message
         }
+
+        await this.closeIMAPConnection();
     }
 
     // will be overridden by Template Controller
@@ -124,6 +126,10 @@ class Template implements OpenSubmitterTemplateProtocol {
 
     // will be overridden by Template Controller
     delay(time) {
+
+    }
+
+    async closeIMAPConnection(): Promise<void> {
 
     }
 

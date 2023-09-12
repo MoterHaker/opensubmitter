@@ -59,7 +59,7 @@ export default class TemplatesManager {
 
         try {
             //compiling them into JavaScript
-            contentJS = this.tsCompile(contentTS);
+            contentJS = this.tsCompile(contentTS).replace("export {};", "");
         } catch (e) {
             this.eventHook.reply('TaskManager', {type: 'set-template-name-error', error: "Could not compile TypeScript to Javascript"})
             return;
@@ -161,9 +161,6 @@ export default class TemplatesManager {
 
     async readLocal(): Promise<void> {
 
-        //reading parent template controller contents
-        const templateParentContent = fs.readFileSync(paths.templateControllerPath).toString().split("//cut")[1];
-
         //listing templates directory
         const templatesList = fs.readdirSync(paths.templatesDirectory, {withFileTypes: true})
                                 .filter(item => {
@@ -190,13 +187,13 @@ export default class TemplatesManager {
             let compiledPath = join(paths.temporaryCompiledTemplatesDirectory, `${templateFile}.cjs`);
 
             //combined Typescript contents of template and its parent controller
-            const contentTS = fs.readFileSync(templatePath).toString() + templateParentContent;
+            const contentTS = fs.readFileSync(templatePath).toString() + paths.templateControllerContent;
 
             let contentJS;
             try {
 
                 //compiling TS into JS, saving into .cjs file
-                contentJS = this.tsCompile(contentTS);
+                contentJS = this.tsCompile(contentTS).replace("export {};", "");
                 fs.writeFileSync(compiledPath, contentJS);
 
                 //win32 has its own importing trick
@@ -219,7 +216,7 @@ export default class TemplatesManager {
                 }
 
             } catch (e) {
-                console.log(`could not compile ${templateFile}: `+e.toString())
+                console.log(`could not compile ${templateFile} in TM: `+e.toString())
             }
 
         }

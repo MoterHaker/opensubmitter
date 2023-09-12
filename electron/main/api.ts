@@ -28,10 +28,11 @@ class InternalAPI {
     protected templates: TemplatesManager = new TemplatesManager();
     protected modulesManager: ModulesManager = new ModulesManager();
     protected executer: ExecuteManager = new ExecuteManager();
+    private isAppVersionUpdated = false;
 
 
     startListening(): void {
-
+        this.readAppSettings();
         this.executer.setTemplateManager(this.templates);
         this.executer.setModulesManager(this.modulesManager);
         ipcMain.on('TM', async(e, data) => {
@@ -40,7 +41,7 @@ class InternalAPI {
             this.templates.setHook(e);
             this.modulesManager.setHook(e);
             this.executer.setHook(e);
-            this.readAppSettings();
+            this.updateAppVersion();
             switch (data.type) {
 
                 case 'select-existing-template':
@@ -167,13 +168,6 @@ class InternalAPI {
 
     readAppSettings() {
 
-        if (this.eventHook) {
-            this.eventHook.reply('NetworkAPI', {
-                type: 'set-version',
-                version: app.getVersion()
-            })
-        }
-
         if (!fs.existsSync(this.paths.settingsFile)) return;
         try {
             const config = JSON.parse(fs.readFileSync(this.paths.settingsFile).toString());
@@ -188,6 +182,17 @@ class InternalAPI {
             }
         } catch (e) {
             //do nothing
+        }
+    }
+
+    updateAppVersion() {
+        if (this.isAppVersionUpdated) return;
+        this.isAppVersionUpdated = true;
+        if (this.eventHook) {
+            this.eventHook.reply('NetworkAPI', {
+                type: 'set-version',
+                version: app.getVersion()
+            })
         }
     }
 
@@ -212,7 +217,7 @@ class InternalAPI {
                 type: 'set-key-error',
                 message: e.toString()
             })
-            console.log("got error: ", e.toString());
+            console.log("got error while setting balance value: ", e.toString());
         }
     }
 

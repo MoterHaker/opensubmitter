@@ -5,15 +5,15 @@ import { ipcRenderer } from 'electron'
 
 export const useSettingsStore = defineStore('settings', () => {
 
-    let updateInterval: any = null;
+    const updateInterval = ref<any>(null);
     const AntiCaptchaAPIKey = ref('')
     const isAntiCaptchaAPIKeyValid = ref(false);
     const AntiCaptchaBalance = ref('--.--')
     const AntiCaptchaErrorString = ref<string | null>('');
 
     function requestAntiCaptchaBalance() {
-        clearInterval(updateInterval)
-        updateInterval = setTimeout(() => {
+        clearInterval(updateInterval.value)
+        updateInterval.value = setTimeout(() => {
             ipcRenderer.send('TM', {
                 type: 'save-settings',
                 antiCaptchaAPIKey: AntiCaptchaAPIKey.value

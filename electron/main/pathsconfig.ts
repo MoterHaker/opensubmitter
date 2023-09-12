@@ -74,10 +74,22 @@ export const pathsConfig = () => {
         join(__dirname, '..','..', 'electron', 'main', 'templateController.ts') :
         join(process.resourcesPath, 'src', 'templateController.ts')
 
+    const templateControllerSubmodulesPath = isDevelopmentEnv() ?
+        join(__dirname, '..','..', 'electron', 'main', 'template-submodules') :
+        join(process.resourcesPath, 'src', 'template-submodules')
+
+
+    let submodulesTS = null;
+    const submodulesList = fs.readdirSync(templateControllerSubmodulesPath);
+    for (const submodulePath of submodulesList) {
+        console.log('adding submodule ', submodulePath, 'at', join(templateControllerSubmodulesPath, submodulePath));
+        submodulesTS += fs.readFileSync(join(templateControllerSubmodulesPath, submodulePath)).toString() + "\n\n";
+    }
+
     const temporaryCompiledTemplatesDirectory = join(tmpdir(), 'opsub_compiled');
     const temporaryCompiledTemplatesNodeModules = join(temporaryCompiledTemplatesDirectory, 'node_modules');
 
-    const templateControllerContent = fs.readFileSync(templateControllerPath)
+    let templateControllerContent = submodulesTS + fs.readFileSync(templateControllerPath)
         .toString()
         .split("//cut")[1];
 
@@ -108,8 +120,9 @@ export const pathsConfig = () => {
 
     return {
         // constants:
-        templatesDirectory,                     //path we we store templates
+        templatesDirectory,                     //path where we store templates
         templateControllerPath,                 //path to templateController.ts
+        templateControllerSubmodulesPath,       //path to submodules of templateController.ts
         temporaryCompiledTemplatesDirectory,    //place were we put templates when scanning them and extracting names, description and other info
         temporaryCompiledTemplatesNodeModules,  //put fake node modules there to let templates scan quickly
         templateControllerContent,              //contents of the template controller
