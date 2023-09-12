@@ -29,7 +29,7 @@ export default class TemplatesManager {
         'imap-example.ts',
         'captcha-solver.ts',
         'manage-results-example.ts',
-        'threads-comminication-example.ts'
+        'threads-communication-example.ts'
     ];
 
     setHook(eventHook) {
