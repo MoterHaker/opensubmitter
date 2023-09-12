@@ -1,8 +1,7 @@
-import fs from "fs";
-import path from "path";
 
 class NamesGenerator {
 
+    electronAssetsDirectory: string;
     extraFemaleNames: string[] = [];
     extraMaleNames: string[] = [];
     extraSurnames: string[] = [];

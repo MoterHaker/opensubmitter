@@ -1,6 +1,6 @@
 import {pathsConfig} from "./pathsconfig";
 import { delay } from "./functions"
-import { utilityProcess } from "electron";
+import {dialog, utilityProcess} from "electron";
 import fs from "fs"
 import TemplatesManager from "./templates-manager";
 import ModulesManager from "./modules-manager";
@@ -296,6 +296,20 @@ export default class ExecuteManager {
         this.eventHook.reply('TaskManager', {
             type: 'notify-export-completed',
             exportedRows: exportCount
+        })
+    }
+
+    async exportResultsToAnotherFile(data) {
+        const files: Electron.SaveDialogReturnValue = await dialog.showSaveDialog({properties: ['showOverwriteConfirmation']});
+        if (!files || files.canceled) {
+            return;
+        }
+        const exportedRows = this.exportManager.export(
+            data.format,
+            files.filePath);
+        this.eventHook.reply('TaskManager', {
+            type: 'notify-export-completed',
+            exportedRows
         })
     }
 

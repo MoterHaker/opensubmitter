@@ -6,6 +6,9 @@ import { isDevelopmentEnv } from "./functions"
 
 const puppeteerVersion = '114.0.5735.133';
 
+let isTCRead = false;
+let templateControllerContent;
+
 export const pathsConfig = () => {
 
     //got it from puppeteer/browser/src/detectPlatform.ts
@@ -78,20 +81,24 @@ export const pathsConfig = () => {
         join(__dirname, '..','..', 'electron', 'main', 'template-submodules') :
         join(process.resourcesPath, 'src', 'template-submodules')
 
-
-    let submodulesTS = null;
-    const submodulesList = fs.readdirSync(templateControllerSubmodulesPath);
-    for (const submodulePath of submodulesList) {
-        console.log('adding submodule ', submodulePath, 'at', join(templateControllerSubmodulesPath, submodulePath));
-        submodulesTS += fs.readFileSync(join(templateControllerSubmodulesPath, submodulePath)).toString() + "\n\n";
-    }
-
     const temporaryCompiledTemplatesDirectory = join(tmpdir(), 'opsub_compiled');
     const temporaryCompiledTemplatesNodeModules = join(temporaryCompiledTemplatesDirectory, 'node_modules');
 
-    let templateControllerContent = submodulesTS + fs.readFileSync(templateControllerPath)
-        .toString()
-        .split("//cut")[1];
+    if (!isTCRead) {
+        let submodulesTS = null;
+        const submodulesList = fs.readdirSync(templateControllerSubmodulesPath);
+        for (const submodulePath of submodulesList) {
+            console.log('adding submodule ', submodulePath, 'at', join(templateControllerSubmodulesPath, submodulePath));
+            submodulesTS += fs.readFileSync(join(templateControllerSubmodulesPath, submodulePath)).toString() + "\n\n";
+        }
+
+        templateControllerContent = submodulesTS + fs.readFileSync(templateControllerPath)
+            .toString()
+            .split("//cut")[1];
+        isTCRead = true;
+    }
+
+
 
     const compiledTemplateDir = join(tmpdir(), 'opsubcompiledcustom');
     if (!fs.existsSync(compiledTemplateDir)) fs.mkdirSync(compiledTemplateDir);

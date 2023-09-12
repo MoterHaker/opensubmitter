@@ -1,6 +1,6 @@
 /// <reference path="../../src/type.d.ts" />
 /// <reference path="../../src/composables/type.d.ts" />
-import { app } from 'electron'
+import {app, dialog} from 'electron'
 import { join } from 'node:path'
 import os, {tmpdir} from 'os';
 import fs from "fs";
@@ -34,6 +34,19 @@ export default class TemplatesManager {
 
     setHook(eventHook) {
         this.eventHook = eventHook;
+    }
+
+    async openTemplateDialog() {
+        const files: Electron.OpenDialogReturnValue = await dialog.showOpenDialog({ properties: ['openFile'] });
+        if (!files || files.canceled) {
+            console.log('canceled file opening')
+            return;
+        }
+
+        this.selectedTemplateFilePath = files.filePaths[0];
+        await this.selectFile();
+        this.loadSettings();
+        this.sendSettings();
     }
 
     async selectFile(): Promise<void> {
@@ -107,6 +120,32 @@ export default class TemplatesManager {
             console.log('no config in the template')
             return;
         }
+    }
+
+
+
+    async selectFileForTemplateSettings(data) {
+        if (data.dialogType === 'open') {
+            const files: Electron.OpenDialogReturnValue = await dialog.showOpenDialog({properties: ['openFile']});
+            if (!files || files.canceled) {
+                return;
+            } else {
+                this.currentObject.config.userSettings[data.index]["fileName"] = files.filePaths[0];
+            }
+        }
+        if (data.dialogType === 'save') {
+            const files: Electron.SaveDialogReturnValue = await dialog.showSaveDialog({properties: ['showOverwriteConfirmation']});
+            if (!files || files.canceled) {
+                return;
+            } else {
+                this.currentObject.config.userSettings[data.index]["fileName"] = files.filePath;
+            }
+        }
+        this.eventHook.reply('TaskManager', {
+            type: 'set-template-config',
+            config: this.currentObject.config,
+            taskThreadsAmount: this.taskThreadsAmount
+        })
     }
 
 
