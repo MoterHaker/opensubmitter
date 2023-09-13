@@ -26,6 +26,12 @@ process.parentPort.on('message', async(e) => {
             fullModulesPath = message.fullModulesPath;
             targetModulesPath = message.targetModulesPath;
 
+            try {
+                await rmDirRecursive(compiledTemplateDir);
+            } catch (e) {
+                console.log(`failed to remove ${compiledTemplateDir}: ${e.toString()}`)
+            }
+
             //extracting archive first to temporary dir with all app.asar contents
             console.log('extracting app.asar to ', compiledTemplateDir);
             asar.extractAll(appPath, compiledTemplateDir);

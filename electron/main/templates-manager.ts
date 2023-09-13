@@ -7,7 +7,7 @@ import fs from "fs";
 import ts, {ScriptTarget} from "typescript"
 
 import {pathsConfig} from "./pathsconfig";
-import { isDevelopmentEnv } from "./functions"
+import { isDevelopmentEnv, delay } from "./functions"
 import axios from "axios";
 
 const paths = pathsConfig();
@@ -205,6 +205,7 @@ export default class TemplatesManager {
                                 .filter(item => {
                                     if (item.isDirectory()) return false;
                                     if (!isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) return false;
+                                    if (item.name === 'type.d.ts') return false;
                                     return ['.ts','.js'].indexOf(extname(item.name)) !== -1;
                                 })
                                 .map(item => item.name)
@@ -250,10 +251,17 @@ export default class TemplatesManager {
         }
 
         //sending to global Vue
-        this.eventHook.reply('Global', {
-            type: 'set-template-file-list',
-            list: result
-        })
+        while (true) {
+            if (!this.eventHook) {
+                await delay(500);
+                continue;
+            }
+            this.eventHook.reply('Global', {
+                type: 'set-template-file-list',
+                list: result
+            })
+            break;
+        }
     }
 
     tsCompile(source: string): string {

@@ -320,7 +320,7 @@ export const useTaskManagerStore = defineStore('taskManager', () => {
 
             case 'switch-to-loaded-template':
                 router.push('/dashboard');
-                selectTemplateByName(data.name);
+                selectTemplateByPath(data.path);
                 break;
 
             case 'notify-export-completed':

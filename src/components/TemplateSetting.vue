@@ -141,6 +141,11 @@ onMounted(() => {
                 radioValue.value = props.setting.value.toString();
             }
             break;
+
+        case "ExportFile":
+            if (typeof props.setting.value === "undefined" || props.setting.value === '') {
+                props.setting.value = 'CSV';
+            }
     }
 })
 

@@ -85,7 +85,10 @@ class InternalAPI {
                     break;
 
                 case 'read-local-templates':
-                    if (!this.paths.isNodeModulesExtracted) return
+                    if (!this.paths.isNodeModulesExtracted) {
+                        this.extractNodeModulesAndReadTemplates();
+                        return
+                    }
                     await this.templates.readLocal();
                     break;
 
@@ -121,9 +124,21 @@ class InternalAPI {
 
             }
 
+            this.extractNodeModulesAndReadTemplates();
+
         });
-        this.modulesManager.extractNodeModules().then(() => this.templates.readLocal());
+
+
+
     }
+
+    extractNodeModulesAndReadTemplates() {
+        this.modulesManager.extractNodeModules().then(() => {
+            this.paths.isNodeModulesExtracted = true;
+            this.templates.readLocal()
+        });
+    }
+
 
 
 
