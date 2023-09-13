@@ -21,14 +21,14 @@ process.parentPort.on('message', async(e) => {
 
         case 'prepare-production':
             const asar = require('@electron/asar');
-            const asarExtractedDirectory = message.asarExtractedDirectory;
+            const compiledTemplateDir = message.compiledTemplateDir;
             const appPath = message.appPath;
             fullModulesPath = message.fullModulesPath;
             targetModulesPath = message.targetModulesPath;
 
             //extracting archive first to temporary dir with all app.asar contents
-            console.log('extracting app.asar to ', asarExtractedDirectory);
-            asar.extractAll(appPath, asarExtractedDirectory);
+            console.log('extracting app.asar to ', compiledTemplateDir);
+            asar.extractAll(appPath, compiledTemplateDir);
 
             //checking if node_modules already exists, removing if yes
             if (fs.existsSync(targetModulesPath)) {

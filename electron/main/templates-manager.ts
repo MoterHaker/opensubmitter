@@ -1,7 +1,7 @@
 /// <reference path="../../src/type.d.ts" />
 /// <reference path="../../src/composables/type.d.ts" />
 import {app, dialog} from 'electron'
-import { join } from 'node:path'
+import { join, extname } from 'node:path'
 import os, {tmpdir} from 'os';
 import fs from "fs";
 import ts, {ScriptTarget} from "typescript"
@@ -204,26 +204,15 @@ export default class TemplatesManager {
         const templatesList = fs.readdirSync(paths.templatesDirectory, {withFileTypes: true})
                                 .filter(item => {
                                     if (item.isDirectory()) return false;
-                                    if (!isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) { console.log('excluding', item); return false }
-                                    let ext = item.name.substring(item.name.indexOf('.')+1);
-                                    return ['ts','js'].indexOf(ext) !== -1;
+                                    if (!isDevelopmentEnv() && this.excludeTemplatesFromProduction.indexOf(item.name) !== -1) return false;
+                                    return ['.ts','.js'].indexOf(extname(item.name)) !== -1;
                                 })
                                 .map(item => item.name)
-
-        //temporary dir for compiled templates
-        if (!fs.existsSync(paths.temporaryCompiledTemplatesDirectory)) fs.mkdirSync(paths.temporaryCompiledTemplatesDirectory);
-        if (!fs.existsSync(paths.temporaryCompiledTemplatesNodeModules)) {
-            fs.mkdirSync(paths.temporaryCompiledTemplatesNodeModules)
-            fs.mkdirSync(join(paths.temporaryCompiledTemplatesNodeModules, 'axios'))
-            fs.mkdirSync(join(paths.temporaryCompiledTemplatesNodeModules, 'puppeteer'))
-            fs.writeFileSync(join(paths.temporaryCompiledTemplatesNodeModules, 'axios', 'index.js'),"module.export={}");
-            fs.writeFileSync(join(paths.temporaryCompiledTemplatesNodeModules, 'puppeteer', 'index.js'),"module.export={}");
-        }
 
         const result = [];
         for (const templateFile of templatesList) {
             const templatePath = join(paths.templatesDirectory, templateFile);
-            let compiledPath = join(paths.temporaryCompiledTemplatesDirectory, `${templateFile}.cjs`);
+            let compiledPath = join(paths.compiledTemplateDir, `${templateFile}.cjs`);
 
             //combined Typescript contents of template and its parent controller
             const contentTS = fs.readFileSync(templatePath).toString() + paths.templateControllerContent;

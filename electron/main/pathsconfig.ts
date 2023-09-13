@@ -58,7 +58,7 @@ export const pathsConfig = () => {
 
         let result = isDevelopmentEnv() ?
             join(app.getAppPath(), 'extra', 'puppeteer', executablePath) :
-            join(asarExtractedDirectory, 'dist', 'puppeteer', executablePath);
+            join(compiledTemplateDir, 'dist', 'puppeteer', executablePath);
 
         if (process.platform === 'win32') {
             //making double quotes, so it could work in the template variable %PUPPETEER_EXECUTABLE_PATH%
@@ -81,14 +81,13 @@ export const pathsConfig = () => {
         join(__dirname, '..','..', 'electron', 'main', 'template-submodules') :
         join(process.resourcesPath, 'src', 'template-submodules')
 
-    const temporaryCompiledTemplatesDirectory = join(tmpdir(), 'opsub_compiled');
-    const temporaryCompiledTemplatesNodeModules = join(temporaryCompiledTemplatesDirectory, 'node_modules');
+    // const temporaryCompiledTemplatesDirectory = join(tmpdir(), 'opsub_compiled');
+    // const temporaryCompiledTemplatesNodeModules = join(temporaryCompiledTemplatesDirectory, 'node_modules');
 
     if (!isTCRead) {
         let submodulesTS = null;
         const submodulesList = fs.readdirSync(templateControllerSubmodulesPath);
         for (const submodulePath of submodulesList) {
-            console.log('adding submodule ', submodulePath, 'at', join(templateControllerSubmodulesPath, submodulePath));
             submodulesTS += fs.readFileSync(join(templateControllerSubmodulesPath, submodulePath)).toString() + "\n\n";
         }
 
@@ -107,13 +106,11 @@ export const pathsConfig = () => {
 
     const compiledTemplateNodeModulesVersion = join(compiledTemplateNodeModules, 'version.txt')
 
-    const asarExtractedDirectory = join(tmpdir(), 'opsubcompiledcustom');
-
     const extractor = isDevelopmentEnv() ?
         join(__dirname, '..', '..', 'electron', 'main', 'asarextractor.js') :
         join(process.resourcesPath, 'src', 'asarextractor.js')
 
-    const asarExtractedNodeModules = join(asarExtractedDirectory, 'dist', 'bundled-node-modules', 'modules')
+    const asarExtractedNodeModules = join(compiledTemplateDir, 'dist', 'bundled-node-modules', 'modules')
 
     const settingsFile = isDevelopmentEnv() ?
         join(__dirname, '..', '..', 'templates', 'settings.json') :
@@ -125,18 +122,18 @@ export const pathsConfig = () => {
         join(__dirname, '..', '..', 'electron', 'main', 'assets') :
         join(process.resourcesPath, 'src', 'assets')
 
+    let isNodeModulesExtracted = false;
+
     return {
         // constants:
         templatesDirectory,                     //path where we store templates
         templateControllerPath,                 //path to templateController.ts
         templateControllerSubmodulesPath,       //path to submodules of templateController.ts
-        temporaryCompiledTemplatesDirectory,    //place were we put templates when scanning them and extracting names, description and other info
-        temporaryCompiledTemplatesNodeModules,  //put fake node modules there to let templates scan quickly
         templateControllerContent,              //contents of the template controller
         compiledTemplateDir,                    //where we store "real" compiled templates
         compiledTemplateNodeModules,            //where we store node_modules for "real" compiled templates
         compiledTemplateNodeModulesVersion,     //path to version.txt file which indicates updates in node_modules
-        asarExtractedDirectory,                 //where to extract app.asar archive in production mode
+        isNodeModulesExtracted,                 //flag to indicate node_modules extraction completion
         asarExtractedNodeModules,               //path to extracted node_modules from app.asar archive
         extractor,                              //module which extracts data from app.asar
         settingsFile,                           //app settings storage file path

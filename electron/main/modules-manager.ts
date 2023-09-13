@@ -8,7 +8,6 @@ export default class ModulesManager {
 
     eventHook = null;
     paths = pathsConfig();
-    areModulesExtracted = false;
     modulesVersion = '0007';
 
     setHook(eventHook): void {
@@ -26,7 +25,7 @@ export default class ModulesManager {
             const version = fs.readFileSync(this.paths.compiledTemplateNodeModulesVersion).toString();
             if (version === this.modulesVersion) {
                 console.log('node_modules version is matching, skipping new copying');
-                this.areModulesExtracted = true;
+                this.paths.isNodeModulesExtracted = true;
                 return;
             }
         }
@@ -42,7 +41,7 @@ export default class ModulesManager {
                         .on("spawn", () => {
                             child.postMessage({
                                 'type': "prepare-production",
-                                "asarExtractedDirectory": this.paths.asarExtractedDirectory,
+                                "compiledTemplateDir": this.paths.compiledTemplateDir,
                                 "appPath": app.getAppPath(),
                                 "fullModulesPath": this.paths.asarExtractedNodeModules,
                                 "targetModulesPath": this.paths.compiledTemplateNodeModules
@@ -76,13 +75,13 @@ export default class ModulesManager {
 
         }
         fs.writeFileSync(this.paths.compiledTemplateNodeModulesVersion, this.modulesVersion);
-        this.areModulesExtracted = true;
+        this.paths.isNodeModulesExtracted = true;
         console.log('node_modules and browsers are prepared');
     }
 
     async checkIfModulesAreExtracted(): Promise<boolean> {
         for (let wait = 0;wait < 120; wait++) {
-            if (!this.areModulesExtracted) {
+            if (!this.paths.isNodeModulesExtracted) {
                 this.eventHook.reply('TaskManager', {
                     type: 'set-running-status',
                     statusData: {
