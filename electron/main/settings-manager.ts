@@ -3,6 +3,7 @@ import ModulesManager from "./modules-manager";
 import {pathsConfig} from "./pathsconfig";
 import ExecuteManager from "./execute-manager";
 import {app} from "electron";
+import axios from "axios";
 
 export default class SettingsManager {
 
@@ -41,10 +42,35 @@ export default class SettingsManager {
         if (data.grizzlySMSAPIKey) {
             this.savedSettings["grizzlySMSAPIKey"] = data.grizzlySMSAPIKey;
             this.saveSettingsFile();
-            await this.checkAntiCaptchaBalance(data.antiCaptchaAPIKey);
+            await this.checkSMSGrizzlyBalance(data.grizzlySMSAPIKey);
         }
 
+    }
 
+    async checkSMSGrizzlyBalance(key: string) {
+        let res;
+        try {
+            res = await axios.get(`https://api.grizzlysms.com/stubs/handler_api.php?api_key=${key}&action=getBalance`);
+        } catch (e) {
+            this.eventHook.reply('Settings', {
+                type: 'set-grizzly-key-error',
+                message: 'Invalid API key'
+            })
+            return;
+        }
+        if (res.data.split(':')[0] == 'BAD_KEY') {
+            this.eventHook.reply('Settings', {
+                type: 'set-grizzly-key-error',
+                message: 'Invalid API key'
+            })
+            return;
+        }
+        if (res.data.split(':')[0] == 'ACCESS_BALANCE') {
+            this.eventHook.reply('Settings', {
+                type: 'set-grizzly-balance-value',
+                balance: res.data.split(':')[1]
+            })
+        }
     }
 
     async checkAntiCaptchaBalance(key: string) {
@@ -81,7 +107,6 @@ export default class SettingsManager {
     }
 
     readAppSettings() {
-
         if (!fs.existsSync(this.paths.settingsFile)) return;
         try {
             const config = JSON.parse(fs.readFileSync(this.paths.settingsFile).toString());

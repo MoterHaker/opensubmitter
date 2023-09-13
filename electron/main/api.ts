@@ -100,6 +100,10 @@ class InternalAPI {
                     await this.settings.checkAntiCaptchaBalance(data.key)
                     break;
 
+                case 'check-grizzly-sms-balance':
+                    await this.settings.checkSMSGrizzlyBalance(data.key)
+                    break;
+
                 case 'get-settings':
                     this.settings.readAppSettings();
                     break;
